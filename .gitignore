@@ -1,3 +1,4 @@
 target
 .idea
 
+src/main/resources/catalog-v001.xml
