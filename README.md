@@ -30,12 +30,16 @@ Some **ideosyncracies** of our approach are:
   * **label** corresponds to the rdfs:label annotation of the relationship. If there is no rdfs:label annotation, label corresponds to the remainder of the entity IRI.
 * An example use of an SL in Cypher is (:n)-['ro:part of']-(:x)
 * Individuals are currently only typed with their most direct type
-* We only support datatypes that are supported by both neo4j and OWL:
-  * Integer/xsd:integer
-  * String/xsd:string
-  * Boolean/xsd:boolean
-  * Float/xsd:float
-* For properties, only annotations to literals are considered (not to other entities)
+* We only support datatypes that are supported by both neo4j and OWL (other OWL2 datatypes will be cast to Neo4j:String, which means their typing information is lost in a round-trip):
+
+ Neo4J | OWL 2 | Comment |
+|-----|-----|-----|
+| Integer | xsd:integer |  |
+| String | xsd:string |  |
+| Boolean | xsd:boolean | |
+| Float | xsd:float |  |
+
+* For properties and axioms, all annotations are treated as if they were to literals (i.e. they wont be connected to other entities)
 
 For readibility, we omit the neo4j2owl namespaces in the OWL 2 EL Axiom Column;
 
@@ -48,11 +52,11 @@ All entities in the ontology, i.e. classes, individuals, object properties, data
 
 | Concept | OWL 2 EL Axiom | Neo4J Graph Pattern | Comment |
 |---------------|---------------|----------------|----------------|
-| Class declaration | Class: A | (:Class {iri: 'http://neo4j2owl.org/mapping#A', short_form:'A'}) |  |
-| Individual declaration | Individual: i | (:Individual {iri: 'http://neo4j2owl.org/mapping#i'}) |  |
-| Annotation property declaration | AnnotationProperty: R | (:AnnotationProperty {iri: 'http://neo4j2owl.org/mapping#R', short_form:'R', sl:'SL(R)'}) |  |
-| Object property declaration | ObjectProperty: R | (:ObjectProperty {iri: 'http://neo4j2owl.org/mapping#R', short_form:'R', sl:'SL(R)'}) |  |
-| Data property declaration | DataProperty: R | (:DataProperty {iri: 'http://neo4j2owl.org/mapping#R', short_form:'R', sl:'SL(R)'}) |  |
+| Class declaration | Class: A | (:Class {iri: 'http://neo4j2owl.org/mapping#A', short_form:'A', label:'L(A)'}) |  |
+| Individual declaration | Individual: i | (:Individual {iri: 'http://neo4j2owl.org/mapping#i', label:'L(A)'}) |  |
+| Annotation property declaration | AnnotationProperty: R | (:AnnotationProperty {iri: 'http://neo4j2owl.org/mapping#R', short_form:'R', sl:'SL(R)'}, label:'L(A)') |  |
+| Object property declaration | ObjectProperty: R | (:ObjectProperty {iri: 'http://neo4j2owl.org/mapping#R', short_form:'R', sl:'SL(R)'}, label:'L(A)') |  |
+| Data property declaration | DataProperty: R | (:DataProperty {iri: 'http://neo4j2owl.org/mapping#R', short_form:'R', sl:'SL(R)'}, label:'L(A)') |  |
 
 
 ## Class-Class relationships
@@ -98,10 +102,48 @@ For reasons of feasibility, data property assertions or restrictions, will be in
 | Data property assertion | Individual: A Facts: R 2 | (:Individual {..,SF(R):2}) |  |
 | Data property restriction | Class: A SubClassOf: R value 2 | (:Class {..,SF(R):2}) | |
 
+## Axiom annotations
+| Concept | OWL 2 EL Axiom | Neo4J Graph Pattern | Comment |
+|---------------|---------------|----------------|----------------|
+| Axiom Annotations | Class: A SubclassOf: Annotations: P "A"@en | (:Class {..})-[r: {..SF(R):'"A"@en'}..]-() |  |
+
+## Notes on mapping procedure
+* If we use curies to indicated edge-type for OPs, we need labels as an attribute.
+
+## Custom Neo4J properties
+For edge types, node labels (in the Neo/Cypher sense of the term) and property keys, special characters and spaces can potentially be supported via the use of back-tick escaping, but avoiding them makes writing cypher much easier - especially if via script.
+
+* iri, http://purl.obolibrary.org/obo/BFO_0000050
+* short_form, BFO_0000050
+* label, "part of"
+* prefix, "http://purl.obolibrary.org/obo/BFO_" 
+* curie, BFO:0000050
+* safe_label, part_of (replace non-alphanumeric by "_")
+* qualified_safe_label (BFO:part_of) [[Maybe use alterntive to :, to avoid necessity of escape marke in Cypher]]
+
+## Related user stories (internal use only)
+* As a  developer writing OWL from the KB,  I want to be able to easily find the correct iri for all OWL entities from the database.
+   => All nodes have an IRI.  All edges have an IRI or have a key  (e.g. short_form or Curie) that makes it easy to look up and IRI from the relevant node.  The key may be a edge type name or an edge attribute (neo4J property key).
+* As a developer writing OWL from the KB, I want to be able to tell from all nodes and edges what type of OWL entity or axiom I should create.
+  => There must be an unambiguous mapping from node:label (or some standard attribute) and edge types (or some standard attribute) to OWL entity and axiom types.
+* As a developer writing to the database,  I need to know what identifiers it is safe to use to uniquely identify nodes for the purpose of merging in new content.
+External content is loaded from ontologies that we don't have complete control over. Uniqueness of  rdfs:Label can not be relied upon (although it is typically a safe assumptions within the context of a single ontology).   short_form uniqueness is much safer, but Curies would be safer still.   
+* As a developer writing to the database, I want to be able to easily and unambiguouysly refer  to existing entities.  => 
+Using  full IRIs for this can be a big pain in the ass as, outside of OBO, these are hard to remember. Using curie's is somewhat easier, but can still be a pain.  Using short_forms is easiest, but to do this safely requires a commitment to short_form uniqueness.  While this cannot be absolutely guaranteed it is rare.
+=> All nodes and edge-types have unique short_form or curie
+* As a developer editing the DB I want to be able to easily write queries to check what information it contains.
+I should be able to easily select major categories of content.  
+I should be able to write queries using lexical identifiers (labels or something closely related to them), even if this is occasionally unreliable.
+I should be able to use lexical identifiers (a readable neo4j:label or node attribute) to filter/select on major categories of entity (e.g. anatomical entity; expression pattern; genetic feature).  
+* As a Geppetto developer, I should be able to find the display names to use for edges and property keys without having to mung text or run secondary lookups.
+Edges should store rdfs:label; property keys should not be Qualified ?
+
 
 ## Future work
 * Provenance should be added on edges only
 * Add superproperties as additional edge types?
+* Axiom annotation with an Individual as a value can not be directly supported as edges to edges, but we can (and should) model these by using an identifier for the Individual (iri or short_form).  The join required to pull axioms associated with the referenced individual can be easily performed in Cypher.
+* Constraint: Edge types should correspond to some allowable set of object property and annotation property types. All of these are defined in source ontologies. This makes querying efficient and easy, and allows for queries specify disjunctive sets of edge type.
 
 ## References 
 
