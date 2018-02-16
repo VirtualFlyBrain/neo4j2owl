@@ -25,7 +25,6 @@ public class OWL2OntologyExporter {
     public GraphDatabaseService db;
     public static OWLDataFactory df = OWLManager.getOWLDataFactory();
     public static final String PREFIX_SEPARATOR = "__";
-    public static final SaveLabelSupplier saveLabelSupplier = new SaveLabelSupplier();
 
     /*
     Constants

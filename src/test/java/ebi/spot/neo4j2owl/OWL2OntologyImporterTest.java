@@ -14,12 +14,20 @@ public class OWL2OntologyImporterTest {
 
     @Test
     public void owl2Import() throws Exception {
-        GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabase();
+
+       GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabase();
         ((GraphDatabaseAPI)db).getDependencyResolver().resolveDependency(Procedures.class).registerProcedure(OWL2OntologyImporter.class);
 
-        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('" +
+        /*Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('" +
                 OWL2OntologyImporterTest.class.getClassLoader().getResource("moviesontology.owl").toURI()
                 + "','RDF/XML')");
+        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl','RDF/XML')");
+        System.out.println(db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
+        Result res = db.execute("MATCH (n:Class)-[p]->(x:Class)  RETURN p");
+        while(res.hasNext()) {
+            System.out.println(res.next().get("p"));
+        }
+*/
 
         //assertEquals(new Long(16), importResult.next().get("elementsLoaded"));
 
