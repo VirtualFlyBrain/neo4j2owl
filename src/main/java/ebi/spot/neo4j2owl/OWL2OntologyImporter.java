@@ -1,19 +1,24 @@
 package ebi.spot.neo4j2owl;
 
-import com.google.common.base.Optional;
+import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.kernel.internal.EmbeddedGraphDatabase;
+import org.neo4j.logging.Log;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Mode;
 import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
+import org.neo4j.unsafe.batchinsert.BatchInserter;
+import org.neo4j.unsafe.batchinsert.BatchInserters;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
-import org.semanticweb.owlapi.util.DefaultPrefixManager;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -26,19 +31,26 @@ public class OWL2OntologyImporter {
 
     @Context
     public GraphDatabaseService db;
-    public static OWLDataFactory df = OWLManager.getOWLDataFactory();
-    public static final String PREFIX_SEPARATOR = "__";
-    public static final CurieManager curies = new CurieManager();
-    public static Map<OWLEntity, N2OEntity> nodemap = new HashMap<>();
-    public static Set<OWLClass> filterout = new HashSet<>();
+
+    // This gives us a log instance that outputs messages to the
+    // standard log, `neo4j.log`
+    @Context
+    public Log log;
+
+    private static OWLDataFactory df = OWLManager.getOWLDataFactory();
+    private static final CurieManager curies = new CurieManager();
+    private static Map<OWLEntity, N2OEntity> nodemap = new HashMap<>();
+    private static Set<OWLClass> filterout = new HashSet<>();
 
     static Map<N2OEntity, Map<String, Set<N2OEntity>>> existential = new HashMap<>();
+    static Map<OWLEntity,Long> nodeIndex = new HashMap<>();
 
-    static int classesLoaded = 0;
-    static int individualsLoaded = 0;
-    static int objPropsLoaded = 0;
-    static int annotationPropertiesloaded = 0;
-    static int dataPropsLoaded = 0;
+    private static int classesLoaded = 0;
+    private static int individualsLoaded = 0;
+    private static int objPropsLoaded = 0;
+    private static int annotationPropertiesloaded = 0;
+    private static int dataPropsLoaded = 0;
+    private static long start = System.currentTimeMillis();
 
     /*
     Constants
@@ -48,16 +60,43 @@ public class OWL2OntologyImporter {
     @Procedure(mode = Mode.WRITE)
     public Stream<ImportResults> owl2Import(@Name("url") String url, @Name("format") String format) {
         ImportResults importResults = new ImportResults();
+        File inserttmp = new File("insert");
+
 
         try {
+           // BatchInserter inserter = BatchInserters.inserter(inserttmp);
+            // To set properties on the relationship, use a properties map
+            // instead of null as the last parameter.
+            //inserter.createRelationship( mattiasNode, chrisNode, knows, null );
+            log("Loading Ontology");
             OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(IRI.create(url));
+            log("Creating reasoner");
             OWLReasoner r = new ElkReasonerFactory().createReasoner(o);
             filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLThing());
             filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
-            extractSignature(o, r);
+            /*log("Set indices");
+            db.execute("CREATE INDEX ON :Individual(iri)");
+            db.execute("CREATE INDEX ON :Class(iri)");
+            db.execute("CREATE INDEX ON :ObjectProperty(iri)");
+            db.execute("CREATE INDEX ON :DataProperty(iri)");
+            db.execute("CREATE INDEX ON :AnnotationProperty(iri)");
+
+            db.execute("CREATE CONSTRAINT ON (c:Individual) ASSERT c.iri IS UNIQUE");
+            db.execute("CREATE CONSTRAINT ON (c:Class) ASSERT c.iri IS UNIQUE");
+            db.execute("CREATE CONSTRAINT ON (c:ObjectProperty) ASSERT c.iri IS UNIQUE");
+            db.execute("CREATE CONSTRAINT ON (c:DataProperty) ASSERT c.iri IS UNIQUE");
+            db.execute("CREATE CONSTRAINT ON (c:AnnotationProperty) ASSERT c.iri IS UNIQUE");
+*/
+
+            log("Extracting signature");
+            extractSignature(o);
+            log("Extracting annotations to literals");
             extractIndividualAnnotationsToLiterals(o, r);
+            log("Extracting subclass relations");
             addSubclassRelations(o, r);
+            log("Extracting class assertions");
             addClassAssertions(o, r);
+            log("Extracting existential relations");
             addExistentialRelationships(o, r);
         } catch (Exception e) {
             e.printStackTrace();
@@ -65,6 +104,16 @@ public class OWL2OntologyImporter {
             importResults.setElementsLoaded(classesLoaded + individualsLoaded + objPropsLoaded + annotationPropertiesloaded + dataPropsLoaded);
         }
         return Stream.of(importResults);
+    }
+
+    private void log(String msg) {
+        log.info(msg);
+        System.out.println(msg+" "+getTimePassed());
+    }
+
+    private String getTimePassed() {
+        long time = System.currentTimeMillis()-start;
+        return ((double)time/1000.0)+" sec";
     }
 
     private void addSubclassRelations(OWLOntology o, OWLReasoner r) {
@@ -156,8 +205,7 @@ public class OWL2OntologyImporter {
         }
     }
 
-    private void processExistentialRestriction(OWLObjectSomeValuesFrom s_super, OWLEntity s_sub) {
-        OWLObjectSomeValuesFrom svf = s_super;
+    private void processExistentialRestriction(OWLObjectSomeValuesFrom svf, OWLEntity s_sub) {
         if (!svf.getProperty().isAnonymous() ) {
             OWLObjectProperty op = svf.getProperty().asOWLObjectProperty();
             OWLClassExpression filler = svf.getFiller();
@@ -189,7 +237,7 @@ public class OWL2OntologyImporter {
         }
         N2OEntity from_n = nodemap.get(from);
         N2OEntity to_n = nodemap.get(to);
-        String roletype = rel.getSafeNormalised_label();
+        String roletype = rel.getQualified_safe_label();
 
 
         if (!existential.containsKey(from_n)) {
@@ -217,14 +265,22 @@ public class OWL2OntologyImporter {
         }
     }
 
-    private void extractSignature(OWLOntology o, OWLReasoner r) {
+    private void extractSignature(OWLOntology o) {
         Set<OWLEntity> entities = new HashSet<>(o.getSignature(Imports.INCLUDED));
+        int i = 0;
         for (OWLEntity e : entities) {
+            i++;
+            if(i % 1000  == 0) {
+                log(i+" out of "+entities.size());
+            }
             N2OEntity ne = new N2OEntity(e, o, curies);
             nodemap.put(e, ne);
             Map<String, Object> props = new HashMap<>();
             props.put(OWL2NeoMapping.ATT_LABEL, ne.getLabel());
-            props.put(OWL2NeoMapping.SAVE_LABEL, ne.getSafe_label());
+            props.put(OWL2NeoMapping.ATT_SAFE_LABEL, ne.getSafe_label());
+            props.put(OWL2NeoMapping.ATT_QUALIFIED_SAFE_LABEL, ne.getQualified_safe_label());
+            props.put(OWL2NeoMapping.ATT_SHORT_FORM, ne.getShort_form());
+            props.put(OWL2NeoMapping.ATT_CURIE, ne.getCurie());
             updatePropertyAttributes(ne, props);
             countLoaded(e);
         }
@@ -238,7 +294,7 @@ public class OWL2OntologyImporter {
             for (OWLAnnotation a : annos) {
                 OWLAnnotationValue aval = a.annotationValue();
                 if (!aval.isIRI()) {
-                    props.put(neoPropertyKey(o, a), aval.asLiteral().or(df.getOWLLiteral("unknownX")).getLiteral());
+                    props.put(neoPropertyKey(a), aval.asLiteral().or(df.getOWLLiteral("unknownX")).getLiteral());
                 } else {
                     IRI iri = aval.asIRI().or(IRI.create("WRONGANNOTATIONPROPERTY"));
                     indexRelation(e,typedEntity(iri,o),nodemap.get(a.getProperty()));
@@ -268,6 +324,16 @@ public class OWL2OntologyImporter {
         db.execute(cypher, params);
     }
 
+    private void updatePropertyAttributes(N2OEntity e, Map<String, Object> props, BatchInserter inserter) {
+        String cypher = String.format("MERGE (p:%s { uri:'%s'}) SET p+={props}",
+                e.getType(),
+                e.getIri());
+        Map<String, Object> params = new HashMap<>();
+        params.put("props", props);
+        long n = inserter.createNode( props );
+        nodeIndex.put(e.getEntity(),n);
+    }
+
     private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, String rel, Map<String, Object> props) {
         String cypher = String.format(
                 "MATCH (p { uri:'%s'}), (c { uri:'%s'}) CREATE (p)-[:%s]->(c)",
@@ -279,8 +345,8 @@ public class OWL2OntologyImporter {
         db.execute(cypher, params);
     }
 
-    private String neoPropertyKey(OWLOntology o, OWLAnnotation a) {
-        return curies.generateSafeLabel(a.getProperty(), o);
+    private String neoPropertyKey(OWLAnnotation a) {
+        return nodemap.get(a.getProperty()).getQualified_safe_label();
     }
 
     private void countLoaded(OWLEntity e) {

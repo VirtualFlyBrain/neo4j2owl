@@ -78,12 +78,7 @@ public class Util {
         System.out.println(r);
     }
 
-    public static String getPreferredLabel(OWLEntity e, OWLOntology o) {
-        for(String l:getLabels(e,o)) {
-            return l;
-        }
-        return e.getIRI().getRemainder().or(e.getIRI().getShortForm());
-    }
+
 
 
     static class CallerBlocksPolicy implements RejectedExecutionHandler {

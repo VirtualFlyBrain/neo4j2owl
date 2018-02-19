@@ -12,7 +12,12 @@ public class OWL2NeoMapping {
     public static final String RELTYPE_INSTANCEOF = "Type";
 
     public static final String ATT_LABEL = "label";
-    public static final String SAVE_LABEL = "sl";
+    public static final String ATT_SAFE_LABEL = "sl";
+    public static final String ATT_QUALIFIED_SAFE_LABEL = "qsl";
+    public static final String ATT_CURIE = "curie";
+    public static final String ATT_SHORT_FORM = "short_form";
+    public static final String ATT_NAMESPACE = "ns";
+
 
     public static String getNeoType(OWLEntity e) {
         if(e instanceof OWLClass) {
