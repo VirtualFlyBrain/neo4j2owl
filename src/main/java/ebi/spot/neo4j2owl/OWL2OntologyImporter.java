@@ -180,7 +180,6 @@ public class OWL2OntologyImporter {
                             fn = "/" + new File(importdir, filename).getAbsolutePath().toString();
                             System.err.println("UNCOMMENT FILENAME");
                         }
-                        System.err.println("UNCOMMENT FILENAME");
                         String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
                         //TODO USING PERIODIC COMMIT 1000
                         String cypher = "USING PERIODIC COMMIT 5000\n" +
@@ -231,11 +230,8 @@ public class OWL2OntologyImporter {
             } else if(manager.getPrimaryEntityPropertyKeys().contains(h)) {
                 sb.append(h+":"+alias+h+", ");
             } else {
-                String a = h;
-                if(a.endsWith(";")) {
-                    a = a.replaceAll(";$","");
-                }
-                sb.append(h+":split("+alias+a+",\";\"), ");
+
+                sb.append(h+":split("+alias+h+",\";\"), ");
             }
 
         }
@@ -439,7 +435,7 @@ public class OWL2OntologyImporter {
                 annoString.put(p,annoString.get(p)+value+";");
             }
         }
-        props.putAll(annoString);
+        annoString.forEach((k,v)->props.put(k,v.replaceAll(";$","")));
     }
 
     private void indexIndividualAnnotationsToEntities(OWLOntology o, OWLReasoner r) {

@@ -14,7 +14,7 @@ public class OWL2OntologyImporterTest {
 
 
 
-    //@Test
+    @Test
     public void owl2ImportSmall() throws Exception {
 
        GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabase();
