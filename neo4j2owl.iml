@@ -114,7 +114,7 @@
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.9" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient:4.5.2" level="project" />
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4.5" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.neo4j.driver:neo4j-java-driver:1.5.0-beta03" level="project" />
+    <orderEntry type="library" name="Maven: org.neo4j.driver:neo4j-java-driver:1.5.1" level="project" />
     <orderEntry type="library" name="Maven: net.sourceforge.owlapi:owlapi-distribution:4.5.1" level="project" />
     <orderEntry type="library" name="Maven: net.sourceforge.owlapi:owlapi-compatibility:4.5.1" level="project" />
     <orderEntry type="library" name="Maven: net.sourceforge.owlapi:owlapi-apibinding:4.5.1" level="project" />

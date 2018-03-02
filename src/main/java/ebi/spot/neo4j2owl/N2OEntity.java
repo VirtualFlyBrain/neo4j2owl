@@ -3,8 +3,6 @@ package ebi.spot.neo4j2owl;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 
-import java.util.Map;
-
 public class N2OEntity {
     private final String ns;
     private final String iri;
@@ -15,18 +13,20 @@ public class N2OEntity {
     private final String short_form;
     private final String curie;
     private final OWLEntity entity;
+    private final long id;
 
 
-    N2OEntity(OWLEntity e, OWLOntology o, CurieManager curies) {
+    N2OEntity(OWLEntity e, OWLOntology o, IRIManager curies, long id) {
         iri = e.getIRI().toString();
         safe_label = curies.getSafeLabel(e,o);
         label = curies.getLabel(e,o);
         type = OWL2NeoMapping.getNeoType(e);
-        ns = curies.getNamespace(e);
+        ns = curies.getNamespace(e.getIRI());
         qualified_safe_label = curies.getQualifiedSafeLabel(e,o);
-        short_form = curies.getShortForm(e);
+        short_form = curies.getShortForm(e.getIRI());
         curie = curies.getCurie(e);
         entity = e;
+        this.id = id;
     }
 
 
@@ -58,12 +58,25 @@ public class N2OEntity {
         return type;
     }
 
-
+    @Override
     public String toString() {
-        return "E[IRI:"+getIri()+"|SL:"+getSafe_label()+"]";
+        return "N2OEntity{" +
+                "ns='" + ns + '\'' +
+                ", iri='" + iri + '\'' +
+                ", safe_label='" + safe_label + '\'' +
+                ", qualified_safe_label='" + qualified_safe_label + '\'' +
+                ", label='" + label + '\'' +
+                ", type='" + type + '\'' +
+                ", short_form='" + short_form + '\'' +
+                ", curie='" + curie + '\'' +
+                '}';
     }
 
     public OWLEntity getEntity() {
         return entity;
+    }
+
+    public long getId() {
+        return id;
     }
 }

@@ -89,8 +89,26 @@
     <!-- http://www.purl.obolibrary.org/obo#TEST_0000002 -->
 
     <owl:Class rdf:about="http://www.purl.obolibrary.org/obo#TEST_0000002">
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-65#DataProperty"/>
+                <owl:hasValue rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</owl:hasValue>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:label xml:lang="en">B</rdfs:label>
+        <rdfs:seeAlso rdf:resource="http://www.purl.obolibrary.org/obo#TEST_0000002"/>
     </owl:Class>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="http://www.purl.obolibrary.org/obo#TEST_0000002"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#subClassOf"/>
+        <owl:annotatedTarget>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-65#DataProperty"/>
+                <owl:hasValue rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</owl:hasValue>
+            </owl:Restriction>
+        </owl:annotatedTarget>
+        <rdfs:comment>ewderer</rdfs:comment>
+    </owl:Axiom>
     
 
 
@@ -116,6 +134,7 @@
             </owl:Restriction>
         </rdf:type>
         <obo:TEST_0000005 rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-65#i2"/>
+        <DataProperty rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">2</DataProperty>
         <rdfs:label xml:lang="en">i</rdfs:label>
     </owl:NamedIndividual>
     

@@ -15,6 +15,7 @@ public class OWL2NeoMapping {
     public static final String ATT_SAFE_LABEL = "sl";
     public static final String ATT_QUALIFIED_SAFE_LABEL = "qsl";
     public static final String ATT_CURIE = "curie";
+    public static final String ATT_IRI = "iri";
     public static final String ATT_SHORT_FORM = "short_form";
     public static final String ATT_NAMESPACE = "ns";
 
@@ -22,7 +23,7 @@ public class OWL2NeoMapping {
     public static String getNeoType(OWLEntity e) {
         if(e instanceof OWLClass) {
             return OWL2NeoMapping.NODETYPE_OWLCLASS;
-        } else if(e instanceof OWLNamedIndividual) {
+        } else if(e instanceof OWLIndividual) {
             return OWL2NeoMapping.NODETYPE_NAMEDINDIVIDUAL;
         } else if(e instanceof OWLObjectProperty) {
             return OWL2NeoMapping.NODETYPE_OWLOBJECTPROPERTY;
