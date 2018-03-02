@@ -25,9 +25,9 @@ The most similar mapping to our is the one used by [Monarch Initiatives SciGraph
 
 
 Some **ideosyncracies** of our approach are:
-* To be able to roundtrip, we create disconnected nodes in the Neo4J graph representing properties so that we can represent metadata (such as labels or other annotations) pertaining to them.
-* We introduce a number of properties based on the notion of label for easier yet unambiguous querying, which are materialised on all nodes. **qualified safe labels** in particular are used to type relationships. Given an entity e (Example: http://purl.obolibrary.org/obo/BFO_0000050),
-  * **ns** corresponds to the namespace the relationship in question in question (Example: http://purl.obolibrary.org/obo/).
+* To be able to roundtrip, we create disconnected nodes in the Neo4J graph representing OWL properties so that we can represent metadata (such as labels or other annotations) pertaining to them.
+* We introduce a number of properties based on the notion of label for easier yet unambiguous querying, which are materialised on all nodes. **qualified safe labels** in particular are used to type relationships. The use of these is predicated on the assumption that, for any given namespace, labels are unique. This should be tested prior to loading. Given an entity e (Example: http://purl.obolibrary.org/obo/BFO_0000050),
+  * **ns** corresponds to the namespace the relationship in question in question (Example: http://purl.obolibrary.org/obo/BFO_).
   * **short_form** corresponds to the remainder (or fragment) of the IRI of e. (Example: "BFO_0000050")
   * **label** corresponds to either
     * the first rdfs:label annotation encountered or, if there are no rdfs:label annotation,
@@ -35,8 +35,8 @@ Some **ideosyncracies** of our approach are:
     * the whole IRI (Example: "part of").
   * **safe label** (sl) is the **label**, with all non-alphanumeric characters being replaced by **_**. Trailing and heading underscores are removed, any sequence of underscores is replaced by a single underscore (Example: "part_of").
   * **curie** is the valid curie for an entity, i.e. the namespace and the short_form, separated by ":" (Example: "obo:BFO_0000050").
-  * **qualified safe label** (qsl) is the safe label of an entity and its namespace, separated by **_** (Example: "part_of_obo").
-* An example use of an SL in Cypher is (:n)-[part_of_obo]-(:x)
+  * **qualified safe label** (qsl) is the safe label of an entity and its namespace, separated by **_** (Example: "part_of_bfo").
+* An example use of an SL in Cypher is (:n)-[part_of_bfo]-(:x)
 * Individuals are currently only typed with their most direct type
 * We only support datatypes that are supported by both neo4j and OWL (other OWL2 datatypes will be cast to Neo4j:String, which means their typing information is lost in a round-trip):
 
@@ -46,6 +46,7 @@ Some **ideosyncracies** of our approach are:
 | String | xsd:string |  |
 | Boolean | xsd:boolean | |
 | Float | xsd:float |  |
+| list | xsd:string | Follow JSON standard for representing list as string? |
 
 * For properties and axioms, all annotations are treated as if they were to literals (i.e. they wont be connected to other entities)
 
