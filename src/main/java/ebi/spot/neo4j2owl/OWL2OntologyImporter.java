@@ -13,6 +13,8 @@ import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.semanticweb.owlapi.reasoner.Node;
+import org.semanticweb.owlapi.reasoner.NodeSet;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
 
@@ -60,7 +62,7 @@ public class OWL2OntologyImporter {
     private static long start = System.currentTimeMillis();
 
     private static boolean batch = true;
-    private static boolean testmode = false;
+    private static boolean testmode = true;
 
     /*
     Constants
@@ -204,7 +206,7 @@ public class OWL2OntologyImporter {
             e.printStackTrace();
         } finally {
             log.info("done (Undo delete)");
-            //deleteCSVFilesInImportsDir(importdir);
+            deleteCSVFilesInImportsDir(importdir);
             importResults.setElementsLoaded(classesLoaded + individualsLoaded + objPropsLoaded + annotationPropertiesloaded + dataPropsLoaded);
         }
         return Stream.of(importResults);
@@ -231,9 +233,8 @@ public class OWL2OntologyImporter {
                 sb.append(h+":"+alias+h+", ");
             } else {
 
-                sb.append(h+":split("+alias+h+",\";\"), ");
+                sb.append(h+":split("+alias+h+",\""+OWL2NeoMapping.ANNOTATION_DELIMITER+"\"), ");
             }
-
         }
         return sb.toString().trim().replaceAll(",$","");
     }
@@ -254,14 +255,20 @@ public class OWL2OntologyImporter {
             if (filterout.contains(e)) {
                 continue;
             }
-            for (OWLClass sub : r.getSubClasses(e, true).getFlattened()) {
-                if (filterout.contains(sub)) {
-                    continue;
-                }
+            for (OWLClass sub : getSubClasses(r, e)) {
+
+                System.out.println(e+" sub: "+sub);
                 Map<String, Object> props = new HashMap<>();
                 updateRelationship(manager.getNode(sub), manager.getNode(e), OWL2NeoMapping.RELTYPE_SUBCLASSOF, props);
             }
         }
+    }
+
+    private Set<OWLClass> getSubClasses(OWLReasoner r, OWLClass e) {
+        Set<OWLClass> subclasses = new HashSet<>(r.getSubClasses(e, true).getFlattened());
+        subclasses.addAll(r.getEquivalentClasses(e).getEntities());
+        subclasses.removeAll(filterout);
+        return subclasses;
     }
 
     private void addExistentialRelationships(OWLOntology o, OWLReasoner r) {

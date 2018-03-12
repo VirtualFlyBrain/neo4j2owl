@@ -1,6 +1,7 @@
 package ebi.spot.neo4j2owl;
 
 import org.apache.commons.io.FileUtils;
+import org.codehaus.jackson.io.JsonStringEncoder;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLEntity;
@@ -216,12 +217,11 @@ public class N2OManager {
     }
 
     private String csvCellValue(Object o) {
-        //TODO Properly escape
-        // ATM replacing "" instead of escaping.
-        String val = o.toString().replaceAll("\"","'");
-        /*if(val.contains("Expressivity")) {
-            //System.out.println(val);
-        }*/
+        String val = new String(JsonStringEncoder.getInstance().quoteAsString(o.toString()));
+        if (val.contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
+            System.err.println("Warning: annotation value "+val+" contains delimiter sequence "+OWL2NeoMapping.ANNOTATION_DELIMITER+" which will not be preserved!");
+        }
+        val = val.replaceAll(";",OWL2NeoMapping.ANNOTATION_DELIMITER); //semicolon needs to be escaped so that the split
         return "\"" + val + "\"";
     }
 

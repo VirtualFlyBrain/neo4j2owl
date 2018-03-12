@@ -92,6 +92,15 @@
             <artifactId>elk-owlapi</artifactId>
             <version>0.4.3</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/net.sourceforge.owlapi/org.semanticweb.hermit -->
+        <dependency>
+            <groupId>net.sourceforge.owlapi</groupId>
+            <artifactId>org.semanticweb.hermit</artifactId>
+            <version>1.4.0.432</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
