@@ -257,7 +257,7 @@ public class OWL2OntologyImporter {
             }
             for (OWLClass sub : getSubClasses(r, e)) {
 
-                System.out.println(e+" sub: "+sub);
+                //System.out.println(e+" sub: "+sub);
                 Map<String, Object> props = new HashMap<>();
                 updateRelationship(manager.getNode(sub), manager.getNode(e), OWL2NeoMapping.RELTYPE_SUBCLASSOF, props);
             }
@@ -439,10 +439,17 @@ public class OWL2OntologyImporter {
                 if(!annoString.containsKey(p)) {
                     annoString.put(p,"");
                 }
-                annoString.put(p,annoString.get(p)+value+";");
+                if (value.contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
+                    System.err.println("Warning: annotation value "+value+" contains delimiter sequence "+OWL2NeoMapping.ANNOTATION_DELIMITER+" which will not be preserved!");
+                    value.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED,"|Content removed during Neo4J Import|");
+                }
+                annoString.put(p,annoString.get(p)+value+OWL2NeoMapping.ANNOTATION_DELIMITER);
+
+
             }
         }
-        annoString.forEach((k,v)->props.put(k,v.replaceAll(";$","")));
+        annoString.forEach((k,v)->props.put(k,v.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED+"$","")));
+        //props.forEach((k,v)->System.out.println("KK "+v));
     }
 
     private void indexIndividualAnnotationsToEntities(OWLOntology o, OWLReasoner r) {

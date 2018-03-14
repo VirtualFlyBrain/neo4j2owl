@@ -178,6 +178,7 @@ public class N2OManager {
                 writeCSVRowFromColumns(columns_sorted, sb, rec);
                 sb.append(type);
                 String s = sb.toString();
+                //System.out.println("KKA"+s);
                 csvout.add(s);//.substring(0, s.length() - 1)
             }
             dataout.put(type, csvout);
@@ -218,10 +219,6 @@ public class N2OManager {
 
     private String csvCellValue(Object o) {
         String val = new String(JsonStringEncoder.getInstance().quoteAsString(o.toString()));
-        if (val.contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
-            System.err.println("Warning: annotation value "+val+" contains delimiter sequence "+OWL2NeoMapping.ANNOTATION_DELIMITER+" which will not be preserved!");
-        }
-        val = val.replaceAll(";",OWL2NeoMapping.ANNOTATION_DELIMITER); //semicolon needs to be escaped so that the split
         return "\"" + val + "\"";
     }
 

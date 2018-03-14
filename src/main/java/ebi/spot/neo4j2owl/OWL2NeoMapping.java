@@ -18,7 +18,8 @@ public class OWL2NeoMapping {
     public static final String ATT_IRI = "iri";
     public static final String ATT_SHORT_FORM = "short_form";
     public static final String ATT_NAMESPACE = "ns";
-    public static final String ANNOTATION_DELIMITER  = "~|§";
+    public static final String ANNOTATION_DELIMITER  = "~|~|~";
+    public static final String ANNOTATION_DELIMITER_ESCAPED  = "\\~\\|\\~\\|\\~";
 
 
     public static String getNeoType(OWLEntity e) {
