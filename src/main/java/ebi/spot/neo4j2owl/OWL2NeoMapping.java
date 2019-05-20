@@ -10,6 +10,7 @@ public class OWL2NeoMapping {
     public static final String NODETYPE_OWLDATAPROPERTY = "DataProperty";
     public static final String RELTYPE_SUBCLASSOF = "SubClassOf";
     public static final String RELTYPE_INSTANCEOF = "Type";
+    public static final String NEO4J_LABEL = "http://neo4j.com#nodeLabel";
 
     public static final String ATT_LABEL = "label";
     public static final String ATT_SAFE_LABEL = "sl";

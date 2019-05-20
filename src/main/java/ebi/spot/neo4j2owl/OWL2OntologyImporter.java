@@ -45,14 +45,13 @@ public class OWL2OntologyImporter {
     public Log log;
 
     private static OWLDataFactory df = OWLManager.getOWLDataFactory();
+    private static OWLAnnotationProperty ap_neo4jLabel = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
     private static final IRIManager iriManager = new IRIManager();
 
     private static Set<OWLClass> filterout = new HashSet<>();
 
     private static Map<N2OEntity, Map<String, Set<N2OEntity>>> existential = new HashMap<>();
-    private static Map<OWLEntity, Long> nodeIndex = new HashMap<>();
     private static N2OManager manager;
-    //private static BatchInserter inserter;
 
     private static int classesLoaded = 0;
     private static int individualsLoaded = 0;
@@ -62,7 +61,7 @@ public class OWL2OntologyImporter {
     private static long start = System.currentTimeMillis();
 
     private static boolean batch = true;
-    private static boolean testmode = true;
+    private static boolean testmode = false;
 
     /*
     Constants
@@ -436,15 +435,20 @@ public class OWL2OntologyImporter {
             if (!aval.isIRI()) {
                 String p = neoPropertyKey(a);
                 String value = aval.asLiteral().or(df.getOWLLiteral("unknownX")).getLiteral();
-                if(!annoString.containsKey(p)) {
-                    annoString.put(p,"");
+                OWLAnnotationProperty ap = a.getProperty();
+                if(ap.equals(ap_neo4jLabel)) {
+                    manager.addNodeLabel(e,value);
                 }
-                if (value.contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
-                    System.err.println("Warning: annotation value "+value+" contains delimiter sequence "+OWL2NeoMapping.ANNOTATION_DELIMITER+" which will not be preserved!");
-                    value.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED,"|Content removed during Neo4J Import|");
+                else {
+                    if (!annoString.containsKey(p)) {
+                        annoString.put(p, "");
+                    }
+                    if (value.contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
+                        System.err.println("Warning: annotation value " + value + " contains delimiter sequence " + OWL2NeoMapping.ANNOTATION_DELIMITER + " which will not be preserved!");
+                        value.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED, "|Content removed during Neo4J Import|");
+                    }
+                    annoString.put(p, annoString.get(p) + value + OWL2NeoMapping.ANNOTATION_DELIMITER);
                 }
-                annoString.put(p,annoString.get(p)+value+OWL2NeoMapping.ANNOTATION_DELIMITER);
-
 
             }
         }
@@ -477,7 +481,7 @@ public class OWL2OntologyImporter {
             */
         } else {
             String cypher = String.format("MERGE (p:%s { uri:'%s'}) SET p+={props}",
-                    e.getType(),
+                    Util.concat(e.getTypes(),":"),
                     e.getIri());
             Map<String, Object> params = new HashMap<>();
             params.put("props", props);

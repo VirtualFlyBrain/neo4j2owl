@@ -13,6 +13,7 @@ import java.util.*;
 
 public class N2OManager {
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
+    private final Map<OWLEntity, Set<String>> nodeLabels = new HashMap<>();
     private final Map<OWLEntity, Map<String, Object>> node_properties = new HashMap<>();
     private final Map<N2ORelationship, Map<String, Object>> relationships = new HashMap<>();
     private final Set<String> primaryEntityPropertyKeys = new HashSet<>();
@@ -59,7 +60,16 @@ public class N2OManager {
             nextavailableid ++;
             //System.out.println(nodeindex.get(e));
         }
+        nodeindex.get(e).addLabels(getLabels(e));
         return nodeindex.get(e);
+    }
+
+    private Set<String> getLabels(OWLEntity e) {
+        if(nodeLabels.containsKey(e)) {
+            return nodeLabels.get(e);
+        } else {
+            return Collections.emptySet();
+        }
     }
 
     Map<String, Set<String>> node_columns = new HashMap();
@@ -205,15 +215,16 @@ public class N2OManager {
 
     private void indexEntitiesByType(Map<String, Set<String>> columns, Map<String, List<OWLEntity>> entities) {
         for (OWLEntity e : node_properties.keySet()) {
-            String type = nodeindex.get(e).getType();
-            if (!columns.containsKey(type)) {
-                columns.put(type, new HashSet<>());
+            for(String type:getNode(e).getTypes()) {
+                if (!columns.containsKey(type)) {
+                    columns.put(type, new HashSet<>());
+                }
+                columns.get(type).addAll(node_properties.get(e).keySet());
+                if (!entities.containsKey(type)) {
+                    entities.put(type, new ArrayList<>());
+                }
+                entities.get(type).add(e);
             }
-            columns.get(type).addAll(node_properties.get(e).keySet());
-            if (!entities.containsKey(type)) {
-                entities.put(type, new ArrayList<>());
-            }
-            entities.get(type).add(e);
         }
     }
 
@@ -233,5 +244,12 @@ public class N2OManager {
 
     public Set<String> getPrimaryEntityPropertyKeys() {
         return primaryEntityPropertyKeys;
+    }
+
+    public void addNodeLabel(OWLEntity e, String label) {
+    if(!nodeLabels.containsKey(e)) {
+        nodeLabels.put(e,new HashSet<>());
+    }
+    nodeLabels.get(e).add(label);
     }
 }

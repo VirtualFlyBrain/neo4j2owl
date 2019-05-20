@@ -6,15 +6,14 @@ import org.neo4j.kernel.impl.core.NodeProxy;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Mode;
-import org.neo4j.procedure.Name;
 import org.neo4j.procedure.Procedure;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.RDFXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.model.parameters.Imports;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,12 +31,13 @@ public class OWL2OntologyExporter {
     public Log log;
 
     static OWLDataFactory df = OWLManager.getOWLDataFactory();
-    static IRIManager iriManager = new IRIManager();
+    //static IRIManager iriManager = new IRIManager();
     static N2OEntityManager n2OEntityManager = new N2OEntityManager();
 
 
     static long start = System.currentTimeMillis();
 
+    /*
     @Procedure(mode = Mode.WRITE)
     public Stream<ProgressInfo> makeN2OCompliant(@Name("url") String url) throws Exception {
         log("Making N2O Compliant");
@@ -61,6 +61,7 @@ public class OWL2OntologyExporter {
     private void updateRelations(OWLOntology o, Map<String, OWLEntity> mapIRIEntity, Map<String, N2OEntity> mapIRIN2O) {
         getEdgeIRIs().stream().map(x->x.get("iri")).forEach(iri->updateRelationship(o, mapIRIEntity, mapIRIN2O, iri));
     }
+
 
     private Result getEdgeIRIs() {
         String cypher_get_edge_types = "MATCH (n)-[r]->(x) RETURN distinct r.iri as iri";
@@ -97,7 +98,7 @@ public class OWL2OntologyExporter {
         return mapIRIN2O.get(iri);
     }
 
-
+*/
     private void log(Object msg) {
         log.info(msg.toString());
         System.out.println(msg + " " + getTimePassed());
@@ -108,6 +109,7 @@ public class OWL2OntologyExporter {
         return ((double) time / 1000.0) + " sec";
     }
 
+    /*
     private void updateNodes(OWLOntology o, Map<String, OWLEntity> mapIRIEntity, Map<String, N2OEntity> mapIRIN2O) {
         String cypher_getAllNodes = "MATCH (n) RETURN distinct n";
         Result res_nodes = db.execute(cypher_getAllNodes);
@@ -134,7 +136,7 @@ public class OWL2OntologyExporter {
                                 //"curie:'%s'" +
                                 " }",
                         iri,
-                        n.getType(),
+                        Util.concat(n.getTypes(),":"),
                         n.getQualified_safe_label(),
                         n.getShort_form(),
                         n.getLabel(),
@@ -150,34 +152,48 @@ public class OWL2OntologyExporter {
         }
         log("Entities not in ontology: "+ct_entitiesnotin);
     }
+*/
 
     @Procedure(mode = Mode.WRITE)
-    public Stream<ProgressInfo> exportOWL(@Name("file") String fileName) throws Exception {
+    public Stream<OntologyReturnValue> exportOWL() throws Exception { //@Name("file") String fileName
+        try {
         OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 
         OWLOntology o = man.createOntology();
-        createEntities(o);
+        addEntities(o);
         addAnnotations(o);
         addRelation(o,OWL2NeoMapping.RELTYPE_SUBCLASSOF);
         addRelation(o,OWL2NeoMapping.RELTYPE_INSTANCEOF);
-        for(String rel:getRelations(OWLAnnotationProperty.class)) {
-            addRelation(o,rel);
+        for(String rel_qsl:getRelations(OWLAnnotationProperty.class)) {
+            addRelation(o,rel_qsl);
         }
-        for(String rel:getRelations(OWLObjectProperty.class)) {
-            addRelation(o,rel);
+        for(String rel_qsl:getRelations(OWLObjectProperty.class)) {
+            addRelation(o,rel_qsl);
         }
-        for(String rel:getRelations(OWLDataProperty.class)) {
-            addRelation(o,rel);
+        for(String rel_qsl:getRelations(OWLDataProperty.class)) {
+            addRelation(o,rel_qsl);
         }
-        man.saveOntology(o, new RDFXMLDocumentFormat(), new FileOutputStream(new File(fileName)));
-        return (Stream.of(new ProgressInfo(fileName)));
+        ByteArrayOutputStream os = new ByteArrayOutputStream(); //new FileOutputStream(new File(fileName))
+        man.saveOntology(o, new RDFXMLDocumentFormat(), os);
+
+        return Stream.of(new OntologyReturnValue(os.toString(java.nio.charset.StandardCharsets.UTF_8.name()),o.getLogicalAxiomCount()+"")); }
+        catch (Exception e) {
+            return Stream.of(new OntologyReturnValue(e.getClass().getSimpleName(),getStackTrace(e)));
+        }
+    }
+
+    public static String getStackTrace(final Throwable throwable) {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw, true);
+        throwable.printStackTrace(pw);
+        return sw.getBuffer().toString();
     }
 
     private Set<String> getRelations(Class cl) {
-        return n2OEntityManager.entitiesQsls().stream().filter(k->cl.isInstance(n2OEntityManager.getEntity(k))).collect(Collectors.toSet());
+        return n2OEntityManager.relationshipQSLs().stream().filter(k->cl.isInstance(n2OEntityManager.getRelationshipByQSL(k))).collect(Collectors.toSet());
     }
 
-    private void addRelation(OWLOntology o, String RELTYPE) {
+    private void addRelation(OWLOntology o, String RELTYPE) throws N2OException {
         log("addRelation():"+RELTYPE);
         //log(mapIdEntity);
         String cypher = String.format("MATCH (n:Entity)-[r:" + RELTYPE + "]->(x:Entity) Return n,r,x");
@@ -185,15 +201,25 @@ public class OWL2OntologyExporter {
         List<OWLOntologyChange> changes = new ArrayList<>();
         while (s.hasNext()) {
             Map<String, Object> r = s.next();
-            log(r);
+            //log(r);
             Long nid = ((NodeProxy) r.get("n")).getId();
             Long xid = ((NodeProxy) r.get("x")).getId();
             changes.add(createAddAxiom(o, nid, xid,RELTYPE));
         }
-        o.getOWLOntologyManager().applyChanges(changes);
+        if(!changes.isEmpty()) {
+            try {
+                o.getOWLOntologyManager().applyChanges(changes);
+            } catch (Exception e) {
+                String msg = "";
+                for(OWLOntologyChange c:changes) {
+                    msg+=c.toString()+"\n";
+                }
+                throw new N2OException(msg,e);
+            }
+        }
     }
 
-    private AddAxiom createAddAxiom(OWLOntology o, Long from, Long to, String type) {
+    private AddAxiom createAddAxiom(OWLOntology o, Long from, Long to, String type) throws N2OException {
 
         OWLEntity e_from = n2OEntityManager.getEntity(from);
         OWLEntity e_to = n2OEntityManager.getEntity(to);
@@ -202,7 +228,7 @@ public class OWL2OntologyExporter {
         } else if(type.equals(OWL2NeoMapping.RELTYPE_INSTANCEOF)) {
             return new AddAxiom(o, df.getOWLClassAssertionAxiom((OWLClass) e_to, (OWLIndividual) e_from));
         } else {
-            OWLEntity p = n2OEntityManager.getEntity(type);
+            OWLEntity p = n2OEntityManager.getRelationshipByQSL(type);
             if(p instanceof OWLObjectProperty) {
                 if (e_from instanceof OWLClass) {
                     if (e_to instanceof OWLClass) {
@@ -223,9 +249,11 @@ public class OWL2OntologyExporter {
                 } else {
                     log("Not deal with X-"+type+"-X");
                 }
+            } if(p instanceof OWLAnnotationProperty) {
+                return new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(e_from.getIRI(), df.getOWLAnnotation((OWLAnnotationProperty)p,e_to.getIRI())));
             }
         }
-        return null;
+        throw new N2OException("Unknown relationship type: "+type,new NullPointerException());
     }
 
 
@@ -237,6 +265,8 @@ public class OWL2OntologyExporter {
 
     private void addAnnotationsForEntity(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e) {
         n2OEntityManager.annotationsProperties(e).forEach(qsl_anno-> addEntityForEntityAndAnnotationProperty(o, changes, e, qsl_anno));
+        OWLAnnotationProperty annop = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
+        n2OEntityManager.nodeLabels(e).forEach(type->changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(type)))));
     }
 
     private void addEntityForEntityAndAnnotationProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno) {
@@ -245,32 +275,37 @@ public class OWL2OntologyExporter {
         log("A:" + annos + " " + annos.getClass());
         if (annos instanceof Collection) {
             for (Object aa : (Collection) annos) {
-                addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, qsl_anno, aa);
+                addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, getAnnotationProperty(qsl_anno), aa);
             }
         }
     }
 
-    private void addAnnotationForEntityAndAnnotationAndValueProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno, Object aa) {
+    private void addAnnotationForEntityAndAnnotationAndValueProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, OWLAnnotationProperty annop, Object aa) {
         if (aa instanceof String[]) {
             for (String value : (String[]) aa) {
                 log("V:" + value + " " + value.getClass());
-                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(getAnnotationProperty(qsl_anno), e.getIRI(), df.getOWLLiteral(value.toString()))));
+                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(value.toString()))));
             }
         }
     }
 
     private OWLAnnotationProperty getAnnotationProperty(String qsl_anno) {
-        OWLEntity e = n2OEntityManager.getEntity(qsl_anno);
+        OWLEntity e = n2OEntityManager.getRelationshipByQSL(qsl_anno);
         if (e instanceof OWLAnnotationProperty) {
             return (OWLAnnotationProperty) e;
         }
         return null;
     }
 
-    private void createEntities(OWLOntology o) {
+    private void addEntities(OWLOntology o) {
         String nodevariable = "n";
         String cypher = String.format("MATCH (n:Entity) Return %s",nodevariable);
         db.execute(cypher).stream().forEach(r->createEntityForEachLabel(r,nodevariable));
+        n2OEntityManager.entities().forEach((e->addDeclaration(e,o)));
+    }
+
+    private void addDeclaration(OWLEntity e, OWLOntology o) {
+        o.getOWLOntologyManager().addAxiom(o,df.getOWLDeclarationAxiom(e));
     }
 
     private void createEntityForEachLabel(Map<String, Object> r, String nodevar) {

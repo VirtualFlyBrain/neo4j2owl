@@ -73,10 +73,23 @@ public class IRIManager {
 
 
     public String getSafeLabel(OWLEntity e, OWLOntology o) {
-        String label = getLabel(e,o);
-        String sl = label.replaceAll("[^A-Za-z0-9]","_"); //replace non-alphanumeric
-        sl = sl.replaceAll("^_+", "").replaceAll("_+$", ""); //replace leading or trailing underscores
+        String label = getLabel(e,o).trim();
+        String sl = label.chars().collect(StringBuilder::new, (sb, c) -> sb.append(encode(c)), StringBuilder::append).toString();
         return sl;
+    }
+
+    private char encode(int c) {
+        char ch = (char)c;
+        if(Character.isLetterOrDigit(ch)) {
+            return ch;
+        }   else if(ch=='_') {
+            return ch;
+        }   else if(ch==' ') {
+            return ("_").charAt(0);
+        }
+        else {
+         return (c+"").charAt(0);
+        }
     }
 
     public String getQualifiedSafeLabel(OWLEntity e, OWLOntology o) {

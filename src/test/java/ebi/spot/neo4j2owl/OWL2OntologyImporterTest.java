@@ -3,6 +3,8 @@ package ebi.spot.neo4j2owl;
 import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.test.TestGraphDatabaseFactory;
@@ -14,7 +16,7 @@ public class OWL2OntologyImporterTest {
 
 
 
-   // @Test
+    //@Test
     public void owl2ImportSmall() throws Exception {
 
        GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabase();

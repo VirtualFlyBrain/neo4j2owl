@@ -78,7 +78,13 @@ public class Util {
         System.out.println(r);
     }
 
-
+    public static String concat(Set<String> strings, String delim) {
+        String out = "";
+        for(String s:strings) {
+            out+=(s+":");
+        }
+        return out.replaceAll("[:]$","");
+    }
 
 
     static class CallerBlocksPolicy implements RejectedExecutionHandler {
