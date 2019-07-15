@@ -267,6 +267,7 @@ public class OWL2OntologyImporter {
         Set<OWLClass> subclasses = new HashSet<>(r.getSubClasses(e, true).getFlattened());
         subclasses.addAll(r.getEquivalentClasses(e).getEntities());
         subclasses.removeAll(filterout);
+        subclasses.remove(e);
         return subclasses;
     }
 
