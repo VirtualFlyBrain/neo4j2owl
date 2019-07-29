@@ -171,3 +171,7 @@ Edges should store rdfs:label; property keys should not be Qualified ?
 | [Storing and querying RDF in Neo4j](http://www.snee.com/bobdc.blog/2014/01/storing-and-querying-rdf-in-ne.html) | Description of a SPARQL plugin to query Neo4J based on Sail Ouplementation. |
 | [Importing ttl (Turtle) ontologies in Neo4j](http://michaelbloggs.blogspot.co.uk/2013/05/importing-ttl-turtle-ontologies-in-neo4j.html) | 2013 blogpost with code on how to import ttl into neo using Sesame API |
 | [OLS: OWL to Neo4j schema](https://www.slideshare.net/thesimonjupp/ontologies-neo4jgraphworkshopberlin) | Largely undocumented, but see slide 16 following of Berlin workshop. Implementing our mapping partially. |
+
+
+Editors notes:
+- Some notes on testing can be found [here](https://github.com/VirtualFlyBrain/vfb-neo2owl-test)
