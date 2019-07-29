@@ -1,0 +1,11 @@
+PREFIX : <http://www.test.com/ns/test#>
+
+CONSTRUCT { ?x ?p ?y . ?y ?q ?z . }
+
+WHERE {
+  ?x ?p ?y .
+  ?y ?q ?z .
+  FILTER(?x=<http://virtualflybrain.org/reports/VFB_00055130>)
+}
+
+LIMIT 100

@@ -52,7 +52,7 @@ public class OWL2OntologyImporterTest {
     }
 
 
-   @Test
+   //@Test
     public void owl2ImportLarge() throws Exception {
 
         GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabase();
@@ -64,7 +64,7 @@ public class OWL2OntologyImporterTest {
         https://github.com/VirtualFlyBrain/VFB_owl/raw/master/src/owl/2016-12-01/vfb.owl.gz
        https://raw.githubusercontent.com/FlyBase/flybase-controlled-vocabulary/master/releases/fbcv.owl*/
 
-        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/FlyBase/flybase-controlled-vocabulary/master/releases/fbcv.owl','n')");
+        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/issue2_neo2owl.owl','n')");
         System.out.println(db.execute("MATCH (n:Entity) RETURN count(n) AS count").next().get("count"));
         Result res = db.execute("MATCH (n)-[p]->(x)  RETURN p LIMIT 20");
         while(res.hasNext()) {
