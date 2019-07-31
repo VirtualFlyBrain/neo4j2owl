@@ -267,6 +267,7 @@ public class OWL2OntologyExporter {
         n2OEntityManager.annotationsProperties(e).forEach(qsl_anno-> addEntityForEntityAndAnnotationProperty(o, changes, e, qsl_anno));
         OWLAnnotationProperty annop = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
         n2OEntityManager.nodeLabels(e).forEach(type->changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(type)))));
+        n2OEntityManager.nodeLabels(e).forEach(type->changes.add(new AddAxiom(o, df.getOWLDeclarationAxiom(e))));
     }
 
     private void addEntityForEntityAndAnnotationProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno) {
