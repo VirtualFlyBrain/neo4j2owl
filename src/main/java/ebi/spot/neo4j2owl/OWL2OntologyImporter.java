@@ -480,7 +480,7 @@ public class OWL2OntologyImporter {
     private void indexIndividualAnnotationsToEntities(OWLOntology o, OWLReasoner r) {
         Set<OWLEntity> entities = new HashSet<>(o.getSignature(Imports.INCLUDED));
         for (OWLEntity e : entities) {
-            Map<String, Object> props = new HashMap<>();
+            //Map<String, Object> props = new HashMap<>();
             Collection<OWLAnnotation> annos = EntitySearcher.getAnnotations(e, o);
             for (OWLAnnotation a : annos) {
                 OWLAnnotationValue aval = a.annotationValue();
