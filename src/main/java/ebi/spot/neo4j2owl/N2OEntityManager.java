@@ -47,7 +47,8 @@ public class N2OEntityManager {
     }
 
     public Collection<OWLEntity> entities() {
-        return qslEntity.values();
+        Set<OWLEntity> entities = new HashSet<>(iriEntity.values());
+        return entities;
     }
 
     void createEntity(NodeProxy n, String l) {
