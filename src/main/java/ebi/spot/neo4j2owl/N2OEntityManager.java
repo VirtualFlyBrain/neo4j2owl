@@ -22,6 +22,19 @@ public class N2OEntityManager {
     private final Set<String> definedProperties = new HashSet<>(Arrays.asList("short_form", "curie", "iri", "sl", "qsl", "label"));
 
 
+    public N2OEntityManager() {
+        prepare_built_ins();
+    }
+
+    private void prepare_built_ins() {
+        qslEntity.put("rdfs_label", df.getRDFSLabel());
+        qslEntity.put("rdfs_comment", df.getRDFSComment());
+        qslEntity.put("rdfs_seealso", df.getRDFSSeeAlso());
+        qslEntity.put("rdfs_isdefinedby", df.getRDFSIsDefinedBy());
+        qslEntity.put("owl_deprecated", df.getOWLDeprecated());
+        qslEntity.put("owl_backwardscompatiblewith", df.getOWLBackwardCompatibleWith());
+        qslEntity.put("owl_incompatiblewith", df.getOWLIncompatibleWith());
+    }
 
     public OWLEntity getEntity(Long e) throws N2OException {
         if(!mapIdEntity.containsKey(e)) {
