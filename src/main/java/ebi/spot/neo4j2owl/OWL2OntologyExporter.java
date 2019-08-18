@@ -33,6 +33,7 @@ public class OWL2OntologyExporter {
     static OWLDataFactory df = OWLManager.getOWLDataFactory();
     //static IRIManager iriManager = new IRIManager();
     static N2OEntityManager n2OEntityManager = new N2OEntityManager();
+    static Set<String> qsls_with_no_matching_properties = new HashSet<>();
 
 
     static long start = System.currentTimeMillis();
@@ -175,7 +176,7 @@ public class OWL2OntologyExporter {
         }
         ByteArrayOutputStream os = new ByteArrayOutputStream(); //new FileOutputStream(new File(fileName))
         man.saveOntology(o, new RDFXMLDocumentFormat(), os);
-
+        qsls_with_no_matching_properties.forEach(this::log);
         return Stream.of(new OntologyReturnValue(os.toString(java.nio.charset.StandardCharsets.UTF_8.name()),o.getLogicalAxiomCount()+"")); }
         catch (Exception e) {
             e.printStackTrace();
@@ -277,7 +278,12 @@ public class OWL2OntologyExporter {
         //log("A:" + annos + " " + annos.getClass());
         if (annos instanceof Collection) {
             for (Object aa : (Collection) annos) {
+                OWLEntity annoP = null;
+                if(annoP == null) {
+                    qsls_with_no_matching_properties.add(qsl_anno);
+                } else {
                 addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, getAnnotationProperty(qsl_anno), aa);
+                }
             }
         }
     }
