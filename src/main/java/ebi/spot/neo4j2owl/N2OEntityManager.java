@@ -27,13 +27,13 @@ public class N2OEntityManager {
     }
 
     private void prepare_built_ins() {
-        qslEntity.put("rdfs_label", df.getRDFSLabel());
-        qslEntity.put("rdfs_comment", df.getRDFSComment());
-        qslEntity.put("rdfs_seealso", df.getRDFSSeeAlso());
-        qslEntity.put("rdfs_isdefinedby", df.getRDFSIsDefinedBy());
-        qslEntity.put("owl_deprecated", df.getOWLDeprecated());
-        qslEntity.put("owl_backwardscompatiblewith", df.getOWLBackwardCompatibleWith());
-        qslEntity.put("owl_incompatiblewith", df.getOWLIncompatibleWith());
+        qslEntity.put("label_rdfs", df.getRDFSLabel());
+        qslEntity.put("comment_rdfs", df.getRDFSComment());
+        qslEntity.put("seealso_rdfs", df.getRDFSSeeAlso());
+        qslEntity.put("isdefinedby_rdfs", df.getRDFSIsDefinedBy());
+        qslEntity.put("deprecated_owl", df.getOWLDeprecated());
+        qslEntity.put("backwardscompatiblewith_owl", df.getOWLBackwardCompatibleWith());
+        qslEntity.put("incompatiblewith_owl", df.getOWLIncompatibleWith());
     }
 
     public OWLEntity getEntity(Long e) throws N2OException {
