@@ -167,10 +167,18 @@ public class OWL2OntologyImporter {
                         String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
                         String cypher = "USING PERIODIC COMMIT 5000\n" +
                                 "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
-                                "MERGE (n:" + type + ":Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"}";
+                                "MERGE (n:Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"} SET n :" + type;
                         log(cypher);
                         final Future<String> cf = exService.submit(()->{dbapi.execute(cypher); return "Finished: "+filename;});
                         System.out.println(cf.get());
+                        /*if(fn.contains("Class")) {
+                            FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
+                        }
+                        else if(fn.contains("Indivi")) {
+                            FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
+                            System.exit(0);
+                        }*/
+
                     }
                 }
                 for (File f : importdir.listFiles()) {
@@ -187,9 +195,14 @@ public class OWL2OntologyImporter {
                                 "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
                                 "MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
                                 "MERGE (s)-[:"+type+"]->(e)";
+                        log(f);
                         log(cypher);
                         final Future<String> cf = exService.submit(()->{dbapi.execute(cypher); return "Finished: "+filename;});
                         System.out.println(cf.get());
+                        /*if(fn.contains("Individual")) {
+                            FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
+                            System.exit(0);
+                        }*/
                     }
                 }
 
@@ -238,8 +251,8 @@ public class OWL2OntologyImporter {
         return sb.toString().trim().replaceAll(",$","");
     }
 
-    private void log(String msg) {
-        log.info(msg);
+    private void log(Object msg) {
+        log.info(msg.toString());
         System.out.println(msg + " " + getTimePassed());
     }
 
@@ -378,7 +391,15 @@ public class OWL2OntologyImporter {
         N2OEntity to_n = manager.getNode(to);
         String roletype = rel.getQualified_safe_label();
 
-
+        /*
+        System.out.println(roletype);
+        System.out.println(to_n);
+        if(roletype.equals("source_ns3")) {
+            //System.out.println(to_n);
+            System.out.println("--------------------------");
+            //System.exit(0);
+        }
+        */
         if (!existential.containsKey(from_n)) {
             existential.put(from_n, new HashMap<>());
         }
@@ -433,7 +454,7 @@ public class OWL2OntologyImporter {
         for (OWLAnnotation a : annos) {
 
             OWLAnnotationValue aval = a.annotationValue();
-            if (!aval.isIRI()) {
+            if (!aval.asIRI().isPresent()) {
                 String p = neoPropertyKey(a);
                 String value = aval.asLiteral().or(df.getOWLLiteral("unknownX")).getLiteral();
                 OWLAnnotationProperty ap = a.getProperty();
@@ -460,11 +481,11 @@ public class OWL2OntologyImporter {
     private void indexIndividualAnnotationsToEntities(OWLOntology o, OWLReasoner r) {
         Set<OWLEntity> entities = new HashSet<>(o.getSignature(Imports.INCLUDED));
         for (OWLEntity e : entities) {
-            Map<String, Object> props = new HashMap<>();
+            //Map<String, Object> props = new HashMap<>();
             Collection<OWLAnnotation> annos = EntitySearcher.getAnnotations(e, o);
             for (OWLAnnotation a : annos) {
                 OWLAnnotationValue aval = a.annotationValue();
-                if (aval.isIRI()) {
+                if (aval.asIRI().isPresent()) {
                     IRI iri = aval.asIRI().or(IRI.create("WRONGANNOTATIONPROPERTY"));
                     indexRelation(e, manager.typedEntity(iri, o), manager.getNode(a.getProperty()));
                 }

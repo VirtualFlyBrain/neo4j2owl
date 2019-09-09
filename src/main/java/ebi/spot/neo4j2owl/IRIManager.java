@@ -122,7 +122,15 @@ public class IRIManager {
             String id = remain.substring(remain.indexOf("_") + 1);
             return e.toString().replaceAll(id+"$","");
         } else {
-            return e.toString().replaceAll(getShortForm(e), "");
+            /*
+            String short_form = e.getShortForm();
+            String namespace = e.getNamespace();
+            try {
+                namespace = e.toString().replaceAll(getShortForm(e), "");
+            } catch (Exception ex) {
+                new IllegalArgumentException(e+" ("+short_form+") does not have a legal short form!",ex);
+            }*/
+            return e.getNamespace();
         }
     }
 

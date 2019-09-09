@@ -10,7 +10,7 @@ DATA=${NEODIR}"data/databases/graph.db"
 LOGS=${NEODIR}"logs"
 PLUGINS=${NEODIR}"plugins"
 
-#rm -r "${DATA}"
+rm -r "${DATA}"
 rm -r "${LOGS}"/*
 rm -r "${IMPORTS}"/*
 

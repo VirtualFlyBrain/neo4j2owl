@@ -33,6 +33,7 @@ public class OWL2OntologyExporter {
     static OWLDataFactory df = OWLManager.getOWLDataFactory();
     //static IRIManager iriManager = new IRIManager();
     static N2OEntityManager n2OEntityManager = new N2OEntityManager();
+    static Set<String> qsls_with_no_matching_properties = new HashSet<>();
 
 
     static long start = System.currentTimeMillis();
@@ -175,9 +176,10 @@ public class OWL2OntologyExporter {
         }
         ByteArrayOutputStream os = new ByteArrayOutputStream(); //new FileOutputStream(new File(fileName))
         man.saveOntology(o, new RDFXMLDocumentFormat(), os);
-
+        qsls_with_no_matching_properties.forEach(this::log);
         return Stream.of(new OntologyReturnValue(os.toString(java.nio.charset.StandardCharsets.UTF_8.name()),o.getLogicalAxiomCount()+"")); }
         catch (Exception e) {
+            e.printStackTrace();
             return Stream.of(new OntologyReturnValue(e.getClass().getSimpleName(),getStackTrace(e)));
         }
     }
@@ -194,7 +196,7 @@ public class OWL2OntologyExporter {
     }
 
     private void addRelation(OWLOntology o, String RELTYPE) throws N2OException {
-        log("addRelation():"+RELTYPE);
+        //log("addRelation():"+RELTYPE);
         //log(mapIdEntity);
         String cypher = String.format("MATCH (n:Entity)-[r:" + RELTYPE + "]->(x:Entity) Return n,r,x");
         Result s = db.execute(cypher);
@@ -267,15 +269,21 @@ public class OWL2OntologyExporter {
         n2OEntityManager.annotationsProperties(e).forEach(qsl_anno-> addEntityForEntityAndAnnotationProperty(o, changes, e, qsl_anno));
         OWLAnnotationProperty annop = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
         n2OEntityManager.nodeLabels(e).forEach(type->changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(type)))));
+        n2OEntityManager.nodeLabels(e).forEach(type->changes.add(new AddAxiom(o, df.getOWLDeclarationAxiom(e))));
     }
 
     private void addEntityForEntityAndAnnotationProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno) {
-        log("Q:" + qsl_anno);
+        //log("Q:" + qsl_anno);
         Object annos = n2OEntityManager.annotationValues(e,qsl_anno);
-        log("A:" + annos + " " + annos.getClass());
+        //log("A:" + annos + " " + annos.getClass());
         if (annos instanceof Collection) {
             for (Object aa : (Collection) annos) {
-                addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, getAnnotationProperty(qsl_anno), aa);
+                OWLEntity annoP = getAnnotationProperty(qsl_anno);
+                if(annoP == null) {
+                    qsls_with_no_matching_properties.add(qsl_anno);
+                } else {
+                    addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, getAnnotationProperty(qsl_anno), aa);
+                }
             }
         }
     }
@@ -283,8 +291,8 @@ public class OWL2OntologyExporter {
     private void addAnnotationForEntityAndAnnotationAndValueProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, OWLAnnotationProperty annop, Object aa) {
         if (aa instanceof String[]) {
             for (String value : (String[]) aa) {
-                log("V:" + value + " " + value.getClass());
-                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(value.toString()))));
+                //log("V:" + value + " " + value.getClass());
+                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(value))));
             }
         }
     }
@@ -294,6 +302,7 @@ public class OWL2OntologyExporter {
         if (e instanceof OWLAnnotationProperty) {
             return (OWLAnnotationProperty) e;
         }
+        log("Warning: QSL "+qsl_anno+" was not found!");
         return null;
     }
 

@@ -55,7 +55,8 @@ public class N2OManager {
     }
 
     public N2OEntity getNode(OWLEntity e) {
-        if (!nodeindex.containsKey(e.toString())) {
+        //System.out.println("|||"+e.getIRI().toString());
+        if (!nodeindex.containsKey(e)) {
             nodeindex.put(e, new N2OEntity(e, o, curies,nextavailableid));
             nextavailableid ++;
             //System.out.println(nodeindex.get(e));
@@ -88,8 +89,7 @@ public class N2OManager {
     }
 
     private void processExportForNodes(File dir) {
-        Map<String, List<OWLEntity>> entities = new HashMap<>();
-        indexEntitiesByType(node_columns, entities);
+        Map<String, List<OWLEntity>> entities = indexEntitiesByType(node_columns);
         Map<String, List<String>> dataout = prepareNodeCSVsForExport(node_columns, entities);
         writeToFile(dir, dataout, "nodes");
     }
@@ -213,8 +213,10 @@ public class N2OManager {
         }
     }
 
-    private void indexEntitiesByType(Map<String, Set<String>> columns, Map<String, List<OWLEntity>> entities) {
+    private Map<String, List<OWLEntity>> indexEntitiesByType(Map<String, Set<String>> columns) {
+        Map<String, List<OWLEntity>> entities = new HashMap<>();
         for (OWLEntity e : node_properties.keySet()) {
+            //System.out.println(e.getIRI());
             for(String type:getNode(e).getTypes()) {
                 if (!columns.containsKey(type)) {
                     columns.put(type, new HashSet<>());
@@ -226,6 +228,8 @@ public class N2OManager {
                 entities.get(type).add(e);
             }
         }
+        //System.exit(0);
+        return entities;
     }
 
     private String csvCellValue(Object o) {

@@ -22,6 +22,19 @@ public class N2OEntityManager {
     private final Set<String> definedProperties = new HashSet<>(Arrays.asList("short_form", "curie", "iri", "sl", "qsl", "label"));
 
 
+    public N2OEntityManager() {
+        prepare_built_ins();
+    }
+
+    private void prepare_built_ins() {
+        qslEntity.put("label_rdfs", df.getRDFSLabel());
+        qslEntity.put("comment_rdfs", df.getRDFSComment());
+        qslEntity.put("seealso_rdfs", df.getRDFSSeeAlso());
+        qslEntity.put("isdefinedby_rdfs", df.getRDFSIsDefinedBy());
+        qslEntity.put("deprecated_owl", df.getOWLDeprecated());
+        qslEntity.put("backwardscompatiblewith_owl", df.getOWLBackwardCompatibleWith());
+        qslEntity.put("incompatiblewith_owl", df.getOWLIncompatibleWith());
+    }
 
     public OWLEntity getEntity(Long e) throws N2OException {
         if(!mapIdEntity.containsKey(e)) {
@@ -47,7 +60,8 @@ public class N2OEntityManager {
     }
 
     public Collection<OWLEntity> entities() {
-        return qslEntity.values();
+        Set<OWLEntity> entities = new HashSet<>(iriEntity.values());
+        return entities;
     }
 
     void createEntity(NodeProxy n, String l) {
@@ -72,7 +86,7 @@ public class N2OEntityManager {
     }
 
     private void createIndividual(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
-        OWLNamedIndividual i = df.getOWLNamedIndividual(IRI.create(allProperties.get("iri").toString()));
+        OWLNamedIndividual i = df.getOWLNamedIndividual(getIRI(allProperties));
         createEntity(i, id, allProperties,labels);
     }
 
@@ -110,19 +124,27 @@ public class N2OEntityManager {
     }
 
     private void createClass(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
-        createEntity(df.getOWLClass(IRI.create(allProperties.get("iri").toString())), id, allProperties,labels);
+        createEntity(df.getOWLClass(getIRI(allProperties)), id, allProperties,labels);
+    }
+
+    private IRI getIRI(Map<String, Object> allProperties) {
+        String iri = allProperties.get("iri").toString();
+        if(iri!=iri.trim()) {
+            System.out.println("IRI contains illegal whitspace, stripping: |"+iri+"|");
+        }
+        return IRI.create(iri.trim());
     }
 
     private void createObjectProperty(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
-        createEntity(df.getOWLObjectProperty(IRI.create(allProperties.get("iri").toString())), id, allProperties,labels);
+        createEntity(df.getOWLObjectProperty(getIRI(allProperties)), id, allProperties,labels);
     }
 
     private void createDataProperty(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
-        createEntity(df.getOWLDataProperty(IRI.create(allProperties.get("iri").toString())), id, allProperties,labels);
+        createEntity(df.getOWLDataProperty(getIRI(allProperties)), id, allProperties,labels);
     }
 
     private void createAnnotationProperty(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
-        createEntity(df.getOWLAnnotationProperty(IRI.create(allProperties.get("iri").toString())), id, allProperties,labels);
+        createEntity(df.getOWLAnnotationProperty(getIRI(allProperties)), id, allProperties,labels);
     }
 
     public Set<String> annotationsProperties(OWLEntity e) {
