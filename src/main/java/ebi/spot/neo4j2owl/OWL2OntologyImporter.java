@@ -167,7 +167,7 @@ public class OWL2OntologyImporter {
                         String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
                         String cypher = "USING PERIODIC COMMIT 5000\n" +
                                 "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
-                                "MERGE (n:" + type + ":Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"}";
+                                "MERGE (n:Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"} SET n :" + type;
                         log(cypher);
                         final Future<String> cf = exService.submit(()->{dbapi.execute(cypher); return "Finished: "+filename;});
                         System.out.println(cf.get());
@@ -195,6 +195,7 @@ public class OWL2OntologyImporter {
                                 "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
                                 "MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
                                 "MERGE (s)-[:"+type+"]->(e)";
+                        log(f);
                         log(cypher);
                         final Future<String> cf = exService.submit(()->{dbapi.execute(cypher); return "Finished: "+filename;});
                         System.out.println(cf.get());
@@ -250,8 +251,8 @@ public class OWL2OntologyImporter {
         return sb.toString().trim().replaceAll(",$","");
     }
 
-    private void log(String msg) {
-        log.info(msg);
+    private void log(Object msg) {
+        log.info(msg.toString());
         System.out.println(msg + " " + getTimePassed());
     }
 

@@ -278,11 +278,11 @@ public class OWL2OntologyExporter {
         //log("A:" + annos + " " + annos.getClass());
         if (annos instanceof Collection) {
             for (Object aa : (Collection) annos) {
-                OWLEntity annoP = null;
+                OWLEntity annoP = getAnnotationProperty(qsl_anno);
                 if(annoP == null) {
                     qsls_with_no_matching_properties.add(qsl_anno);
                 } else {
-                addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, getAnnotationProperty(qsl_anno), aa);
+                    addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, getAnnotationProperty(qsl_anno), aa);
                 }
             }
         }

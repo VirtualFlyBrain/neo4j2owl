@@ -89,8 +89,7 @@ public class N2OManager {
     }
 
     private void processExportForNodes(File dir) {
-        Map<String, List<OWLEntity>> entities = new HashMap<>();
-        indexEntitiesByType(node_columns, entities);
+        Map<String, List<OWLEntity>> entities = indexEntitiesByType(node_columns);
         Map<String, List<String>> dataout = prepareNodeCSVsForExport(node_columns, entities);
         writeToFile(dir, dataout, "nodes");
     }
@@ -214,7 +213,8 @@ public class N2OManager {
         }
     }
 
-    private void indexEntitiesByType(Map<String, Set<String>> columns, Map<String, List<OWLEntity>> entities) {
+    private Map<String, List<OWLEntity>> indexEntitiesByType(Map<String, Set<String>> columns) {
+        Map<String, List<OWLEntity>> entities = new HashMap<>();
         for (OWLEntity e : node_properties.keySet()) {
             //System.out.println(e.getIRI());
             for(String type:getNode(e).getTypes()) {
@@ -229,6 +229,7 @@ public class N2OManager {
             }
         }
         //System.exit(0);
+        return entities;
     }
 
     private String csvCellValue(Object o) {
