@@ -111,7 +111,15 @@ public class OWL2OntologyImporter {
             }
             //inserter = BatchInserters.inserter( inserttmp);
             log("Loading Ontology");
-            OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(IRI.create(url));
+            IRI iri = null;
+            if(url.startsWith("file://")) {
+                File ontology = new File(importdir,url.replaceAll("file://",""));
+                iri = IRI.create(ontology.toURI());
+            } else {
+                iri = IRI.create(url);
+            }
+            log.info("IRI: "+iri);
+            OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(iri);
             manager = new N2OManager(o, iriManager);
             log("Creating reasoner");
             OWLReasoner r = new ElkReasonerFactory().createReasoner(o);
