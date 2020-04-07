@@ -1,8 +1,8 @@
 #!/bin/bash
 
 KB="/data/kb/graph.db"
-PLUGIN="/ws/neo4j2owl/target/neo4j2owl-1.0.jar"
-NEODIR="/Users/matentzn/Library/Application Support/Neo4j Desktop/Application/neo4jDatabases/database-70e49721-cbd8-40ab-ab39-ec4a54a2a8b2/installation-3.3.3/"
+PLUGIN="/Users/matentzn/ws/neo4j2owl/target/neo4j2owl-1.0.jar"
+NEODIR="/Users/matentzn/Library/Application Support/Neo4j Desktop/Application/neo4jDatabases/database-cbde95fd-fdd9-43b0-a4bb-764de88b716b/installation-3.3.3/"
 
 
 IMPORTS=${NEODIR}"imports"

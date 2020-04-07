@@ -31,11 +31,11 @@ public class IRIManager {
         //System.out.println(prefixNamespaceMap);
     }
 
+
     private String getPrefix(IRI iri) {
         String ns = getNamespace(iri);
         if(!namespacePrefixMap.containsKey(ns)) {
             if(isOBOesque(iri)) {
-
                     String obo = ns.substring(0,ns.lastIndexOf("/")+1);
                     //System.out.println(obo);
                     String init = ns.replaceAll(obo,"");

@@ -307,9 +307,8 @@ public class OWL2OntologyExporter {
     }
 
     private void addEntities(OWLOntology o) {
-        String nodevariable = "n";
-        String cypher = String.format("MATCH (n:Entity) Return %s",nodevariable);
-        db.execute(cypher).stream().forEach(r->createEntityForEachLabel(r,nodevariable));
+        String cypher = "MATCH (n:Entity) Return n";
+        db.execute(cypher).stream().forEach(r->createEntityForEachLabel((NodeProxy) r.get("n")));
         n2OEntityManager.entities().forEach((e->addDeclaration(e,o)));
     }
 
@@ -317,8 +316,7 @@ public class OWL2OntologyExporter {
         o.getOWLOntologyManager().addAxiom(o,df.getOWLDeclarationAxiom(e));
     }
 
-    private void createEntityForEachLabel(Map<String, Object> r, String nodevar) {
-        NodeProxy n = (NodeProxy) r.get(nodevar);
+    private void createEntityForEachLabel(NodeProxy n) {
         n.getLabels().forEach(l->n2OEntityManager.createEntity(n,l.name()));
     }
 
