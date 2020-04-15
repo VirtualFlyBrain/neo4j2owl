@@ -2,7 +2,6 @@ package ebi.spot.neo4j2owl;
 
 import org.neo4j.graphdb.Label;
 import org.neo4j.kernel.impl.core.NodeProxy;
-import org.neo4j.values.virtual.MapValue;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -19,8 +18,7 @@ public class N2OEntityManager {
     private final Map<IRI, OWLEntity> iriEntity = new HashMap<>();
     private final Map<OWLEntity, Map<String, Set<Object>>> mapAnnotations = new HashMap<>();
     private final Map<OWLEntity, Set<String>> mapTypes = new HashMap<>();
-    private final Set<String> definedProperties = new HashSet<>(Arrays.asList("short_form", "curie", "iri", "sl", "qsl", "label"));
-
+    private final Set<String> annotationPropertyQSLs = new HashSet<>(Arrays.asList("short_form", "curie", "iri", "sl", "qsl", "label"));
 
     public N2OEntityManager() {
         prepare_built_ins();
@@ -43,25 +41,17 @@ public class N2OEntityManager {
         return mapIdEntity.get(e);
     }
 
-    public OWLEntity getEntity(IRI iri) {
-        return iriEntity.get(iri);
-    }
-
     public OWLEntity getRelationshipByQSL(String qsl) {
         return qslEntity.get(qsl);
     }
 
-    public Set<IRI> entityKeys() {
-        return iriEntity.keySet();
-    }
 
     public Set<String> relationshipQSLs() {
         return qslEntity.keySet();
     }
 
     public Collection<OWLEntity> entities() {
-        Set<OWLEntity> entities = new HashSet<>(iriEntity.values());
-        return entities;
+        return new HashSet<>(iriEntity.values());
     }
 
     void createEntity(NodeProxy n, String l) {
@@ -90,22 +80,33 @@ public class N2OEntityManager {
         createEntity(i, id, allProperties,labels);
     }
 
+    /*
+    This method is the key method that indexes a neo4j node as an OWL entity.
+     */
     private void createEntity(OWLEntity e, long id, Map<String, Object> allProperties, Iterable<Label> labels) {
-        mapAnnotations(allProperties, e);
+        indexEntityAnnotations(allProperties, e);
         mapIdEntity.put(id, e);
         iriEntity.put(e.getIRI(), e);
+        indexEntityQSLIfExists(e, allProperties);
+        indexNeo4JNodeLabels(e, labels);
+    }
+
+    private void indexEntityQSLIfExists(OWLEntity e, Map<String, Object> allProperties) {
         if(allProperties.containsKey("qsl")) {
             qslEntity.put(allProperties.get("qsl").toString(), e);
         }
+    }
+
+    private void indexNeo4JNodeLabels(OWLEntity e, Iterable<Label> labels) {
+        if(!mapTypes.containsKey(e)) {
+            mapTypes.put(e,new HashSet<>());
+        }
         for(Label l:labels) {
-            if(!mapTypes.containsKey(e)) {
-                mapTypes.put(e,new HashSet<>());
-            }
             mapTypes.get(e).add(l.name());
         }
     }
 
-    private void mapAnnotations(Map<String, Object> allProperties, OWLEntity i) {
+    private void indexEntityAnnotations(Map<String, Object> allProperties, OWLEntity i) {
         if (!mapAnnotations.containsKey(i)) {
             mapAnnotations.put(i, new HashMap<>());
         }
@@ -120,7 +121,7 @@ public class N2OEntityManager {
     }
 
     private boolean isAnnotationProperty(String key) {
-        return !definedProperties.contains(key);
+        return !annotationPropertyQSLs.contains(key);
     }
 
     private void createClass(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
@@ -144,6 +145,11 @@ public class N2OEntityManager {
     }
 
     private void createAnnotationProperty(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
+        if(allProperties.containsKey("qsl")) {
+            // this should always be true: if you are an AP, you need a qsl.
+            annotationPropertyQSLs.add(allProperties.get("qsl").toString());
+        }
+
         createEntity(df.getOWLAnnotationProperty(getIRI(allProperties)), id, allProperties,labels);
     }
 

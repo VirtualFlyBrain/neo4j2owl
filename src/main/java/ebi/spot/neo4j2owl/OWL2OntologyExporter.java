@@ -267,33 +267,54 @@ public class OWL2OntologyExporter {
 
     private void addAnnotationsForEntity(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e) {
         n2OEntityManager.annotationsProperties(e).forEach(qsl_anno-> addEntityForEntityAndAnnotationProperty(o, changes, e, qsl_anno));
+
+        // Add all neo4jlabels to node
         OWLAnnotationProperty annop = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
         n2OEntityManager.nodeLabels(e).forEach(type->changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(type)))));
+
+        // Add entity declarations for all entities
+        // TODO this is probably redundant with the initial addEntities(o); call.
         n2OEntityManager.nodeLabels(e).forEach(type->changes.add(new AddAxiom(o, df.getOWLDeclarationAxiom(e))));
     }
 
     private void addEntityForEntityAndAnnotationProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno) {
-        //log("Q:" + qsl_anno);
         Object annos = n2OEntityManager.annotationValues(e,qsl_anno);
-        //log("A:" + annos + " " + annos.getClass());
+        OWLAnnotationProperty annoP = getAnnotationProperty(qsl_anno);
         if (annos instanceof Collection) {
             for (Object aa : (Collection) annos) {
-                OWLEntity annoP = getAnnotationProperty(qsl_anno);
                 if(annoP == null) {
                     qsls_with_no_matching_properties.add(qsl_anno);
                 } else {
-                    addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, getAnnotationProperty(qsl_anno), aa);
+                    addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, annoP, aa);
                 }
             }
         }
     }
 
+    /*
+    This method maps neo4j property value to OWL
+     */
     private void addAnnotationForEntityAndAnnotationAndValueProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, OWLAnnotationProperty annop, Object aa) {
-        if (aa instanceof String[]) {
-            for (String value : (String[]) aa) {
-                //log("V:" + value + " " + value.getClass());
-                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(value))));
+        if (aa.getClass().isArray()) {
+            for (Object value : (Object[]) aa) {
+                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(),getLiteral(value))));
             }
+        } else {
+            changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(),getLiteral(aa))));
+        }
+    }
+
+    private OWLAnnotationValue getLiteral(Object value) {
+        if(value instanceof Boolean) {
+            return df.getOWLLiteral((Boolean)value);
+        } else if(value instanceof Integer) {
+            return df.getOWLLiteral((Integer)value);
+        } else if(value instanceof Float) {
+            return df.getOWLLiteral((Float)value);
+        } else if(value instanceof Double) {
+            return df.getOWLLiteral((Double)value);
+        } else {
+            return df.getOWLLiteral(value.toString());
         }
     }
 
@@ -302,10 +323,15 @@ public class OWL2OntologyExporter {
         if (e instanceof OWLAnnotationProperty) {
             return (OWLAnnotationProperty) e;
         }
-        log("Warning: QSL "+qsl_anno+" was not found!");
-        return null;
+        //log("Warning: QSL "+qsl_anno+" was not found!");
+        return df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_UNMAPPED_PROPERTY_PREFIX_URI+qsl_anno));
     }
 
+    /*
+    For every node labelled "Entity" in the KB, create a corresponding OWL entity, and a declaration in the ontology
+    Nothing else is added at this step - just declarations. The main purpose is to index all entities for the next
+    Steps in the pipeline
+     */
     private void addEntities(OWLOntology o) {
         String cypher = "MATCH (n:Entity) Return n";
         db.execute(cypher).stream().forEach(r->createEntityForEachLabel((NodeProxy) r.get("n")));
