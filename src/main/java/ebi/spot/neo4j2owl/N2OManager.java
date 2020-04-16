@@ -11,12 +11,18 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
+enum RELATION_TYPE
+{
+    QSL, SL_STRICT, SL_LOSE;
+}
+
 public class N2OManager {
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
     private final Map<OWLEntity, Set<String>> nodeLabels = new HashMap<>();
     private final Map<OWLEntity, Map<String, Object>> node_properties = new HashMap<>();
     private final Map<N2ORelationship, Map<String, Object>> relationships = new HashMap<>();
     private final Set<String> primaryEntityPropertyKeys = new HashSet<>();
+    private final Set<OWLEntity> entitiesWithClashingSafeLabels = new HashSet<>();
     private final IRIManager curies;
     private final OWLOntology o;
     long nextavailableid = 1;
@@ -57,8 +63,8 @@ public class N2OManager {
     public N2OEntity getNode(OWLEntity e) {
         //System.out.println("|||"+e.getIRI().toString());
         if (!nodeindex.containsKey(e)) {
-            nodeindex.put(e, new N2OEntity(e, o, curies,nextavailableid));
-            nextavailableid ++;
+            nodeindex.put(e, new N2OEntity(e, o, curies, nextavailableid));
+            nextavailableid++;
             //System.out.println(nodeindex.get(e));
         }
         nodeindex.get(e).addLabels(getLabels(e));
@@ -66,7 +72,7 @@ public class N2OManager {
     }
 
     private Set<String> getLabels(OWLEntity e) {
-        if(nodeLabels.containsKey(e)) {
+        if (nodeLabels.containsKey(e)) {
             return nodeLabels.get(e);
         } else {
             return Collections.emptySet();
@@ -84,7 +90,7 @@ public class N2OManager {
     private void processExportForRelationships(File dir) {
         Map<String, List<N2ORelationship>> relationships = new HashMap<>();
         indexRelationshipsByType(prop_columns, relationships);
-        Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(prop_columns,relationships);
+        Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(prop_columns, relationships);
         writeToFile(dir, dataout_rel, "relationship");
     }
 
@@ -97,7 +103,7 @@ public class N2OManager {
     private void writeToFile(File dir, Map<String, List<String>> dataout, String nodeclass) {
         for (String type : dataout.keySet()) {
             try {
-                FileUtils.writeLines(new File(dir, nodeclass+"_" + type + ".txt"), dataout.get(type));
+                FileUtils.writeLines(new File(dir, nodeclass + "_" + type + ".txt"), dataout.get(type));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -107,20 +113,20 @@ public class N2OManager {
     private void indexRelationshipsByType(Map<String, Set<String>> columns, Map<String, List<N2ORelationship>> relationships) {
         for (N2ORelationship e : this.relationships.keySet()) {
             String type = e.getType();
-            if(!columns.containsKey(type)) {
-                columns.put(type,new HashSet<>());
+            if (!columns.containsKey(type)) {
+                columns.put(type, new HashSet<>());
             }
             columns.get(type).addAll(this.relationships.get(e).keySet());
-            if(!relationships.containsKey(type)) {
-                relationships.put(type,new ArrayList<>());
+            if (!relationships.containsKey(type)) {
+                relationships.put(type, new ArrayList<>());
             }
             relationships.get(type).add(e);
         }
     }
 
     public OWLEntity typedEntity(IRI iri, OWLOntology o) {
-        for(OWLEntity e:nodeindex.keySet()) {
-            if(e.getIRI().equals(iri)) {
+        for (OWLEntity e : nodeindex.keySet()) {
+            if (e.getIRI().equals(iri)) {
                 return e;
             }
         }
@@ -132,8 +138,8 @@ public class N2OManager {
 
     private String constructHeaderForRelationships(List<String> columns_sorted) {
         StringBuilder sb = new StringBuilder();
-        for(String column:columns_sorted) {
-            sb.append(markupColumn(column,"")+",");
+        for (String column : columns_sorted) {
+            sb.append(markupColumn(column, "") + ",");
         }
         sb.append("start,");
         sb.append("end");
@@ -153,8 +159,8 @@ public class N2OManager {
                 StringBuilder sb = new StringBuilder();
                 Map<String, Object> rec = this.relationships.get(e);
                 writeCSVRowFromColumns(columns_sorted, sb, rec);
-                sb.append(nodeindex.get(e.getStart()).getIri()+ ",");
-                sb.append(nodeindex.get(e.getEnd()).getIri()+",");
+                sb.append(nodeindex.get(e.getStart()).getIri() + ",");
+                sb.append(nodeindex.get(e.getEnd()).getIri() + ",");
                 //sb.append(e.getType());
                 String s = sb.toString();
                 csvout.add(s.substring(0, s.length() - 1));
@@ -180,7 +186,7 @@ public class N2OManager {
             List<String> csvout = new ArrayList<>();
             List<String> columns_sorted = new ArrayList<>(columns.get(type));
             Collections.sort(columns_sorted);
-            csvout.add(constructHeaderForEntities(columns_sorted,type));
+            csvout.add(constructHeaderForEntities(columns_sorted, type));
 
             for (OWLEntity e : entities.get(type)) {
                 StringBuilder sb = new StringBuilder();
@@ -198,16 +204,16 @@ public class N2OManager {
 
     private String constructHeaderForEntities(List<String> columns_sorted, String type) {
         StringBuilder sb = new StringBuilder();
-        for(String column:columns_sorted) {
-            sb.append(markupColumn(column, type)+",");
+        for (String column : columns_sorted) {
+            sb.append(markupColumn(column, type) + ",");
         }
         sb.append(":LABEL");
         return sb.toString();
     }
 
     private String markupColumn(String column, String type) {
-        if(false) {
-            return "iri:ID("+type+")";
+        if (false) {
+            return "iri:ID(" + type + ")";
         } else {
             return column;
         }
@@ -217,7 +223,7 @@ public class N2OManager {
         Map<String, List<OWLEntity>> entities = new HashMap<>();
         for (OWLEntity e : node_properties.keySet()) {
             //System.out.println(e.getIRI());
-            for(String type:getNode(e).getTypes()) {
+            for (String type : getNode(e).getTypes()) {
                 if (!columns.containsKey(type)) {
                     columns.put(type, new HashSet<>());
                 }
@@ -251,9 +257,46 @@ public class N2OManager {
     }
 
     public void addNodeLabel(OWLEntity e, String label) {
-    if(!nodeLabels.containsKey(e)) {
-        nodeLabels.put(e,new HashSet<>());
+        if (!nodeLabels.containsKey(e)) {
+            nodeLabels.put(e, new HashSet<>());
+        }
+        nodeLabels.get(e).add(label);
     }
-    nodeLabels.get(e).add(label);
+
+    /*
+    Checks whether the safe labels are unique in the context of the current import (for Properties).
+    This is important so that not two distinct properties are mapped to the same neo edge type.
+     */
+    public void checkUniqueSafeLabel(RELATION_TYPE relation_type) {
+        Map<String,OWLEntity> sls = new HashMap<>();
+        Set<String> non_unique = new HashSet<>();
+        Set<String> non_unique_iri = new HashSet<>();
+        for (OWLEntity e : nodeindex.keySet()) {
+            if (nodeindex.get(e).getEntity().isOWLObjectProperty() || nodeindex.get(e).getEntity().isOWLDataProperty() || nodeindex.get(e).getEntity().isOWLAnnotationProperty()) {
+                String sl = nodeindex.get(e).getSafe_label();
+                if (sls.keySet().contains(sl)) {
+                    non_unique.add(sl);
+                    non_unique_iri.add(nodeindex.get(e).getIri());
+                    non_unique_iri.add(nodeindex.get(sls.get(sl)).getIri());
+                    this.entitiesWithClashingSafeLabels.add(e);
+                } else {
+                    sls.put(sl,e);
+                }
+            }
+        }
+        if (!non_unique.isEmpty()) {
+            String nu = String.join(", ", non_unique);
+            String nuiri = String.join(", ", non_unique_iri);
+            String msg = String.format("There are %d non-unique safe labels (%s), pertaining to the following properties: %s", non_unique.size(), nu, nuiri);
+            if(relation_type.equals(RELATION_TYPE.SL_STRICT)) {
+                throw new IllegalStateException(msg);
+            } else {
+                System.out.println("WARNING: "+msg);
+            }
+        }
+    }
+
+    public boolean isUnsafeRelation(OWLEntity entity) {
+        return entitiesWithClashingSafeLabels.contains(entity);
     }
 }

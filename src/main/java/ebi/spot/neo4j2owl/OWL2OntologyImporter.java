@@ -13,8 +13,6 @@ import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
-import org.semanticweb.owlapi.reasoner.Node;
-import org.semanticweb.owlapi.reasoner.NodeSet;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
 
@@ -62,6 +60,10 @@ public class OWL2OntologyImporter {
 
     private static boolean batch = true;
     private static boolean testmode = false;
+    private static RELATION_TYPE relation_type = RELATION_TYPE.SL_LOSE;
+
+
+
 
     /*
     Constants
@@ -397,7 +399,7 @@ public class OWL2OntologyImporter {
         }
         N2OEntity from_n = manager.getNode(from);
         N2OEntity to_n = manager.getNode(to);
-        String roletype = rel.getQualified_safe_label();
+        String roletype = getRoleType(rel);
 
         /*
         System.out.println(roletype);
@@ -415,6 +417,23 @@ public class OWL2OntologyImporter {
             existential.get(from_n).put(roletype, new HashSet<>());
         }
         existential.get(from_n).get(roletype).add(to_n);
+    }
+
+    private String getRoleType(N2OEntity rel) {
+        switch(relation_type) {
+            case QSL:
+                return rel.getQualified_safe_label();
+            case SL_STRICT:
+                return rel.getSafe_label();
+            case SL_LOSE:
+                if(manager.isUnsafeRelation(rel.getEntity())) {
+                    return rel.getQualified_safe_label();
+                } else {
+                    return rel.getSafe_label();
+                }
+            default:
+                return rel.getQualified_safe_label();
+        }
     }
 
     private void addClassAssertions(OWLOntology o, OWLReasoner r) {
@@ -453,6 +472,8 @@ public class OWL2OntologyImporter {
             createNode(ne, props);
             countLoaded(e);
         }
+        if (!relation_type.equals(RELATION_TYPE.QSL))
+            manager.checkUniqueSafeLabel(relation_type);
     }
 
 
@@ -536,7 +557,9 @@ public class OWL2OntologyImporter {
     }
 
     private String neoPropertyKey(OWLAnnotation a) {
-        return manager.getNode(a.getProperty()).getQualified_safe_label();
+        N2OEntity n = manager.getNode(a.getProperty());
+        String key = getRoleType(n);
+        return key;
     }
 
     private void countLoaded(OWLEntity e) {

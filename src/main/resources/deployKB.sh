@@ -10,9 +10,9 @@ DATA=${NEODIR}"data/databases/graph.db"
 LOGS=${NEODIR}"logs"
 PLUGINS=${NEODIR}"plugins"
 
-rm -r "${DATA}"
-rm -r "${LOGS}"/*
-rm -r "${IMPORTS}"/*
+rm -rf "${DATA}"
+rm -rf "${LOGS}"/*
+rm -rf "${IMPORTS}"/*
 
-cp -r "${KB}" "${DATA}/"
+#cp -r "${KB}" "${DATA}/"
 cp "${PLUGIN}" "${PLUGINS}/"
