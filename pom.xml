@@ -20,6 +20,7 @@
             <version>${neo4j.version}</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>server-api</artifactId>
@@ -100,6 +101,14 @@
             <version>1.4.0.432</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.yaml/snakeyaml -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.26</version>
+        </dependency>
+
 
     </dependencies>
 

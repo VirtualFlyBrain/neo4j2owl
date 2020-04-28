@@ -184,5 +184,6 @@
     <orderEntry type="library" scope="TEST" name="Maven: org.codehaus.woodstox:stax2-api:3.1.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.apache.ws.commons.axiom:axiom-dom:1.2.14" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: dk.brics.automaton:automaton:1.11-8" level="project" />
+    <orderEntry type="library" name="Maven: org.yaml:snakeyaml:1.26" level="project" />
   </component>
 </module>
