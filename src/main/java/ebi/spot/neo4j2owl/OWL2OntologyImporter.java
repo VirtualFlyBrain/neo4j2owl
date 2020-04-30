@@ -597,7 +597,7 @@ public class OWL2OntologyImporter {
             }
             N2OEntity ne = manager.getNode(e);
             Map<String, Object> props = new HashMap<>();
-            props.put(OWL2NeoMapping.ATT_LABEL, ne.getLabel());
+            //props.put(OWL2NeoMapping.ATT_LABEL, ne.getLabel());
             props.put(OWL2NeoMapping.ATT_SAFE_LABEL, ne.getSafe_label());
             props.put(OWL2NeoMapping.ATT_QUALIFIED_SAFE_LABEL, ne.getQualified_safe_label());
             props.put(OWL2NeoMapping.ATT_SHORT_FORM, ne.getShort_form());

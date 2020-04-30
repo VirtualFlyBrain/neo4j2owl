@@ -30,7 +30,7 @@ public class N2OManager {
     N2OManager(OWLOntology o, IRIManager curies) {
         this.curies = curies;
         this.o = o;
-        primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_LABEL);
+        //primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_LABEL);
         primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_SAFE_LABEL);
         primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_QUALIFIED_SAFE_LABEL);
         primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_SHORT_FORM);
