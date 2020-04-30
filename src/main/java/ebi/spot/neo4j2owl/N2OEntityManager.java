@@ -120,7 +120,7 @@ public class N2OEntityManager {
         }
     }
 
-    private boolean isAnnotationProperty(String key) {
+    public boolean isAnnotationProperty(String key) {
         return !annotationPropertyQSLs.contains(key);
     }
 

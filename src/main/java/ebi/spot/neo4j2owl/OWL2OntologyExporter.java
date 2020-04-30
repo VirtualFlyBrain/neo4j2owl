@@ -3,6 +3,7 @@ package ebi.spot.neo4j2owl;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.impl.core.NodeProxy;
+import org.neo4j.kernel.impl.core.RelationshipProxy;
 import org.neo4j.logging.Log;
 import org.neo4j.procedure.Context;
 import org.neo4j.procedure.Mode;
@@ -101,11 +102,11 @@ public class OWL2OntologyExporter {
             //log(r);
             Long nid = ((NodeProxy) r.get("n")).getId();
             Long xid = ((NodeProxy) r.get("x")).getId();
-            log("CLASSSSSSSSS: "+r.get("r"));
-            AddAxiom axiom_change = createAddAxiom(o, nid, xid,RELTYPE);
-            OWLAxiom ax = axiom_change.getAxiom();
+            RelationshipProxy rp = (RelationshipProxy)r.get("r");
 
-            changes.add(axiom_change);
+            OWLAxiom ax = createAxiom(n2OEntityManager.getEntity(nid), n2OEntityManager.getEntity(xid),RELTYPE);
+            Set<OWLAnnotation> axiomAnnotations = getAxiomAnnotations(rp);
+            changes.add(new AddAxiom(o,ax.getAnnotatedAxiom(axiomAnnotations)));
         }
         if(!changes.isEmpty()) {
             try {
@@ -120,30 +121,49 @@ public class OWL2OntologyExporter {
         }
     }
 
-    private AddAxiom createAddAxiom(OWLOntology o, Long from, Long to, String type) throws N2OException {
+    private Set<OWLAnnotation> getAxiomAnnotations(RelationshipProxy rp) {
+        Set<OWLAnnotation> axiomAnnotations = new HashSet<>();
+        Map<String, Object> rpros = rp.getAllProperties();
+        for(String propertykey:rpros.keySet()) {
+            if (n2OEntityManager.isAnnotationProperty(propertykey)) {
+                OWLAnnotationProperty ap = (OWLAnnotationProperty) n2OEntityManager.getRelationshipByQSL(propertykey);
+                Object v = rpros.get(propertykey);
+                if (v.getClass().isArray()) {
+                    for (Object val : toObjectArray(v)) {
+                        OWLAnnotationValue value = getLiteral(val);
+                        axiomAnnotations.add(df.getOWLAnnotation(ap, value));
+                    }
+                } else {
+                    OWLAnnotationValue value = getLiteral(v);
+                    axiomAnnotations.add(df.getOWLAnnotation(ap, value));
+                }
+            }
+        }
+        return axiomAnnotations;
+    }
 
-        OWLEntity e_from = n2OEntityManager.getEntity(from);
-        OWLEntity e_to = n2OEntityManager.getEntity(to);
+    private OWLAxiom createAxiom(OWLEntity e_from, OWLEntity e_to, String type) throws N2OException {
+
         if(type.equals(OWL2NeoMapping.RELTYPE_SUBCLASSOF)) {
-            return new AddAxiom(o, df.getOWLSubClassOfAxiom((OWLClass) e_from, (OWLClass) e_to));
+            return df.getOWLSubClassOfAxiom((OWLClass) e_from, (OWLClass) e_to);
         } else if(type.equals(OWL2NeoMapping.RELTYPE_INSTANCEOF)) {
-            return new AddAxiom(o, df.getOWLClassAssertionAxiom((OWLClass) e_to, (OWLIndividual) e_from));
+            return df.getOWLClassAssertionAxiom((OWLClass) e_to, (OWLIndividual) e_from);
         } else {
             OWLEntity p = n2OEntityManager.getRelationshipByQSL(type);
             if(p instanceof OWLObjectProperty) {
                 if (e_from instanceof OWLClass) {
                     if (e_to instanceof OWLClass) {
-                        return new AddAxiom(o, df.getOWLSubClassOfAxiom((OWLClass) e_from, df.getOWLObjectSomeValuesFrom((OWLObjectProperty)p,(OWLClass)e_to)));
+                        return df.getOWLSubClassOfAxiom((OWLClass) e_from, df.getOWLObjectSomeValuesFrom((OWLObjectProperty)p,(OWLClass)e_to));
                     } else if (e_to instanceof OWLNamedIndividual) {
-                        return new AddAxiom(o, df.getOWLSubClassOfAxiom((OWLClass) e_from, df.getOWLObjectHasValue((OWLObjectProperty)p,(OWLNamedIndividual)e_to)));
+                        return df.getOWLSubClassOfAxiom((OWLClass) e_from, df.getOWLObjectHasValue((OWLObjectProperty)p,(OWLNamedIndividual)e_to));
                     } else {
                        log("Not deal with OWLClass-"+type+"-X");
                     }
                 } else if (e_from instanceof OWLNamedIndividual) {
                     if (e_to instanceof OWLClass) {
-                        return new AddAxiom(o, df.getOWLClassAssertionAxiom(df.getOWLObjectSomeValuesFrom((OWLObjectProperty)p,(OWLClass)e_to),(OWLNamedIndividual)e_from));
+                        return df.getOWLClassAssertionAxiom(df.getOWLObjectSomeValuesFrom((OWLObjectProperty)p,(OWLClass)e_to),(OWLNamedIndividual)e_from);
                     } else if (e_to instanceof OWLNamedIndividual) {
-                        return new AddAxiom(o, df.getOWLObjectPropertyAssertionAxiom((OWLObjectProperty)p,(OWLNamedIndividual) e_from,(OWLNamedIndividual)e_to));
+                        return df.getOWLObjectPropertyAssertionAxiom((OWLObjectProperty)p,(OWLNamedIndividual) e_from,(OWLNamedIndividual)e_to);
                     } else {
                         log("Not deal with OWLClass-"+type+"-X");
                     }
@@ -151,7 +171,7 @@ public class OWL2OntologyExporter {
                     log("Not deal with X-"+type+"-X");
                 }
             } if(p instanceof OWLAnnotationProperty) {
-                return new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(e_from.getIRI(), df.getOWLAnnotation((OWLAnnotationProperty)p,e_to.getIRI())));
+                return df.getOWLAnnotationAssertionAxiom(e_from.getIRI(), df.getOWLAnnotation((OWLAnnotationProperty)p,e_to.getIRI()));
             }
         }
         throw new N2OException("Unknown relationship type: "+type,new NullPointerException());
