@@ -1,0 +1,110 @@
+Old methods since removed.
+
+
+/*
+    private void updateNodes(OWLOntology o, Map<String, OWLEntity> mapIRIEntity, Map<String, N2OEntity> mapIRIN2O) {
+        String cypher_getAllNodes = "MATCH (n) RETURN distinct n";
+        Result res_nodes = db.execute(cypher_getAllNodes);
+        int ct_entitiesnotin = 0;
+        while (res_nodes.hasNext()) {
+            Map<String, Object> r = res_nodes.next();
+            NodeProxy np = (NodeProxy) r.get("n");
+            //log(np);
+            //log( np.getAllProperties());
+            String iri = np.getAllProperties().get("iri").toString();
+            //log(iri);
+            if(mapIRIEntity.containsKey(iri)) {
+                OWLEntity e = mapIRIEntity.get(iri);
+                //log(e);
+                N2OEntity n = new N2OEntity(e, o, iriManager, np.getId());
+                mapIRIN2O.put(iri, n);
+                String cypher_update_node = String.format("MERGE (n {iri:\"%s\"}) " +
+                                "ON MATCH SET n:%s " +
+                                "ON MATCH SET n +={ " +
+                                "qsl:\"%s\" " +
+                                //"short_form:'%s', " +
+                                //"label:'%s', " +
+                                //"sl:'%s', " +
+                                //"curie:'%s'" +
+                                " }",
+                        iri,
+                        Util.concat(n.getTypes(),":"),
+                        n.getQualified_safe_label(),
+                        n.getShort_form(),
+                        n.getLabel(),
+                        n.getSafe_label(),
+                        n.getCurie()
+                );
+                //log(cypher_update_node);
+                db.execute(cypher_update_node);
+            }
+            else {
+                ct_entitiesnotin++;
+            }
+        }
+        log("Entities not in ontology: "+ct_entitiesnotin);
+    }
+*/
+
+ /*
+    @Procedure(mode = Mode.WRITE)
+    public Stream<ProgressInfo> makeN2OCompliant(@Name("url") String url) throws Exception {
+        log("Making N2O Compliant");
+        try {
+            OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(IRI.create(url));
+
+            Map<String, OWLEntity> mapIRIEntity = new HashMap<>();
+            o.getSignature(Imports.INCLUDED).forEach(e -> mapIRIEntity.put(e.getIRI().toString(), e));
+            Map<String, N2OEntity> mapIRIN2O = new HashMap<>();
+
+            updateNodes(o, mapIRIEntity, mapIRIN2O);
+            updateRelations(o, mapIRIEntity, mapIRIN2O);
+        } catch (Throwable e) {
+            log(e.getMessage());
+            e.printStackTrace();
+        }
+
+        return (Stream.of(new ProgressInfo(url)));
+    }
+
+    private void updateRelations(OWLOntology o, Map<String, OWLEntity> mapIRIEntity, Map<String, N2OEntity> mapIRIN2O) {
+        getEdgeIRIs().stream().map(x->x.get("iri")).forEach(iri->updateRelationship(o, mapIRIEntity, mapIRIN2O, iri));
+    }
+
+
+    private Result getEdgeIRIs() {
+        String cypher_get_edge_types = "MATCH (n)-[r]->(x) RETURN distinct r.iri as iri";
+        log(cypher_get_edge_types);
+        return db.execute(cypher_get_edge_types);
+    }
+
+    private void updateRelationship(OWLOntology o, Map<String, OWLEntity> mapIRIEntity, Map<String, N2OEntity> mapIRIN2O, Object i) {
+        if (i == null) {
+            throw new IllegalArgumentException("All edges must have an iri property!");
+        }
+        String iri = (String)i;
+        N2OEntity n = createNewEntity(o, mapIRIEntity, mapIRIN2O, iri);
+
+        String cypher_update_node = String.format(
+                "MATCH (n)-[r {iri:\"%s\"}]->(m) " +
+                        "CREATE (n)-[r2:%s]->(m) " +
+                        "SET r2 = r "
+                //+ "WITH r "+
+                // "DELETE r"
+                ,
+                n.getIri(),
+                n.getQualified_safe_label());
+        log(cypher_update_node);
+        db.execute(cypher_update_node);
+    }
+
+    private N2OEntity createNewEntity(OWLOntology o, Map<String, OWLEntity> mapIRIEntity, Map<String, N2OEntity> mapIRIN2O, String iri) {
+        if (!mapIRIN2O.containsKey(iri)) {
+            OWLEntity e = mapIRIEntity.get(iri);
+            N2OEntity n = new N2OEntity(e, o, iriManager, -1);
+            mapIRIN2O.put(iri, n);
+        }
+        return mapIRIN2O.get(iri);
+    }
+
+*/

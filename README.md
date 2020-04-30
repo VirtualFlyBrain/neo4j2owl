@@ -175,3 +175,8 @@ Edges should store rdfs:label; property keys should not be Qualified ?
 
 Editors notes:
 - Some notes on testing can be found [here](https://github.com/VirtualFlyBrain/vfb-neo2owl-test)
+
+
+Generation of safe labels:
+- alphanumeric and underscore allowed
+- other characters are encoded (for example, `has part':@"` results in `has_part3563`.

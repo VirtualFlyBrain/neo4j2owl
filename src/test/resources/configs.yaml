@@ -1,6 +1,6 @@
 strict: false
 index: false
-testmode: false
+testmode: true
 batch: true
 safe_label: lose
 property_mapping:
