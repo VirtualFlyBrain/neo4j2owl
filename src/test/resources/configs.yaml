@@ -1,5 +1,8 @@
 strict: false
 index: false
+testmode: false
+batch: true
+safe_label: lose
 property_mapping:
   - iris:
       - "http://purl.obolibrary.org/obo/so#part_of"

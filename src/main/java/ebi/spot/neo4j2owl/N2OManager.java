@@ -82,7 +82,7 @@ public class N2OManager {
     Map<String, Set<String>> node_columns = new HashMap();
     Map<String, Set<String>> prop_columns = new HashMap();
 
-    public void exportCSV(File dir) {
+    public void exportOntologyToCSV(File dir) {
         processExportForNodes(dir);
         processExportForRelationships(dir);
     }
@@ -285,9 +285,9 @@ public class N2OManager {
             }
         }
         if (!non_unique.isEmpty()) {
-            String nu = String.join(", ", non_unique);
-            String nuiri = String.join(", ", non_unique_iri);
-            String msg = String.format("There are %d non-unique safe labels (%s), pertaining to the following properties: %s", non_unique.size(), nu, nuiri);
+            String nu = String.join("\n ", non_unique);
+            String nuiri = String.join("\n ", non_unique_iri);
+            String msg = String.format("There are %d non-unique safe labels \n (%s), pertaining to the following properties: \n %s", non_unique.size(), nu, nuiri);
             if(relation_type.equals(RELATION_TYPE.SL_STRICT)) {
                 throw new IllegalStateException(msg);
             } else {
@@ -298,5 +298,14 @@ public class N2OManager {
 
     public boolean isUnsafeRelation(OWLEntity entity) {
         return entitiesWithClashingSafeLabels.contains(entity);
+    }
+
+    Map<String,Class> propertyTypeMap = new HashMap<>();
+
+    public void setPropertyType(String property,Class type) {
+        propertyTypeMap.put(property,type);
+    }
+    public boolean isPropertyOfType(String h,Class c) {
+        return propertyTypeMap.containsKey(h) && propertyTypeMap.get(h)==c;
     }
 }

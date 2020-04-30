@@ -15,8 +15,13 @@ import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,10 +29,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import static ebi.spot.neo4j2owl.RELATION_TYPE.QSL;
+import static ebi.spot.neo4j2owl.RELATION_TYPE.SL_STRICT;
+
 /**
- * Created by jbarrasa on 21/03/2016.
- * <p>
- * Importer of basic ontology (RDFS & OWL) elements:
+ * Created by Nicolas Matentzoglu for EMBL-EBI and Virtual Fly Brain. Code roughly based on jbarrasa neosemantics.
  */
 public class OWL2OntologyImporter {
 
@@ -58,12 +64,6 @@ public class OWL2OntologyImporter {
     private static int dataPropsLoaded = 0;
     private static long start = System.currentTimeMillis();
 
-    private static boolean batch = true;
-    private static boolean testmode = false;
-    private static RELATION_TYPE relation_type = RELATION_TYPE.SL_LOSE;
-
-
-
 
     /*
     Constants
@@ -71,76 +71,39 @@ public class OWL2OntologyImporter {
 
 
     @Procedure(mode = Mode.DBMS)
-    public Stream<ImportResults> owl2Import(@Name("url") String url, @Name("strict") String strict) {
-        ImportResults importResults = new ImportResults();
+    public Stream<ImportResults> owl2Import(@Name("url") String url, @Name("config") String config) {
+
+        start = System.currentTimeMillis();
+
         final ExecutorService exService = Executors.newSingleThreadExecutor();
-        iriManager.setStrict(strict.equals("strict"));
 
-        File importdir = new File(dbapi.getStoreDir(),"import");
-        log.info("Import dir: "+importdir.getAbsolutePath());
-
-        //Integer timeout_in_minutes = Integer.valueOf(timeout_str);
-
-        System.out.println(dbapi.getStoreDir().getAbsolutePath());
-        batch = true;//insert.equals("batch");
-        Map<String,String> params = dbapi.getDependencyResolver().resolveDependency(Config.class).getRaw();
-
-        String par_neo4jhome = "unsupported.dbms.directories.neo4j_home";
-        String par_importdirpath = "dbms.directories.import";
-        if(params.containsKey(par_neo4jhome)&&params.containsKey(par_importdirpath)) {
-            String neo4j_home_path = params.get(par_neo4jhome);
-            String import_dir_path = params.get(par_importdirpath);
-            File i = new File(import_dir_path);
-            if(i.isAbsolute()) {
-                importdir = i;
-            } else {
-                importdir = new File(neo4j_home_path,import_dir_path);
-            }
-        } else {
-            log.error("Import directory (or base neo4j directory) not set.");
-        }
-        //System.out.println(params);
-        //System.out.println(dbapi.getStoreDir().getAbsolutePath());
-
+        File importdir = prepareImportDirectory();
 
         try {
-            if (batch) {
-                if(!importdir.exists()) {
-                    log.error(importdir.getAbsolutePath()+" does not exist! Select valid import dir.");
-                } else {
-                    deleteCSVFilesInImportsDir(importdir);
-                }
-            }
+            prepareConfig(url, config, importdir);
+        } catch (IOException e) {
+            log.error("Config could not be loaded, using defaults.");
+            e.printStackTrace();
+        }
+
+        ImportResults importResults = new ImportResults();
+        try {
+
             //inserter = BatchInserters.inserter( inserttmp);
             log("Loading Ontology");
-            IRI iri = null;
-            if(url.startsWith("file://")) {
-                File ontology = new File(importdir,url.replaceAll("file://",""));
-                iri = IRI.create(ontology.toURI());
-            } else {
-                iri = IRI.create(url);
-            }
-            log.info("IRI: "+iri);
-            OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(iri);
+            OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(getOntologyIRI(url, importdir));
             manager = new N2OManager(o, iriManager);
-            log("Creating reasoner");
+
+            log("Preparing reasoner");
             OWLReasoner r = new ElkReasonerFactory().createReasoner(o);
             filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLThing());
             filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
-            log("Set indices");
-            /*
-            db.execute("CREATE INDEX ON :Individual(iri)");
-            db.execute("CREATE INDEX ON :Class(iri)");
-            db.execute("CREATE INDEX ON :ObjectProperty(iri)");
-            db.execute("CREATE INDEX ON :DataProperty(iri)");
-            db.execute("CREATE INDEX ON :AnnotationProperty(iri)");
-            */
+            filterout.addAll(r.getUnsatisfiableClasses().getEntities());
 
-//            db.execute("CREATE CONSTRAINT ON (c:Individual) ASSERT c.iri IS UNIQUE");
-            //   db.execute("CREATE CONSTRAINT ON (c:Class) ASSERT c.iri IS UNIQUE");
-            //   db.execute("CREATE CONSTRAINT ON (c:ObjectProperty) ASSERT c.iri IS UNIQUE");
-            //   db.execute("CREATE CONSTRAINT ON (c:DataProperty) ASSERT c.iri IS UNIQUE");
-            //   db.execute("CREATE CONSTRAINT ON (c:AnnotationProperty) ASSERT c.iri IS UNIQUE");
+            log("Preparing of Indices: " + N2OConfig.getInstance().prepareIndex());
+            if (N2OConfig.getInstance().prepareIndex()) {
+                prepareIndices();
+            }
 
             log("Extracting signature");
             extractSignature(o);
@@ -152,92 +115,249 @@ public class OWL2OntologyImporter {
             addClassAssertions(o, r);
             log("Extracting existential relations");
             addExistentialRelationships(o, r);
-            if (batch) {
+            if (N2OConfig.getInstance().isBatch()) {
                 log("Loading in Database: " + importdir.getAbsolutePath());
 
-                manager.exportCSV(importdir);
+                manager.exportOntologyToCSV(importdir);
 
-                /*
-                GraphDatabase.driver()
-                try ( Session session = db.session() )
-                {
-                    session.run( "USING PERIODIC COMMIT ..." );
-                }*/
+                exService.submit(() -> {
+                    dbapi.execute("CREATE INDEX ON :Entity(iri)");
+                    return "done";
+                });
 
-                exService.submit(()->{dbapi.execute("CREATE INDEX ON :Entity(iri)"); return "done";});
+                log("Loading nodes to neo from CSV.");
+                loadNodesToNeoFromCSV(exService, importdir);
 
-                for (File f : importdir.listFiles()) {
-                    String filename = f.getName();
-                    if (filename.startsWith("nodes_")) {
-                        String fn = filename;
-                        if(testmode) {
-                            fn = "/" + new File(importdir, filename).getAbsolutePath().toString();
-                            System.err.println("UNCOMMENT FILENAME");
-                        }
-                        String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
-                        String cypher = "USING PERIODIC COMMIT 5000\n" +
-                                "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
-                                "MERGE (n:Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"} SET n :" + type;
-                        log(cypher);
-                        final Future<String> cf = exService.submit(()->{dbapi.execute(cypher); return "Finished: "+filename;});
-                        System.out.println(cf.get());
-                        /*if(fn.contains("Class")) {
-                            FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
-                        }
-                        else if(fn.contains("Indivi")) {
-                            FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
-                            System.exit(0);
-                        }*/
-
-                    }
-                }
-                for (File f : importdir.listFiles()) {
-                    String filename = f.getName();
-                    if (filename.startsWith("relationship")) {
-                        String fn = filename;
-                        if(testmode) {
-                            fn = "/" + new File(importdir, filename).getAbsolutePath().toString();
-                            System.err.println("UNCOMMENT FILENAME");
-                        }
-                        String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
-                        //TODO USING PERIODIC COMMIT 1000
-                        String cypher = "USING PERIODIC COMMIT 5000\n" +
-                                "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
-                                "MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
-                                "MERGE (s)-[:"+type+"]->(e)";
-                        log(f);
-                        log(cypher);
-                        final Future<String> cf = exService.submit(()->{dbapi.execute(cypher); return "Finished: "+filename;});
-                        System.out.println(cf.get());
-                        /*if(fn.contains("Individual")) {
-                            FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
-                            System.exit(0);
-                        }*/
-                    }
-                }
+                log("Loading relationships to neo from CSV.");
+                loadRelationshipsToNeoFromCSV(exService, importdir);
 
                 exService.shutdown();
                 try {
-                    exService.awaitTermination(180, TimeUnit.MINUTES);
+                    exService.awaitTermination(N2OConfig.getInstance().getTimeoutInMinutes(), TimeUnit.MINUTES);
                     log("All done..");
-                } catch(InterruptedException e) {
+                } catch (InterruptedException e) {
                     log.error("Query interrupted");
                 }
             }
         } catch (Exception e) {
+            importResults.setTerminationKO(e.getMessage());
             e.printStackTrace();
         } finally {
-            log.info("done (Undo delete)");
+            log("done (Undo delete)");
             deleteCSVFilesInImportsDir(importdir);
             importResults.setElementsLoaded(classesLoaded + individualsLoaded + objPropsLoaded + annotationPropertiesloaded + dataPropsLoaded);
         }
         return Stream.of(importResults);
     }
 
+    private void loadRelationshipsToNeoFromCSV(ExecutorService exService, File importdir) throws InterruptedException, java.util.concurrent.ExecutionException {
+        for (File f : importdir.listFiles()) {
+            String filename = f.getName();
+            if (filename.startsWith("relationship")) {
+                String fn = filename;
+                if (N2OConfig.getInstance().isTestmode()) {
+                    fn = "/" + new File(importdir, filename).getAbsolutePath();
+                    System.err.println("UNCOMMENT FILENAME");
+                }
+                String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
+                //TODO USING PERIODIC COMMIT 1000
+                String cypher = "USING PERIODIC COMMIT 5000\n" +
+                        "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
+                        "MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
+                        "MERGE (s)-[:" + type + "]->(e)";
+                log(f);
+                log(cypher);
+                final Future<String> cf = exService.submit(() -> {
+                    dbapi.execute(cypher);
+                    return "Finished: " + filename;
+                });
+                System.out.println(cf.get());
+                /*if(fn.contains("Individual")) {
+                    FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
+                    System.exit(0);
+                }*/
+            }
+        }
+    }
+
+    private void loadNodesToNeoFromCSV(ExecutorService exService, File importdir) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
+        for (File f : importdir.listFiles()) {
+            String filename = f.getName();
+            if (filename.startsWith("nodes_")) {
+                String fn = filename;
+                if (N2OConfig.getInstance().isTestmode()) {
+                    fn = "/" + new File(importdir, filename).getAbsolutePath();
+                    System.err.println("CURRENTLY RUNNING IN TESTMODE, UNCOMMENT BEFORE COMPILING");
+                    FileUtils.readLines(new File(importdir, filename), "utf-8").forEach(System.out::println);
+                }
+                String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
+                String cypher = "USING PERIODIC COMMIT 5000\n" +
+                        "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
+                        // OLD VERSION: "MERGE (n:Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"} SET n :" + type;
+                        "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses(type, "cl.") + " SET n :" + type;
+                log(cypher);
+                final Future<String> cf = exService.submit(() -> {
+                    dbapi.execute(cypher);
+                    return "Finished: " + filename;
+                });
+                System.out.println(cf.get());
+                /*if(fn.contains("Class")) {
+                    FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
+                }
+                else if(fn.contains("Indivi")) {
+                    FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
+                    System.exit(0);
+                }*/
+
+            }
+        }
+    }
+
+    private void prepareIndices() {
+        db.execute("CREATE INDEX ON :Individual(iri)");
+        db.execute("CREATE INDEX ON :Class(iri)");
+        db.execute("CREATE INDEX ON :ObjectProperty(iri)");
+        db.execute("CREATE INDEX ON :DataProperty(iri)");
+        db.execute("CREATE INDEX ON :AnnotationProperty(iri)");
+        db.execute("CREATE CONSTRAINT ON (c:Individual) ASSERT c.iri IS UNIQUE");
+        db.execute("CREATE CONSTRAINT ON (c:Class) ASSERT c.iri IS UNIQUE");
+        db.execute("CREATE CONSTRAINT ON (c:ObjectProperty) ASSERT c.iri IS UNIQUE");
+        db.execute("CREATE CONSTRAINT ON (c:DataProperty) ASSERT c.iri IS UNIQUE");
+        db.execute("CREATE CONSTRAINT ON (c:AnnotationProperty) ASSERT c.iri IS UNIQUE");
+    }
+
+    private File prepareImportDirectory() {
+        Map<String, String> params = dbapi.getDependencyResolver().resolveDependency(Config.class).getRaw();
+        String par_neo4jhome = "unsupported.dbms.directories.neo4j_home";
+        String par_importdirpath = "dbms.directories.import";
+        File importdir = new File(dbapi.getStoreDir(), "import");
+        log.info("Import dir: " + importdir.getAbsolutePath());
+        if (params.containsKey(par_neo4jhome) && params.containsKey(par_importdirpath)) {
+            String neo4j_home_path = params.get(par_neo4jhome);
+            String import_dir_path = params.get(par_importdirpath);
+            File i = new File(import_dir_path);
+            if (i.isAbsolute()) {
+                importdir = i;
+            } else {
+                importdir = new File(neo4j_home_path, import_dir_path);
+            }
+        } else {
+            log.error("Import directory (or base neo4j directory) not set.");
+        }
+        if (!importdir.exists()) {
+            log.error(importdir.getAbsolutePath() + " does not exist! Select valid import dir.");
+        } else {
+            deleteCSVFilesInImportsDir(importdir);
+        }
+        return importdir;
+    }
+
+    private IRI getOntologyIRI(@Name("url") String url, File importdir) {
+        IRI iri = null;
+        if (url.startsWith("file://")) {
+            File ontology = new File(importdir, url.replaceAll("file://", ""));
+            iri = IRI.create(ontology.toURI());
+        } else {
+            iri = IRI.create(url);
+        }
+        return iri;
+    }
+
+    private void prepareConfig(String url, String config, File importdir) throws IOException {
+        File configfile = new File(importdir, "config.yaml");
+        N2OConfig n2o_config = N2OConfig.getInstance();
+        if (config.startsWith("file://")) {
+            File config_ = new File(importdir, url.replaceAll("file://", ""));
+            FileUtils.copyFile(config_, configfile);
+        } else {
+            URL url_ = new URL(config);
+            FileUtils.copyURLToFile(
+                    url_,
+                    configfile);
+        }
+
+        Yaml yaml = new Yaml();
+        InputStream inputStream = new FileInputStream(configfile);
+        Map<String, Object> configs = yaml.load(inputStream);
+        if (configs.containsKey("strict")) {
+            if (configs.get("strict") instanceof Boolean) {
+                n2o_config.setStrict((Boolean) configs.get("strict"));
+                iriManager.setStrict((Boolean) configs.get("strict"));
+            } else {
+                log("CONFIG: strict value is not boolean");
+            }
+        }
+        if (configs.containsKey("property_mapping")) {
+            Object pm = configs.get("property_mapping");
+            if (pm instanceof ArrayList) {
+                for (Object pmm : ((ArrayList) pm)) {
+                    if (pmm instanceof HashMap) {
+                        HashMap<String, Object> pmmhm = (HashMap<String, Object>) pmm;
+                        if (pmmhm.containsKey("iris")) {
+                            ArrayList iris = (ArrayList) pmmhm.get("iris");
+                            for (Object iri : iris) {
+                                if (pmmhm.containsKey("id")) {
+                                    String id = pmmhm.get("id").toString();
+                                    n2o_config.setIriToSl(IRI.create(iri.toString()), id);
+                                    if (pmmhm.containsKey("datatype")) {
+                                        String datatype = pmmhm.get("datatype").toString();
+                                        n2o_config.setSlToDatatype(id, datatype);
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+            }
+        }
+        if (configs.containsKey("index")) {
+            if (configs.get("index") instanceof Boolean) {
+                N2OConfig.getInstance().setPrepareIndex((Boolean) configs.get("index"));
+            }
+        }
+
+        if (configs.containsKey("testmode")) {
+            if (configs.get("testmode") instanceof Boolean) {
+                N2OConfig.getInstance().setTestmode((Boolean) configs.get("testmode"));
+            }
+        }
+
+        if (configs.containsKey("batch")) {
+            if (configs.get("batch") instanceof Boolean) {
+                N2OConfig.getInstance().setBatch((Boolean) configs.get("batch"));
+            }
+        }
+
+        if (configs.containsKey("safe_label")) {
+            N2OConfig.getInstance().setSafeLabelMode(configs.get("safe_label").toString());
+        }
+
+    }
+
+    private String uncomposedSetClauses(String sl, String alias) {
+        StringBuilder sb = new StringBuilder();
+
+        for (String h : manager.getHeadersForNodes(sl)) {
+            if (h.equals("iri")) {
+                continue;
+            } else if (manager.getPrimaryEntityPropertyKeys().contains(h)) {
+                sb.append("SET n." + h + " = " + alias + h + " ");
+            } else {
+                String function = "to" + N2OConfig.getInstance().slToDatatype(h);
+
+                //TODO somevalue = [ x in split(cl.somevalue) | colaesce(apoc.util.toBoolean(x), apoc.util.toInteger(x), apoc.util.toFloat(x), x) ]
+                sb.append("SET n." + h + " = [value IN split(" + alias + h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\") | " + function + "(trim(value))] ");
+            }
+        }
+        return sb.toString().trim().replaceAll(",$", "");
+    }
+
     private void deleteCSVFilesInImportsDir(File importdir) {
-        if(importdir.exists()) {
+        if (importdir.exists()) {
             for (File f : importdir.listFiles()) {
-                if(f.getName().startsWith("nodes_")||f.getName().startsWith("relationship_")) {
+                if (f.getName().startsWith("nodes_") || f.getName().startsWith("relationship_")) {
                     FileUtils.deleteQuietly(f);
                 }
             }
@@ -248,17 +368,17 @@ public class OWL2OntologyImporter {
     private String composeSETQuery(Set<String> headersForNodes, String alias) {
         StringBuilder sb = new StringBuilder();
 
-        for(String h:headersForNodes) {
-            if(h.equals("iri")) {
+        for (String h : headersForNodes) {
+            if (h.equals("iri")) {
                 continue;
-            } else if(manager.getPrimaryEntityPropertyKeys().contains(h)) {
-                sb.append(h+":"+alias+h+", ");
+            } else if (manager.getPrimaryEntityPropertyKeys().contains(h)) {
+                sb.append(h + ":" + alias + h + ", ");
             } else {
 
-                sb.append(h+":split("+alias+h+",\""+OWL2NeoMapping.ANNOTATION_DELIMITER+"\"), ");
+                sb.append(h + ":split(" + alias + h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\"), ");
             }
         }
-        return sb.toString().trim().replaceAll(",$","");
+        return sb.toString().trim().replaceAll(",$", "");
     }
 
     private void log(Object msg) {
@@ -419,17 +539,32 @@ public class OWL2OntologyImporter {
         existential.get(from_n).get(roletype).add(to_n);
     }
 
+    /*
+    The role type is picked in the following order:
+    1. If set in config
+    2. In case of SL_Lose, if unsafe (clash), use QSL
+    3. else use whatever was configured (SL/QSL).
+     */
     private String getRoleType(N2OEntity rel) {
-        switch(relation_type) {
+        Optional<String> sl = N2OConfig.getInstance().iriToSl(IRI.create(rel.getIri()));
+        switch (N2OConfig.getInstance().safeLabelMode()) {
             case QSL:
                 return rel.getQualified_safe_label();
             case SL_STRICT:
-                return rel.getSafe_label();
-            case SL_LOSE:
-                if(manager.isUnsafeRelation(rel.getEntity())) {
-                    return rel.getQualified_safe_label();
+                if (sl.isPresent()) {
+                    return sl.get();
                 } else {
                     return rel.getSafe_label();
+                }
+            case SL_LOSE:
+                if (sl.isPresent()) {
+                    return sl.get();
+                } else {
+                    if (manager.isUnsafeRelation(rel.getEntity())) {
+                        return rel.getQualified_safe_label();
+                    } else {
+                        return rel.getSafe_label();
+                    }
                 }
             default:
                 return rel.getQualified_safe_label();
@@ -472,39 +607,56 @@ public class OWL2OntologyImporter {
             createNode(ne, props);
             countLoaded(e);
         }
-        if (!relation_type.equals(RELATION_TYPE.QSL))
-            manager.checkUniqueSafeLabel(relation_type);
+        if (!N2OConfig.getInstance().safeLabelMode().equals(QSL))
+            manager.checkUniqueSafeLabel(N2OConfig.getInstance().safeLabelMode());
     }
 
 
     private void extractIndividualAnnotations(OWLEntity e, Map<String, Object> props, OWLOntology o) {
         Collection<OWLAnnotation> annos = EntitySearcher.getAnnotations(e, o);
-        Map<String,String> annoString = new HashMap<>();
+        Map<String, String> propertyAnnotationValueMap = new HashMap<>();
         for (OWLAnnotation a : annos) {
 
             OWLAnnotationValue aval = a.annotationValue();
             if (!aval.asIRI().isPresent()) {
                 String p = neoPropertyKey(a);
-                String value = aval.asLiteral().or(df.getOWLLiteral("unknownX")).getLiteral();
+                Object value = extractValueFromOWLAnnotationValue(aval);
                 OWLAnnotationProperty ap = a.getProperty();
-                if(ap.equals(ap_neo4jLabel)) {
-                    manager.addNodeLabel(e,value);
-                }
-                else {
-                    if (!annoString.containsKey(p)) {
-                        annoString.put(p, "");
+                if (ap.equals(ap_neo4jLabel)) {
+                    manager.addNodeLabel(e, value.toString());
+                } else {
+                    if (!propertyAnnotationValueMap.containsKey(p)) {
+                        propertyAnnotationValueMap.put(p, "");
                     }
-                    if (value.contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
+                    if (value.toString().contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
                         System.err.println("Warning: annotation value " + value + " contains delimiter sequence " + OWL2NeoMapping.ANNOTATION_DELIMITER + " which will not be preserved!");
-                        value.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED, "|Content removed during Neo4J Import|");
+                        value = value.toString().replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED, "|Content removed during Neo4J Import|");
                     }
-                    annoString.put(p, annoString.get(p) + value + OWL2NeoMapping.ANNOTATION_DELIMITER);
+                    propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + value + OWL2NeoMapping.ANNOTATION_DELIMITER);
                 }
 
             }
         }
-        annoString.forEach((k,v)->props.put(k,v.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED+"$","")));
+        propertyAnnotationValueMap.forEach((k, v) -> props.put(k, v.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED + "$", "")));
         //props.forEach((k,v)->System.out.println("KK "+v));
+    }
+
+    private Object extractValueFromOWLAnnotationValue(OWLAnnotationValue aval) {
+        if (aval.isLiteral()) {
+            OWLLiteral literal = aval.asLiteral().or(df.getOWLLiteral("unknownX"));
+            if (literal.isBoolean()) {
+                return literal.parseBoolean();
+            } else if (literal.isDouble()) {
+                return literal.parseDouble();
+            } else if (literal.isFloat()) {
+                return literal.parseFloat();
+            } else if (literal.isInteger()) {
+                return literal.parseInteger();
+            } else {
+                return literal.getLiteral();
+            }
+        }
+        return "neo4j2owl_UnknownValue";
     }
 
     private void indexIndividualAnnotationsToEntities(OWLOntology o, OWLReasoner r) {
@@ -523,7 +675,7 @@ public class OWL2OntologyImporter {
     }
 
     private void createNode(N2OEntity e, Map<String, Object> props) {
-        if (batch) {
+        if (N2OConfig.getInstance().isBatch()) {
             manager.updateNode(e.getEntity(), props);
             /*
             props.put(OWL2NeoMapping.ATT_IRI,e.getIri());
@@ -532,7 +684,7 @@ public class OWL2OntologyImporter {
             */
         } else {
             String cypher = String.format("MERGE (p:%s { uri:'%s'}) SET p+={props}",
-                    Util.concat(e.getTypes(),":"),
+                    Util.concat(e.getTypes(), ":"),
                     e.getIri());
             Map<String, Object> params = new HashMap<>();
             params.put("props", props);
@@ -541,7 +693,7 @@ public class OWL2OntologyImporter {
     }
 
     private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, String rel, Map<String, Object> props) {
-        if (batch) {
+        if (N2OConfig.getInstance().isBatch()) {
             //inserter.createRelationship(nodeIndex.get(start_neo.getEntity()), nodeIndex.get(end_neo.getEntity()), () -> rel, props);
             manager.updateRelation(start_neo.getEntity(), end_neo.getEntity(), rel, props);
         } else {

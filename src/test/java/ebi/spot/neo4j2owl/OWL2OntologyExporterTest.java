@@ -21,10 +21,10 @@ import static org.junit.Assert.assertEquals;
  */
 public class OWL2OntologyExporterTest {
 
-    //@Test
+    @Test
     public void owl2Export() throws Exception {
         GraphDatabaseService db = prepareImporterExporterDB();
-        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/issue2_neo2owl.owl','n')");
+        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl','https://raw.githubusercontent.com/VirtualFlyBrain/neo4j2owl/master/src/test/resources/configs.yaml')");
         Result exportResult = db.execute("CALL ebi.spot.neo4j2owl.exportOWL()");
         System.out.println("Export Results");
         exportResult.stream().forEach(m->System.out.println(m.get("o")));

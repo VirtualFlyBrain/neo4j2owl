@@ -14,6 +14,7 @@ import org.semanticweb.owlapi.model.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -296,12 +297,29 @@ public class OWL2OntologyExporter {
      */
     private void addAnnotationForEntityAndAnnotationAndValueProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, OWLAnnotationProperty annop, Object aa) {
         if (aa.getClass().isArray()) {
+            aa = toObjectArray(aa);
             for (Object value : (Object[]) aa) {
-                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(),getLiteral(value))));
+                //System.out.println("AVV: " + value.getClass());
+                //System.out.println("IRI: " + annop.getIRI());
+                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), getLiteral(value))));
             }
         } else {
             changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(),getLiteral(aa))));
         }
+    }
+
+    /*
+    From https://stackoverflow.com/a/5608477/2451542
+     */
+    private Object[] toObjectArray(Object val){
+        if (val instanceof Object[])
+            return (Object[])val;
+        int arrlength = Array.getLength(val);
+        Object[] outputArray = new Object[arrlength];
+        for(int i = 0; i < arrlength; ++i){
+            outputArray[i] = Array.get(val, i);
+        }
+        return outputArray;
     }
 
     private OWLAnnotationValue getLiteral(Object value) {

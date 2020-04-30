@@ -26,7 +26,7 @@ public class OWL2OntologyImporterTest {
                 OWL2OntologyImporterTest.class.getClassLoader().getResource("moviesontology.owl").toURI()
                 + "','RDF/XML')"); */
 
-        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl','n')");
+        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl','https://raw.githubusercontent.com/VirtualFlyBrain/neo4j2owl/master/src/test/resources/configs.yaml')");
         System.out.println(db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
         Result res = db.execute("MATCH (n)-[p]->(x)  RETURN p");
         while(res.hasNext()) {
