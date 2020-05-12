@@ -2,19 +2,19 @@ package ebi.spot.neo4j2owl;
 
 import org.semanticweb.owlapi.model.IRI;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class N2OConfig {
     private boolean strict = true;
     private boolean batch = true;
     private boolean testmode = true;
+    private boolean oboassumption = false;
     private RELATION_TYPE relation_type = RELATION_TYPE.SL_LOSE;
     private boolean index = false;
     private long timeoutinminutes = 180;
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
+    private Set<IRI> oboProperties = new HashSet<>();
 
 
     private static N2OConfig config = null;
@@ -91,12 +91,29 @@ public class N2OConfig {
     public void setSafeLabelMode(String sl_mode) {
         if(sl_mode.equals("strict")) {
             relation_type = RELATION_TYPE.SL_STRICT;
-        } else if(sl_mode.equals("lose")) {
+        } else if(sl_mode.equals("loose")) {
             relation_type = RELATION_TYPE.SL_LOSE;
         } else if(sl_mode.equals("qsl")) {
             relation_type = RELATION_TYPE.QSL;
         } else {
             System.out.println("Warning: "+sl_mode+ " not a valid mode, keeping default");
         }
+    }
+
+    public void addPropertyForOBOAssumption(IRI prop) {
+        this.oboProperties.add(prop);
+    }
+
+    public Set<IRI> getOboAssumptionProperties() {
+        return new HashSet<>(this.oboProperties);
+    }
+
+
+    public boolean isOBOAssumption() {
+        return this.oboassumption;
+    }
+
+    public void setOBOAssumption(boolean oboassumption) {
+        this.oboassumption = oboassumption;
     }
 }

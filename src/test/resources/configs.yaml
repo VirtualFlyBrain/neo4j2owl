@@ -1,8 +1,13 @@
 strict: false
 index: false
 testmode: false
+obo_assumption: true
 batch: true
-safe_label: lose
+safe_label: loose
+obo_assumption_overwrite_defaults:
+  - iris:
+      - "http://www.geneontology.org/formats/oboInOwl#hasDbXref"
+      - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"
 property_mapping:
   - iris:
       - "http://purl.obolibrary.org/obo/so#part_of"
