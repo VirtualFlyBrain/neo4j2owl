@@ -1,6 +1,8 @@
 package ebi.spot.neo4j2owl;
 
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 
 import java.util.HashSet;
@@ -82,6 +84,15 @@ public class N2OEntity {
 
     public long getId() {
         return id;
+    }
+
+    public String getEntityType() {
+        if (getEntity() instanceof OWLAnnotationProperty) {
+            return "Annotation";
+        } else if (getEntity() instanceof OWLObjectProperty) {
+            return "Related";
+        }
+        return "";
     }
 
     public void addLabels(Set<String> labels) {

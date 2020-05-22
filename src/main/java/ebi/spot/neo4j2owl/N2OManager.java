@@ -18,9 +18,11 @@ enum RELATION_TYPE
 
 public class N2OManager {
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
+    private final Map<String,N2OEntity> qslEntityIndex = new HashMap<>();
+    private final Map<N2OEntity,String> entityQSLIndex = new HashMap<>();
     private final Map<OWLEntity, Set<String>> nodeLabels = new HashMap<>();
     private final Map<OWLEntity, Map<String, Object>> node_properties = new HashMap<>();
-    private final Map<N2ORelationship, Map<String, Object>> relationships = new HashMap<>();
+    private final Map<N2ORelationship, Map<String, Object>> relationship_properties = new HashMap<>();
     private final Set<String> primaryEntityPropertyKeys = new HashSet<>();
     private final Set<OWLEntity> entitiesWithClashingSafeLabels = new HashSet<>();
     private final IRIManager curies;
@@ -48,15 +50,17 @@ public class N2OManager {
         return e;
     }
 
-    public N2ORelationship updateRelation(OWLEntity start, OWLEntity end, String relation, Map<String, Object> props) {
-        N2OEntity es = getNode(start);
-        N2OEntity ee = getNode(end);
+    public N2ORelationship updateRelation(N2OEntity start, N2OEntity end, Map<String,Object> rel_data) {
 
-        N2ORelationship rel = new N2ORelationship(es.getEntity(), ee.getEntity(), relation);
-        if (!relationships.containsKey(rel)) {
-            relationships.put(rel, new HashMap<>());
+        N2ORelationship rel = new N2ORelationship(start.getEntity(), end.getEntity(), rel_data.get("id").toString());
+        if (!relationship_properties.containsKey(rel)) {
+            relationship_properties.put(rel, new HashMap<>());
         }
-        relationships.get(rel).putAll(props);
+        for(String k:rel_data.keySet()) {
+            if (k!="id") {
+                relationship_properties.get(rel).put(k,rel_data.get(k));
+            }
+        }
         return rel;
     }
 
@@ -67,8 +71,10 @@ public class N2OManager {
             nextavailableid++;
             //System.out.println(nodeindex.get(e));
         }
-        nodeindex.get(e).addLabels(getLabels(e));
-        return nodeindex.get(e);
+        N2OEntity en = nodeindex.get(e);
+        en.addLabels(getLabels(e));
+        qslEntityIndex.put(prepareQSL(en),en);
+        return en;
     }
 
     private Set<String> getLabels(OWLEntity e) {
@@ -88,9 +94,8 @@ public class N2OManager {
     }
 
     private void processExportForRelationships(File dir) {
-        Map<String, List<N2ORelationship>> relationships = new HashMap<>();
-        indexRelationshipsByType(prop_columns, relationships);
-        Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(prop_columns, relationships);
+        Map<String, List<N2ORelationship>> relationships = indexRelationshipsByType();
+        Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(relationships);
         writeToFile(dir, dataout_rel, "relationship");
     }
 
@@ -110,18 +115,24 @@ public class N2OManager {
         }
     }
 
-    private void indexRelationshipsByType(Map<String, Set<String>> columns, Map<String, List<N2ORelationship>> relationships) {
-        for (N2ORelationship e : this.relationships.keySet()) {
-            String type = e.getType();
-            if (!columns.containsKey(type)) {
-                columns.put(type, new HashSet<>());
-            }
-            columns.get(type).addAll(this.relationships.get(e).keySet());
+    private Map<String, List<N2ORelationship>> indexRelationshipsByType() {
+        Map<String, List<N2ORelationship>> relationships = new HashMap<>();
+        for (N2ORelationship e : this.relationship_properties.keySet()) {
+            String type = e.getRelationId();
+            indexRelationshipColumns(e, type);
             if (!relationships.containsKey(type)) {
                 relationships.put(type, new ArrayList<>());
             }
             relationships.get(type).add(e);
         }
+        return relationships;
+    }
+
+    private void indexRelationshipColumns(N2ORelationship e, String type) {
+        if (!this.prop_columns.containsKey(type)) {
+            prop_columns.put(type, new HashSet<>());
+        }
+        prop_columns.get(type).addAll(this.relationship_properties.get(e).keySet());
     }
 
     public OWLEntity typedEntity(IRI iri, OWLOntology o) {
@@ -148,20 +159,20 @@ public class N2OManager {
     }
 
 
-    private Map<String, List<String>> prepareRelationCSVsForExport(Map<String, Set<String>> columns, Map<String, List<N2ORelationship>> relationships) {
+    private Map<String, List<String>> prepareRelationCSVsForExport(Map<String, List<N2ORelationship>> relationships) {
         Map<String, List<String>> dataout = new HashMap<>();
-        for (String type : columns.keySet()) {
+        for (String type : prop_columns.keySet()) {
             List<String> csvout = new ArrayList<>();
-            List<String> columns_sorted = new ArrayList<>(columns.get(type));
+            List<String> columns_sorted = new ArrayList<>(prop_columns.get(type));
             csvout.add(constructHeaderForRelationships(columns_sorted));
             Collections.sort(columns_sorted);
             for (N2ORelationship e : relationships.get(type)) {
                 StringBuilder sb = new StringBuilder();
-                Map<String, Object> rec = this.relationships.get(e);
+                Map<String, Object> rec = this.relationship_properties.get(e);
                 writeCSVRowFromColumns(columns_sorted, sb, rec);
                 sb.append(nodeindex.get(e.getStart()).getIri() + ",");
                 sb.append(nodeindex.get(e.getEnd()).getIri() + ",");
-                //sb.append(e.getType());
+                //sb.append(e.getRelationId());
                 String s = sb.toString();
                 csvout.add(s.substring(0, s.length() - 1));
             }
@@ -244,8 +255,9 @@ public class N2OManager {
     }
 
     public Set<String> getHeadersForNodes(String type) {
-        //System.out.println(type);
-        return node_columns.get(type);
+        Set<String> headers = node_columns.get(type);
+        headers.remove("iri");
+        return headers;
     }
 
     public Set<String> getHeadersForRelationships(String type) {
@@ -294,6 +306,55 @@ public class N2OManager {
                 System.out.println("WARNING: "+msg);
             }
         }
+    }
+
+    /*
+    The entity id, or role type, is picked in the following order:
+    1. If set in config
+    2. In case of SL_Lose, if unsafe (clash), use QSL
+    3. else use whatever was configured (SL/QSL).
+     */
+    public String prepareQSL(N2OEntity rel) {
+        if(entityQSLIndex.containsKey(rel)) {
+            return entityQSLIndex.get(rel);
+        }
+        Optional<String> sl = N2OConfig.getInstance().iriToSl(IRI.create(rel.getIri()));
+        String sls = rel.getQualified_safe_label();
+        switch (N2OConfig.getInstance().safeLabelMode()) {
+            case QSL:
+                sls = rel.getQualified_safe_label();
+                break;
+            case SL_STRICT:
+                if (sl.isPresent()) {
+                    sls = sl.get();
+                } else {
+                    sls = rel.getSafe_label();
+                }
+                break;
+            case SL_LOSE:
+                if (sl.isPresent()) {
+                    sls = sl.get();
+                } else {
+                    if (this.isUnsafeRelation(rel.getEntity())) {
+                        sls = rel.getQualified_safe_label();
+                    } else {
+                        sls = rel.getSafe_label();
+                    }
+                }
+                break;
+            default:
+                sls = rel.getQualified_safe_label();
+                break;
+        }
+        entityQSLIndex.put(rel,sls);
+        return sls;
+    }
+
+    public Optional<N2OEntity> fromSL(String sl) {
+        if(qslEntityIndex.containsKey(sl)) {
+            return Optional.of(qslEntityIndex.get(sl));
+        }
+        return Optional.empty();
     }
 
     public boolean isUnsafeRelation(OWLEntity entity) {

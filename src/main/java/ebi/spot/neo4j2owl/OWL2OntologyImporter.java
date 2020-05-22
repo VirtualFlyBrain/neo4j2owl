@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl;
 
+import com.google.common.collect.Iterables;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.kernel.configuration.Config;
@@ -27,10 +28,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ebi.spot.neo4j2owl.RELATION_TYPE.QSL;
-import static ebi.spot.neo4j2owl.RELATION_TYPE.SL_STRICT;
 
 /**
  * Created by Nicolas Matentzoglu for EMBL-EBI and Virtual Fly Brain. Code roughly based on jbarrasa neosemantics.
@@ -50,11 +51,10 @@ public class OWL2OntologyImporter {
 
     private static OWLDataFactory df = OWLManager.getOWLDataFactory();
     private static OWLAnnotationProperty ap_neo4jLabel = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
-    private static final IRIManager iriManager = new IRIManager();
+    private static IRIManager iriManager;
+    private static Set<OWLClass> filterout;
+    private static Map<N2OEntity, Map<String, Set<N2OEntity>>> existential;
 
-    private static Set<OWLClass> filterout = new HashSet<>();
-
-    private static Map<N2OEntity, Map<String, Set<N2OEntity>>> existential = new HashMap<>();
     private static N2OManager manager;
 
     private static int classesLoaded = 0;
@@ -75,6 +75,7 @@ public class OWL2OntologyImporter {
 
         start = System.currentTimeMillis();
 
+
         final ExecutorService exService = Executors.newSingleThreadExecutor();
 
         File importdir = prepareImportDirectory();
@@ -92,55 +93,21 @@ public class OWL2OntologyImporter {
             //inserter = BatchInserters.inserter( inserttmp);
             log("Loading Ontology");
             OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(getOntologyIRI(url, importdir));
-            manager = new N2OManager(o, iriManager);
-
-            log("Preparing reasoner");
-            OWLReasoner r = new ElkReasonerFactory().createReasoner(o);
-            filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLThing());
-            filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
-            filterout.addAll(r.getUnsatisfiableClasses().getEntities());
-
-            log("Preparing of Indices: " + N2OConfig.getInstance().prepareIndex());
-            if (N2OConfig.getInstance().prepareIndex()) {
-                prepareIndices();
+            log("Size ontology: "+o.getAxiomCount());
+            List<OWLOntology> chunks = chunk(o,N2OConfig.getInstance().getBatch_size());
+            for(OWLOntology c: chunks) {
+                importOntology(exService, importdir, c);
+            }
+            exService.shutdown();
+            try {
+                log("Stopping executor..");
+                exService.awaitTermination(N2OConfig.getInstance().getTimeoutInMinutes(), TimeUnit.MINUTES);
+                log("All done..");
+            } catch (InterruptedException e) {
+                log.error("Query interrupted");
             }
 
-            log("Extracting signature");
-            extractSignature(o);
-            log("Extracting annotations to literals");
-            indexIndividualAnnotationsToEntities(o, r);
-            log("Extracting subclass relations");
-            addSubclassRelations(o, r);
-            log("Extracting class assertions");
-            addClassAssertions(o, r);
-            log("Extracting existential relations");
-            addExistentialRelationships(o, r);
-            if (N2OConfig.getInstance().isBatch()) {
-                log("Loading in Database: " + importdir.getAbsolutePath());
-
-                manager.exportOntologyToCSV(importdir);
-
-                exService.submit(() -> {
-                    dbapi.execute("CREATE INDEX ON :Entity(iri)");
-                    return "done";
-                });
-
-                log("Loading nodes to neo from CSV.");
-                loadNodesToNeoFromCSV(exService, importdir);
-
-                log("Loading relationships to neo from CSV.");
-                loadRelationshipsToNeoFromCSV(exService, importdir);
-
-                exService.shutdown();
-                try {
-                    exService.awaitTermination(N2OConfig.getInstance().getTimeoutInMinutes(), TimeUnit.MINUTES);
-                    log("All done..");
-                } catch (InterruptedException e) {
-                    log.error("Query interrupted");
-                }
-            }
         } catch (Exception e) {
-            importResults.setTerminationKO(e.getMessage());
             e.printStackTrace();
         } finally {
             log("done (Undo delete)");
@@ -150,21 +117,92 @@ public class OWL2OntologyImporter {
         return Stream.of(importResults);
     }
 
-    private void loadRelationshipsToNeoFromCSV(ExecutorService exService, File importdir) throws InterruptedException, java.util.concurrent.ExecutionException {
+    private List<OWLOntology> chunk(OWLOntology o,int chunksize) {
+        List<OWLOntology> chunks = new ArrayList<>();
+        if(o.getAxioms(Imports.INCLUDED).size()<chunksize) {
+            chunks.add(o);
+        }
+        else {
+            Set<OWLAxiom> declarations = new HashSet<>(o.getAxioms(AxiomType.DECLARATION));
+            Set<OWLAxiom> axioms = o.getAxioms(Imports.INCLUDED);
+            axioms.removeAll(declarations);
+            for (List<OWLAxiom> partition : Iterables.partition(axioms, chunksize)) {
+                try {
+                    chunks.add(OWLManager.createOWLOntologyManager().createOntology(new HashSet<>(partition)));
+                } catch (OWLOntologyCreationException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+
+        return chunks;
+    }
+
+    private void importOntology(ExecutorService exService, File importdir, OWLOntology o) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
+        iriManager = new IRIManager();
+        iriManager.setStrict(N2OConfig.getInstance().isStrict());
+        existential = new HashMap<>();
+        filterout = new HashSet<>();
+
+        manager = new N2OManager(o, iriManager);
+
+        log("Preparing reasoner");
+        OWLReasoner r = new ElkReasonerFactory().createReasoner(o);
+        filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLThing());
+        filterout.add(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
+        filterout.addAll(r.getUnsatisfiableClasses().getEntities());
+
+        log("Preparing of Indices: " + N2OConfig.getInstance().prepareIndex());
+        if (N2OConfig.getInstance().prepareIndex()) {
+            prepareIndices();
+        }
+
+        log("Extracting signature");
+        extractSignature(o);
+        log("Extracting annotations to literals");
+        indexIndividualAnnotationsToEntities(o, r);
+        log("Extracting subclass relations");
+        addSubclassRelations(o, r);
+        log("Extracting class assertions");
+        addClassAssertions(o, r);
+        log("Extracting existential relations");
+        addExistentialRelationships(o, r);
+        if (N2OConfig.getInstance().isBatch()) {
+            log("Loading in Database: " + importdir.getAbsolutePath());
+
+            manager.exportOntologyToCSV(importdir);
+
+            exService.submit(() -> {
+                dbapi.execute("CREATE INDEX ON :Entity(iri)");
+                return "done";
+            });
+
+            log("Loading nodes to neo from CSV.");
+            loadNodesToNeoFromCSV(exService, importdir);
+
+            log("Loading relationships to neo from CSV.");
+            loadRelationshipsToNeoFromCSV(exService, importdir);
+            log("Loading done..");
+        }
+    }
+
+    private void loadRelationshipsToNeoFromCSV(ExecutorService exService, File importdir) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
         for (File f : importdir.listFiles()) {
             String filename = f.getName();
             if (filename.startsWith("relationship")) {
                 String fn = filename;
                 if (N2OConfig.getInstance().isTestmode()) {
                     fn = "/" + new File(importdir, filename).getAbsolutePath();
-                    System.err.println("UNCOMMENT FILENAME");
+                    System.err.println("CURRENTLY RUNNING IN TESTMODE, UNCOMMENT BEFORE COMPILING");
+                    FileUtils.readLines(new File(importdir, filename), "utf-8").forEach(System.out::println);
                 }
                 String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
                 //TODO USING PERIODIC COMMIT 1000
                 String cypher = "USING PERIODIC COMMIT 5000\n" +
                         "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
                         "MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
-                        "MERGE (s)-[:" + type + "]->(e)";
+                        "MERGE (s)-[r:"+type+"]->(e) "+ uncomposedSetClauses("cl", "r",manager.getHeadersForRelationships(type));
                 log(f);
                 log(cypher);
                 final Future<String> cf = exService.submit(() -> {
@@ -194,7 +232,7 @@ public class OWL2OntologyImporter {
                 String cypher = "USING PERIODIC COMMIT 5000\n" +
                         "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
                         // OLD VERSION: "MERGE (n:Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"} SET n :" + type;
-                        "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses(type, "cl.") + " SET n :" + type;
+                        "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses("cl","n",manager.getHeadersForNodes(type)) + " SET n :" + type;
                 log(cypher);
                 final Future<String> cf = exService.submit(() -> {
                     dbapi.execute(cypher);
@@ -282,7 +320,6 @@ public class OWL2OntologyImporter {
         if (configs.containsKey("strict")) {
             if (configs.get("strict") instanceof Boolean) {
                 n2o_config.setStrict((Boolean) configs.get("strict"));
-                iriManager.setStrict((Boolean) configs.get("strict"));
             } else {
                 log("CONFIG: strict value is not boolean");
             }
@@ -318,9 +355,38 @@ public class OWL2OntologyImporter {
             }
         }
 
+        if (configs.containsKey("obo_assumption")) {
+            if (configs.get("obo_assumption") instanceof Boolean) {
+                N2OConfig.getInstance().setOBOAssumption((Boolean) configs.get("obo_assumption"));
+            }
+        }
+
+        if (configs.containsKey("batch_size")) {
+            if (configs.get("batch_size") instanceof Integer) {
+                N2OConfig.getInstance().setBatchSize((Integer) configs.get("batch_size"));
+            } else if (configs.get("batch_size") instanceof Long) {
+                N2OConfig.getInstance().setBatchSize((Integer) configs.get("batch_size"));
+            }
+        }
+
+        if (configs.containsKey("obo_assumption_overwrite_defaults")) {
+            if (configs.get("obo_assumption_overwrite_defaults") instanceof HashMap) {
+                HashMap<String, Object> pmmhm = (HashMap<String, Object>) configs.get("obo_assumption_overwrite_defaults");
+                if (pmmhm.containsKey("iris")) {
+                    ArrayList iris = (ArrayList) pmmhm.get("iris");
+                    for (Object iri : iris) {
+                        N2OConfig.getInstance().addPropertyForOBOAssumption(IRI.create(iri.toString()));
+                    }
+                }
+                N2OConfig.getInstance().setOBOAssumption((Boolean) configs.get("obo_assumption"));
+            }
+        }
+
         if (configs.containsKey("testmode")) {
             if (configs.get("testmode") instanceof Boolean) {
                 N2OConfig.getInstance().setTestmode((Boolean) configs.get("testmode"));
+                //System.err.println("TESTMODE");
+                //N2OConfig.getInstance().setTestmode(true);
             }
         }
 
@@ -336,19 +402,16 @@ public class OWL2OntologyImporter {
 
     }
 
-    private String uncomposedSetClauses(String sl, String alias) {
+    private String uncomposedSetClauses(String csvalias, String neovar, Set<String> headers) {
         StringBuilder sb = new StringBuilder();
-
-        for (String h : manager.getHeadersForNodes(sl)) {
-            if (h.equals("iri")) {
-                continue;
-            } else if (manager.getPrimaryEntityPropertyKeys().contains(h)) {
-                sb.append("SET n." + h + " = " + alias + h + " ");
+        for (String h : headers) {
+           log(h);
+            if (manager.getPrimaryEntityPropertyKeys().contains(h)) {
+                sb.append("SET "+neovar+"." + h + " = " + csvalias +"."+ h + " ");
             } else {
                 String function = "to" + N2OConfig.getInstance().slToDatatype(h);
-
                 //TODO somevalue = [ x in split(cl.somevalue) | colaesce(apoc.util.toBoolean(x), apoc.util.toInteger(x), apoc.util.toFloat(x), x) ]
-                sb.append("SET n." + h + " = [value IN split(" + alias + h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\") | " + function + "(trim(value))] ");
+                sb.append("SET "+neovar+"." + h + " = [value IN split(" + csvalias +"."+ h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\") | " + function + "(trim(value))] ");
             }
         }
         return sb.toString().trim().replaceAll(",$", "");
@@ -365,7 +428,7 @@ public class OWL2OntologyImporter {
     }
 
 
-    private String composeSETQuery(Set<String> headersForNodes, String alias) {
+    /*private String composeSETQuery(Set<String> headersForNodes, String alias) {
         StringBuilder sb = new StringBuilder();
 
         for (String h : headersForNodes) {
@@ -379,7 +442,7 @@ public class OWL2OntologyImporter {
             }
         }
         return sb.toString().trim().replaceAll(",$", "");
-    }
+    }*/
 
     private void log(Object msg) {
         log.info(msg.toString());
@@ -401,7 +464,8 @@ public class OWL2OntologyImporter {
 
                 //System.out.println(e+" sub: "+sub);
                 Map<String, Object> props = new HashMap<>();
-                updateRelationship(manager.getNode(sub), manager.getNode(e), OWL2NeoMapping.RELTYPE_SUBCLASSOF, props);
+                props.put("id",OWL2NeoMapping.RELTYPE_SUBCLASSOF);
+                updateRelationship(manager.getNode(sub), manager.getNode(e), props);
             }
         }
     }
@@ -421,10 +485,17 @@ public class OWL2OntologyImporter {
                 continue;
             }
             for (String rel : existential.get(e).keySet()) {
+                Optional<N2OEntity> relEntity = manager.fromSL(rel);
                 for (N2OEntity ec : existential.get(e).get(rel)) {
 
                     Map<String, Object> props = new HashMap<>();
-                    updateRelationship(e, ec, rel, props);
+                    props.put("id",rel);
+                    if(relEntity.isPresent()) {
+                        props.put("iri", relEntity.get().getIri());
+                        props.put("type", relEntity.get().getEntityType());
+                        props.put("label",relEntity.get().getLabel());
+                    }
+                    updateRelationship(e, ec, props);
                 }
             }
         }
@@ -519,7 +590,7 @@ public class OWL2OntologyImporter {
         }
         N2OEntity from_n = manager.getNode(from);
         N2OEntity to_n = manager.getNode(to);
-        String roletype = getRoleType(rel);
+        String roletype = manager.prepareQSL(rel);
 
         /*
         System.out.println(roletype);
@@ -539,37 +610,7 @@ public class OWL2OntologyImporter {
         existential.get(from_n).get(roletype).add(to_n);
     }
 
-    /*
-    The role type is picked in the following order:
-    1. If set in config
-    2. In case of SL_Lose, if unsafe (clash), use QSL
-    3. else use whatever was configured (SL/QSL).
-     */
-    private String getRoleType(N2OEntity rel) {
-        Optional<String> sl = N2OConfig.getInstance().iriToSl(IRI.create(rel.getIri()));
-        switch (N2OConfig.getInstance().safeLabelMode()) {
-            case QSL:
-                return rel.getQualified_safe_label();
-            case SL_STRICT:
-                if (sl.isPresent()) {
-                    return sl.get();
-                } else {
-                    return rel.getSafe_label();
-                }
-            case SL_LOSE:
-                if (sl.isPresent()) {
-                    return sl.get();
-                } else {
-                    if (manager.isUnsafeRelation(rel.getEntity())) {
-                        return rel.getQualified_safe_label();
-                    } else {
-                        return rel.getSafe_label();
-                    }
-                }
-            default:
-                return rel.getQualified_safe_label();
-        }
-    }
+
 
     private void addClassAssertions(OWLOntology o, OWLReasoner r) {
         Set<OWLNamedIndividual> entities = new HashSet<>(o.getIndividualsInSignature(Imports.INCLUDED));
@@ -582,7 +623,8 @@ public class OWL2OntologyImporter {
                     continue;
                 }
                 Map<String, Object> props = new HashMap<>();
-                updateRelationship(manager.getNode(e), manager.getNode(type), OWL2NeoMapping.RELTYPE_INSTANCEOF, props);
+                props.put("id",OWL2NeoMapping.RELTYPE_INSTANCEOF);
+                updateRelationship(manager.getNode(e), manager.getNode(type), props);
             }
         }
     }
@@ -613,16 +655,16 @@ public class OWL2OntologyImporter {
 
 
     private void extractIndividualAnnotations(OWLEntity e, Map<String, Object> props, OWLOntology o) {
-        Collection<OWLAnnotation> annos = EntitySearcher.getAnnotations(e, o);
+        //Collection<OWLAnnotation> annos = EntitySearcher.getAnnotations(e, o);
+        Collection<OWLAnnotationAssertionAxiom> annos = EntitySearcher.getAnnotationAssertionAxioms(e, o);
         Map<String, String> propertyAnnotationValueMap = new HashMap<>();
-        for (OWLAnnotation a : annos) {
-
+        for (OWLAnnotationAssertionAxiom ax : annos) {
+            OWLAnnotation a = ax.getAnnotation();
             OWLAnnotationValue aval = a.annotationValue();
             if (!aval.asIRI().isPresent()) {
                 String p = neoPropertyKey(a);
                 Object value = extractValueFromOWLAnnotationValue(aval);
-                OWLAnnotationProperty ap = a.getProperty();
-                if (ap.equals(ap_neo4jLabel)) {
+                if (a.getProperty().equals(ap_neo4jLabel)) {
                     manager.addNodeLabel(e, value.toString());
                 } else {
                     if (!propertyAnnotationValueMap.containsKey(p)) {
@@ -632,7 +674,38 @@ public class OWL2OntologyImporter {
                         System.err.println("Warning: annotation value " + value + " contains delimiter sequence " + OWL2NeoMapping.ANNOTATION_DELIMITER + " which will not be preserved!");
                         value = value.toString().replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED, "|Content removed during Neo4J Import|");
                     }
-                    propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + value + OWL2NeoMapping.ANNOTATION_DELIMITER);
+                    Set<OWLAnnotation> axiomAnnotations = ax.getAnnotations();
+                    if (!axiomAnnotations.isEmpty() && N2OConfig.getInstance().isOBOAssumption()) {
+                        Map<String,Set<Object>> axAnnos = new HashMap<>();
+                        for (OWLAnnotation axAnn : axiomAnnotations) {
+                            OWLAnnotationValue avalAx = axAnn.annotationValue();
+                            OWLAnnotationProperty ap = axAnn.getProperty();
+
+                            if (!avalAx.asIRI().isPresent() && N2OConfig.getInstance().isPropertyInOBOAssumption(ap)) {
+                                Object valueAxAnn = extractValueFromOWLAnnotationValue(avalAx);
+                                String pAx = neoPropertyKey(axAnn);
+                                if (valueAxAnn instanceof String) {
+                                    valueAxAnn = valueAxAnn.toString().replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED,
+                                            "|Content removed during Neo4J Import|");
+                                    valueAxAnn = String.format("'%s'",valueAxAnn);
+                                }
+                                //dbxref: [], seeAlso: []]
+                                if(!axAnnos.containsKey(pAx)) {
+                                    axAnnos.put(pAx,new HashSet<>());
+                                }
+                                axAnnos.get(pAx).add(valueAxAnn);
+                            }
+                        }
+                        String valueAnnotated = String.format("{ value: \"%s\", annotations: [",value);
+                        for(String axAnnosRel:axAnnos.keySet()) {
+                            String va = String.join(",", axAnnos.get(axAnnosRel).stream().map(Object::toString).collect(Collectors.toSet()));
+                            valueAnnotated += String.format("{ %s: [ %s ]}",axAnnosRel,va);
+                        }
+                        valueAnnotated += "]}";
+                        propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + valueAnnotated + OWL2NeoMapping.ANNOTATION_DELIMITER);
+                    } else {
+                        propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + value + OWL2NeoMapping.ANNOTATION_DELIMITER);
+                    }
                 }
 
             }
@@ -679,7 +752,7 @@ public class OWL2OntologyImporter {
             manager.updateNode(e.getEntity(), props);
             /*
             props.put(OWL2NeoMapping.ATT_IRI,e.getIri());
-            long id = inserter.createNode(props, ()->e.getType());
+            long id = inserter.createNode(props, ()->e.getRelationId());
             nodeIndex.put(e.getEntity(),id);
             */
         } else {
@@ -692,25 +765,25 @@ public class OWL2OntologyImporter {
         }
     }
 
-    private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, String rel, Map<String, Object> props) {
+    private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, Map<String,Object> rel) {
         if (N2OConfig.getInstance().isBatch()) {
             //inserter.createRelationship(nodeIndex.get(start_neo.getEntity()), nodeIndex.get(end_neo.getEntity()), () -> rel, props);
-            manager.updateRelation(start_neo.getEntity(), end_neo.getEntity(), rel, props);
+            manager.updateRelation(start_neo, end_neo, rel);
         } else {
             String cypher = String.format(
                     "MATCH (p { uri:'%s'}), (c { uri:'%s'}) CREATE (p)-[:%s]->(c)",
                     // c can be a class or an object property
-                    start_neo.getIri(), end_neo.getIri(), rel);
+                    start_neo.getIri(), end_neo.getIri(), rel.get("id"));
 
             Map<String, Object> params = new HashMap<>();
-            params.put("props", props);
+            //params.put("props", props);
             db.execute(cypher, params);
         }
     }
 
     private String neoPropertyKey(OWLAnnotation a) {
         N2OEntity n = manager.getNode(a.getProperty());
-        String key = getRoleType(n);
+        String key = manager.prepareQSL(n);
         return key;
     }
 

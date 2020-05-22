@@ -1,6 +1,7 @@
 package ebi.spot.neo4j2owl;
 
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 
 import java.util.*;
 
@@ -12,6 +13,7 @@ public class N2OConfig {
     private RELATION_TYPE relation_type = RELATION_TYPE.SL_LOSE;
     private boolean index = false;
     private long timeoutinminutes = 180;
+    private int batch_size = 999000000;
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
     private Set<IRI> oboProperties = new HashSet<>();
@@ -115,5 +117,21 @@ public class N2OConfig {
 
     public void setOBOAssumption(boolean oboassumption) {
         this.oboassumption = oboassumption;
+    }
+
+    public boolean isStrict() {
+        return this.strict;
+    }
+
+    public boolean isPropertyInOBOAssumption(OWLAnnotationProperty ap) {
+        return this.getOboAssumptionProperties().contains(ap.getIRI());
+    }
+
+    public void setBatchSize(int batch_size) {
+        this.batch_size = batch_size;
+    }
+
+    public int getBatch_size() {
+        return this.batch_size;
     }
 }

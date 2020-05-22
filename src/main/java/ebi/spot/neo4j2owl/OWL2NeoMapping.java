@@ -8,8 +8,8 @@ public class OWL2NeoMapping {
     public static final String NODETYPE_OWLOBJECTPROPERTY = "ObjectProperty";
     public static final String NODETYPE_OWLANNOTATIONPROPERTY = "AnnotationProperty";
     public static final String NODETYPE_OWLDATAPROPERTY = "DataProperty";
-    public static final String RELTYPE_SUBCLASSOF = "SubClassOf";
-    public static final String RELTYPE_INSTANCEOF = "Type";
+    public static final String RELTYPE_SUBCLASSOF = "SUBCLASSOF";
+    public static final String RELTYPE_INSTANCEOF = "INSTANCEOF";
     public static final String NEO4J_LABEL = "http://neo4j.com#nodeLabel";
     public static final String NEO4J_UNMAPPED_PROPERTY_PREFIX_URI = "http://neo4j.com/property#";
 

@@ -34,11 +34,11 @@ public class OWL2OntologyExporter {
 
     static OWLDataFactory df = OWLManager.getOWLDataFactory();
     //static IRIManager iriManager = new IRIManager();
-    static N2OEntityManager n2OEntityManager = new N2OEntityManager();
-    static Set<String> qsls_with_no_matching_properties = new HashSet<>();
+    static N2OEntityManager n2OEntityManager;
+    static Set<String> qsls_with_no_matching_properties;
 
 
-    static long start = System.currentTimeMillis();
+    static long start;
 
 
     private void log(Object msg) {
@@ -53,6 +53,9 @@ public class OWL2OntologyExporter {
 
     @Procedure(mode = Mode.WRITE)
     public Stream<OntologyReturnValue> exportOWL() throws Exception { //@Name("file") String fileName
+        n2OEntityManager = new N2OEntityManager();
+        qsls_with_no_matching_properties = new HashSet<>();
+        start = System.currentTimeMillis();
         try {
             OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 
