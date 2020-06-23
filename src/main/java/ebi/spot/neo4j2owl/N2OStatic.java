@@ -19,7 +19,7 @@ public class N2OStatic {
     public static final String ATT_CURIE = "curie";
     public static final String ATT_IRI = "iri";
     public static final String ATT_SHORT_FORM = "short_form";
-    public static final String ATT_NAMESPACE = "ns";
+
     public static final String ANNOTATION_DELIMITER  = "~|~|~";
     public static final String ANNOTATION_DELIMITER_ESCAPED  = "\\~\\|\\~\\|\\~";
 
@@ -37,6 +37,10 @@ public class N2OStatic {
             return N2OStatic.NODETYPE_OWLDATAPROPERTY;
         }
         return "UnknownType";
+    }
+
+    public static boolean isN2OBuiltInProperty(String property) {
+        return property.equals(ATT_LABEL) || property.equals(ATT_SAFE_LABEL) || property.equals(ATT_QUALIFIED_SAFE_LABEL) || property.equals(ATT_CURIE) || property.equals(ATT_SHORT_FORM) || property.equals(ATT_IRI);
     }
 
 
