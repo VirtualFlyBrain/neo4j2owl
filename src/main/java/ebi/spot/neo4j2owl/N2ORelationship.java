@@ -6,23 +6,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class N2ORelationship {
-    private final OWLEntity start;
-    private final OWLEntity end;
+    private final N2OEntity start;
+    private final N2OEntity end;
     private final String relation;
-    N2ORelationship(OWLEntity iri_start, OWLEntity iri_end, String relation) {
+    private final Map<String, Object> props;
+
+    N2ORelationship(N2OEntity iri_start, N2OEntity iri_end, String relation,Map<String, Object> props) {
         this.start = iri_start;
         this.end = iri_end;
         this.relation = relation;
+        this.props = props;
     }
 
-    public OWLEntity getStart() {
+    public N2OEntity getStart() {
         return start;
     }
-    public OWLEntity getEnd() {
+    public N2OEntity getEnd() {
         return end;
     }
     public String getRelationId() {
         return relation;
+    }
+    public Map<String, Object> getProps() {
+        return props;
     }
 
 }

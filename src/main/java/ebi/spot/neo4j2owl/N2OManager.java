@@ -22,7 +22,8 @@ public class N2OManager {
     private final Map<N2OEntity,String> entityQSLIndex = new HashMap<>();
     private final Map<OWLEntity, Set<String>> nodeLabels = new HashMap<>();
     private final Map<OWLEntity, Map<String, Object>> node_properties = new HashMap<>();
-    private final Map<N2ORelationship, Map<String, Object>> relationship_properties = new HashMap<>();
+    private final List<N2ORelationship> rels = new ArrayList<>();
+    private final Map<N2OOWLRelationship, Map<String, Object>> relationship_properties = new HashMap<>();
     private final Set<String> primaryEntityPropertyKeys = new HashSet<>();
     private final Set<OWLEntity> entitiesWithClashingSafeLabels = new HashSet<>();
     private final IRIManager curies;
@@ -50,9 +51,9 @@ public class N2OManager {
         return e;
     }
 
-    public N2ORelationship updateRelation(N2OEntity start, N2OEntity end, Map<String,Object> rel_data) {
+    public N2OOWLRelationship updateRelation(N2OEntity start, N2OEntity end, Map<String,Object> rel_data) {
 
-        N2ORelationship rel = new N2ORelationship(start.getEntity(), end.getEntity(), rel_data.get("id").toString());
+        N2OOWLRelationship rel = new N2OOWLRelationship(start.getEntity(), end.getEntity(), rel_data.get("id").toString());
         if (!relationship_properties.containsKey(rel)) {
             relationship_properties.put(rel, new HashMap<>());
         }
@@ -94,7 +95,7 @@ public class N2OManager {
     }
 
     private void processExportForRelationships(File dir) {
-        Map<String, List<N2ORelationship>> relationships = indexRelationshipsByType();
+        Map<String, List<N2OOWLRelationship>> relationships = indexRelationshipsByType();
         Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(relationships);
         writeToFile(dir, dataout_rel, "relationship");
     }
@@ -115,9 +116,9 @@ public class N2OManager {
         }
     }
 
-    private Map<String, List<N2ORelationship>> indexRelationshipsByType() {
-        Map<String, List<N2ORelationship>> relationships = new HashMap<>();
-        for (N2ORelationship e : this.relationship_properties.keySet()) {
+    private Map<String, List<N2OOWLRelationship>> indexRelationshipsByType() {
+        Map<String, List<N2OOWLRelationship>> relationships = new HashMap<>();
+        for (N2OOWLRelationship e : this.relationship_properties.keySet()) {
             String type = e.getRelationId();
             indexRelationshipColumns(e, type);
             if (!relationships.containsKey(type)) {
@@ -128,7 +129,7 @@ public class N2OManager {
         return relationships;
     }
 
-    private void indexRelationshipColumns(N2ORelationship e, String type) {
+    private void indexRelationshipColumns(N2OOWLRelationship e, String type) {
         if (!this.prop_columns.containsKey(type)) {
             prop_columns.put(type, new HashSet<>());
         }
@@ -159,14 +160,14 @@ public class N2OManager {
     }
 
 
-    private Map<String, List<String>> prepareRelationCSVsForExport(Map<String, List<N2ORelationship>> relationships) {
+    private Map<String, List<String>> prepareRelationCSVsForExport(Map<String, List<N2OOWLRelationship>> relationships) {
         Map<String, List<String>> dataout = new HashMap<>();
         for (String type : prop_columns.keySet()) {
             List<String> csvout = new ArrayList<>();
             List<String> columns_sorted = new ArrayList<>(prop_columns.get(type));
             csvout.add(constructHeaderForRelationships(columns_sorted));
             Collections.sort(columns_sorted);
-            for (N2ORelationship e : relationships.get(type)) {
+            for (N2OOWLRelationship e : relationships.get(type)) {
                 StringBuilder sb = new StringBuilder();
                 Map<String, Object> rec = this.relationship_properties.get(e);
                 writeCSVRowFromColumns(columns_sorted, sb, rec);
@@ -368,5 +369,13 @@ public class N2OManager {
     }
     public boolean isPropertyOfType(String h,Class c) {
         return propertyTypeMap.containsKey(h) && propertyTypeMap.get(h)==c;
+    }
+
+    public void addRelation(N2ORelationship nr) {
+        rels.add(nr);
+    }
+
+    public Iterable<? extends N2ORelationship> getRelationships() {
+        return rels;
     }
 }

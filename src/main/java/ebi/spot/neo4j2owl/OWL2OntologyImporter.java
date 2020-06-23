@@ -53,8 +53,6 @@ public class OWL2OntologyImporter {
     private static OWLAnnotationProperty ap_neo4jLabel = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
     private static IRIManager iriManager;
     private static Set<OWLClass> filterout;
-    private static Map<N2OEntity, Map<String, Set<N2OEntity>>> existential;
-
     private static N2OManager manager;
 
     private static int classesLoaded = 0;
@@ -93,9 +91,9 @@ public class OWL2OntologyImporter {
             //inserter = BatchInserters.inserter( inserttmp);
             log("Loading Ontology");
             OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(getOntologyIRI(url, importdir));
-            log("Size ontology: "+o.getAxiomCount());
-            List<OWLOntology> chunks = chunk(o,N2OConfig.getInstance().getBatch_size());
-            for(OWLOntology c: chunks) {
+            log("Size ontology: " + o.getAxiomCount());
+            List<OWLOntology> chunks = chunk(o, N2OConfig.getInstance().getBatch_size());
+            for (OWLOntology c : chunks) {
                 importOntology(exService, importdir, c);
             }
             exService.shutdown();
@@ -117,12 +115,11 @@ public class OWL2OntologyImporter {
         return Stream.of(importResults);
     }
 
-    private List<OWLOntology> chunk(OWLOntology o,int chunksize) {
+    private List<OWLOntology> chunk(OWLOntology o, int chunksize) {
         List<OWLOntology> chunks = new ArrayList<>();
-        if(o.getAxioms(Imports.INCLUDED).size()<chunksize) {
+        if (o.getAxioms(Imports.INCLUDED).size() < chunksize) {
             chunks.add(o);
-        }
-        else {
+        } else {
             Set<OWLAxiom> declarations = new HashSet<>(o.getAxioms(AxiomType.DECLARATION));
             Set<OWLAxiom> axioms = o.getAxioms(Imports.INCLUDED);
             axioms.removeAll(declarations);
@@ -142,7 +139,6 @@ public class OWL2OntologyImporter {
     private void importOntology(ExecutorService exService, File importdir, OWLOntology o) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
         iriManager = new IRIManager();
         iriManager.setStrict(N2OConfig.getInstance().isStrict());
-        existential = new HashMap<>();
         filterout = new HashSet<>();
 
         manager = new N2OManager(o, iriManager);
@@ -202,7 +198,7 @@ public class OWL2OntologyImporter {
                 String cypher = "USING PERIODIC COMMIT 5000\n" +
                         "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
                         "MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
-                        "MERGE (s)-[r:"+type+"]->(e) "+ uncomposedSetClauses("cl", "r",manager.getHeadersForRelationships(type));
+                        "MERGE (s)-[r:" + type + "]->(e) " + uncomposedSetClauses("cl", "r", manager.getHeadersForRelationships(type));
                 log(f);
                 log(cypher);
                 final Future<String> cf = exService.submit(() -> {
@@ -232,7 +228,7 @@ public class OWL2OntologyImporter {
                 String cypher = "USING PERIODIC COMMIT 5000\n" +
                         "LOAD CSV WITH HEADERS FROM \"file:/" + fn + "\" AS cl\n" +
                         // OLD VERSION: "MERGE (n:Entity { iri: cl.iri }) SET n +={"+composeSETQuery(manager.getHeadersForNodes(type),"cl.")+"} SET n :" + type;
-                        "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses("cl","n",manager.getHeadersForNodes(type)) + " SET n :" + type;
+                        "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses("cl", "n", manager.getHeadersForNodes(type)) + " SET n :" + type;
                 log(cypher);
                 final Future<String> cf = exService.submit(() -> {
                     dbapi.execute(cypher);
@@ -405,13 +401,13 @@ public class OWL2OntologyImporter {
     private String uncomposedSetClauses(String csvalias, String neovar, Set<String> headers) {
         StringBuilder sb = new StringBuilder();
         for (String h : headers) {
-           log(h);
+            log(h);
             if (manager.getPrimaryEntityPropertyKeys().contains(h)) {
-                sb.append("SET "+neovar+"." + h + " = " + csvalias +"."+ h + " ");
+                sb.append("SET " + neovar + "." + h + " = " + csvalias + "." + h + " ");
             } else {
                 String function = "to" + N2OConfig.getInstance().slToDatatype(h);
                 //TODO somevalue = [ x in split(cl.somevalue) | colaesce(apoc.util.toBoolean(x), apoc.util.toInteger(x), apoc.util.toFloat(x), x) ]
-                sb.append("SET "+neovar+"." + h + " = [value IN split(" + csvalias +"."+ h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\") | " + function + "(trim(value))] ");
+                sb.append("SET " + neovar + "." + h + " = [value IN split(" + csvalias + "." + h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\") | " + function + "(trim(value))] ");
             }
         }
         return sb.toString().trim().replaceAll(",$", "");
@@ -464,7 +460,7 @@ public class OWL2OntologyImporter {
 
                 //System.out.println(e+" sub: "+sub);
                 Map<String, Object> props = new HashMap<>();
-                props.put("id",OWL2NeoMapping.RELTYPE_SUBCLASSOF);
+                props.put("id", OWL2NeoMapping.RELTYPE_SUBCLASSOF);
                 updateRelationship(manager.getNode(sub), manager.getNode(e), props);
             }
         }
@@ -480,25 +476,37 @@ public class OWL2OntologyImporter {
 
     private void addExistentialRelationships(OWLOntology o, OWLReasoner r) {
         getConnectedEntities(r, o);
-        for (N2OEntity e : existential.keySet()) {
+        for (N2ORelationship relationship : manager.getRelationships()) {
+            N2OEntity e = relationship.getStart();
             if (filterout.contains(e)) {
                 continue;
             }
-            for (String rel : existential.get(e).keySet()) {
-                Optional<N2OEntity> relEntity = manager.fromSL(rel);
-                for (N2OEntity ec : existential.get(e).get(rel)) {
 
-                    Map<String, Object> props = new HashMap<>();
-                    props.put("id",rel);
-                    if(relEntity.isPresent()) {
-                        props.put("iri", relEntity.get().getIri());
-                        props.put("type", relEntity.get().getEntityType());
-                        props.put("label",relEntity.get().getLabel());
-                    }
-                    updateRelationship(e, ec, props);
-                }
+            N2OEntity ec = relationship.getEnd();
+
+            if (filterout.contains(ec)) {
+                continue;
             }
+
+            Map<String, Object> props = prepareRelationshipProperties(relationship);
+            updateRelationship(e, ec, props);
         }
+    }
+
+    private Map<String, Object> prepareRelationshipProperties(N2ORelationship relationship) {
+        String rel = relationship.getRelationId();
+        Optional<N2OEntity> relEntity = manager.fromSL(rel);
+        Map<String, Object> props = relationship.getProps();
+        props.remove("iri");
+        props.remove("label");
+        props.remove("type");
+        props.put("id", rel);
+        if (relEntity.isPresent()) {
+            props.put("iri", relEntity.get().getIri());
+            props.put("type", relEntity.get().getEntityType());
+            props.put("label", relEntity.get().getLabel());
+        }
+        return props;
     }
 
     private void getConnectedEntities(OWLReasoner r, OWLOntology o) {
@@ -512,9 +520,9 @@ public class OWL2OntologyImporter {
                 OWLClassExpression s_sub = sax.getSubClass();
                 if (s_sub.isClassExpressionLiteral()) {
                     if (s_super instanceof OWLObjectSomeValuesFrom) {
-                        processExistentialRestriction((OWLObjectSomeValuesFrom) s_super, s_sub.asOWLClass());
+                        processExistentialRestriction((OWLObjectSomeValuesFrom) s_super, s_sub.asOWLClass(), ax.getAnnotations());
                     } else if (s_super instanceof OWLObjectHasValue) {
-                        processExistentialRestriction((OWLObjectSomeValuesFrom) ((OWLObjectHasValue) s_super).asSomeValuesFrom(), s_sub.asOWLClass());
+                        processExistentialRestriction((OWLObjectSomeValuesFrom) ((OWLObjectHasValue) s_super).asSomeValuesFrom(), s_sub.asOWLClass(), ax.getAnnotations());
                     }
                 }
             } else if (ax instanceof OWLEquivalentClassesAxiom) {
@@ -526,7 +534,7 @@ public class OWL2OntologyImporter {
                 for (OWLClass c : names) {
                     for (OWLClassExpression e : eqax.getClassExpressionsAsList()) {
                         if (e instanceof OWLObjectSomeValuesFrom) {
-                            processExistentialRestriction((OWLObjectSomeValuesFrom) e, c);
+                            processExistentialRestriction((OWLObjectSomeValuesFrom) e, c, ax.getAnnotations());
                         }
                     }
                 }
@@ -537,9 +545,9 @@ public class OWL2OntologyImporter {
                 if (i.isNamed()) {
                     OWLClassExpression type = eqax.getClassExpression();
                     if (type instanceof OWLObjectSomeValuesFrom) {
-                        processExistentialRestriction((OWLObjectSomeValuesFrom) type, i.asOWLNamedIndividual());
+                        processExistentialRestriction((OWLObjectSomeValuesFrom) type, i.asOWLNamedIndividual(), ax.getAnnotations());
                     } else if (type instanceof OWLObjectHasValue) {
-                        processExistentialRestriction((OWLObjectSomeValuesFrom) ((OWLObjectHasValue) type).asSomeValuesFrom(), i.asOWLNamedIndividual());
+                        processExistentialRestriction((OWLObjectSomeValuesFrom) ((OWLObjectHasValue) type).asSomeValuesFrom(), i.asOWLNamedIndividual(), ax.getAnnotations());
                     }
                 }
             } else if (ax instanceof OWLObjectPropertyAssertionAxiom) {
@@ -550,7 +558,7 @@ public class OWL2OntologyImporter {
                     OWLIndividual to = eqax.getObject();
                     if (to.isNamed()) {
                         if (!eqax.getProperty().isAnonymous()) {
-                            indexRelation(from.asOWLNamedIndividual(), to.asOWLNamedIndividual(), manager.getNode(eqax.getProperty().asOWLObjectProperty()));
+                            indexRelation(from.asOWLNamedIndividual(), to.asOWLNamedIndividual(), manager.getNode(eqax.getProperty().asOWLObjectProperty()), ax.getAnnotations());
                         }
                     }
                 }
@@ -558,14 +566,14 @@ public class OWL2OntologyImporter {
         }
     }
 
-    private void processExistentialRestriction(OWLObjectSomeValuesFrom svf, OWLEntity s_sub) {
+    private void processExistentialRestriction(OWLObjectSomeValuesFrom svf, OWLEntity s_sub, Set<OWLAnnotation> annos) {
         if (!svf.getProperty().isAnonymous()) {
             OWLObjectProperty op = svf.getProperty().asOWLObjectProperty();
             OWLClassExpression filler = svf.getFiller();
             if (filler.isClassExpressionLiteral()) {
                 // ENTITY-CLASS: A SubClassOf R some B, i:R some B
                 OWLClass c = svf.getFiller().asOWLClass();
-                indexRelation(s_sub, c, manager.getNode(op));
+                indexRelation(s_sub, c, manager.getNode(op), annos);
             } else {
                 // ENTITY-INDIVIDUAL: A SubClassOf R some {i}, i: R some {j}
                 if (filler instanceof OWLObjectOneOf) {
@@ -573,7 +581,7 @@ public class OWL2OntologyImporter {
                     if (ce.getIndividuals().size() == 1) { // If there is more than one, we cannot assume a relationship.
                         for (OWLIndividual i : ce.getIndividuals()) {
                             if (i.isNamed()) {
-                                indexRelation(s_sub, i.asOWLNamedIndividual(), manager.getNode(op));
+                                indexRelation(s_sub, i.asOWLNamedIndividual(), manager.getNode(op), annos);
                             }
                         }
                     }
@@ -582,7 +590,7 @@ public class OWL2OntologyImporter {
         }
     }
 
-    private void indexRelation(OWLEntity from, OWLEntity to, N2OEntity rel) {
+    private void indexRelation(OWLEntity from, OWLEntity to, N2OEntity rel, Set<OWLAnnotation> annos) {
         if (filterout.contains(from)) {
             return;
         } else if (filterout.contains(to)) {
@@ -592,24 +600,24 @@ public class OWL2OntologyImporter {
         N2OEntity to_n = manager.getNode(to);
         String roletype = manager.prepareQSL(rel);
 
-        /*
-        System.out.println(roletype);
-        System.out.println(to_n);
-        if(roletype.equals("source_ns3")) {
-            //System.out.println(to_n);
-            System.out.println("--------------------------");
-            //System.exit(0);
-        }
-        */
-        if (!existential.containsKey(from_n)) {
-            existential.put(from_n, new HashMap<>());
-        }
-        if (!existential.get(from_n).containsKey(roletype)) {
-            existential.get(from_n).put(roletype, new HashSet<>());
-        }
-        existential.get(from_n).get(roletype).add(to_n);
+        Map<String, Object> props = owlAnnotationsToProps(annos);
+        manager.addRelation(new N2ORelationship(from_n, to_n, roletype, props));
     }
 
+    private Map<String, Object> owlAnnotationsToProps(Set<OWLAnnotation> owlans) {
+        Map<String, Object> ans = new HashMap<>();
+        for (OWLAnnotation a : owlans) {
+            OWLAnnotationValue aval = a.annotationValue();
+            String value = "UNKNOWN_ANNOTATION_VALUE";
+            if (aval.asIRI().isPresent()) {
+                value = aval.asIRI().or(IRI.create("UNKNOWN_ANNOTATION_IRI_VALUE")).toString();
+            } else if (aval.isLiteral()) {
+                value = aval.asLiteral().or(df.getOWLLiteral("UNKNOWN_ANNOTATION_LITERAL_VALUE")).getLiteral();
+            }
+            ans.put(manager.prepareQSL(manager.getNode(a.getProperty())), value);
+        }
+        return ans;
+    }
 
 
     private void addClassAssertions(OWLOntology o, OWLReasoner r) {
@@ -623,7 +631,7 @@ public class OWL2OntologyImporter {
                     continue;
                 }
                 Map<String, Object> props = new HashMap<>();
-                props.put("id",OWL2NeoMapping.RELTYPE_INSTANCEOF);
+                props.put("id", OWL2NeoMapping.RELTYPE_INSTANCEOF);
                 updateRelationship(manager.getNode(e), manager.getNode(type), props);
             }
         }
@@ -676,7 +684,7 @@ public class OWL2OntologyImporter {
                     }
                     Set<OWLAnnotation> axiomAnnotations = ax.getAnnotations();
                     if (!axiomAnnotations.isEmpty() && N2OConfig.getInstance().isOBOAssumption()) {
-                        Map<String,Set<Object>> axAnnos = new HashMap<>();
+                        Map<String, Set<Object>> axAnnos = new HashMap<>();
                         for (OWLAnnotation axAnn : axiomAnnotations) {
                             OWLAnnotationValue avalAx = axAnn.annotationValue();
                             OWLAnnotationProperty ap = axAnn.getProperty();
@@ -687,19 +695,19 @@ public class OWL2OntologyImporter {
                                 if (valueAxAnn instanceof String) {
                                     valueAxAnn = valueAxAnn.toString().replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED,
                                             "|Content removed during Neo4J Import|");
-                                    valueAxAnn = String.format("'%s'",valueAxAnn);
+                                    valueAxAnn = String.format("'%s'", valueAxAnn);
                                 }
                                 //dbxref: [], seeAlso: []]
-                                if(!axAnnos.containsKey(pAx)) {
-                                    axAnnos.put(pAx,new HashSet<>());
+                                if (!axAnnos.containsKey(pAx)) {
+                                    axAnnos.put(pAx, new HashSet<>());
                                 }
                                 axAnnos.get(pAx).add(valueAxAnn);
                             }
                         }
-                        String valueAnnotated = String.format("{ value: \"%s\", annotations: [",value);
-                        for(String axAnnosRel:axAnnos.keySet()) {
+                        String valueAnnotated = String.format("{ value: \"%s\", annotations: [", value);
+                        for (String axAnnosRel : axAnnos.keySet()) {
                             String va = String.join(",", axAnnos.get(axAnnosRel).stream().map(Object::toString).collect(Collectors.toSet()));
-                            valueAnnotated += String.format("{ %s: [ %s ]}",axAnnosRel,va);
+                            valueAnnotated += String.format("{ %s: [ %s ]}", axAnnosRel, va);
                         }
                         valueAnnotated += "]}";
                         propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + valueAnnotated + OWL2NeoMapping.ANNOTATION_DELIMITER);
@@ -736,12 +744,12 @@ public class OWL2OntologyImporter {
         Set<OWLEntity> entities = new HashSet<>(o.getSignature(Imports.INCLUDED));
         for (OWLEntity e : entities) {
             //Map<String, Object> props = new HashMap<>();
-            Collection<OWLAnnotation> annos = EntitySearcher.getAnnotations(e, o);
-            for (OWLAnnotation a : annos) {
+            Collection<OWLAnnotationAssertionAxiom> annos = EntitySearcher.getAnnotationAssertionAxioms(e, o);
+            for (OWLAnnotationAssertionAxiom a : annos) {
                 OWLAnnotationValue aval = a.annotationValue();
                 if (aval.asIRI().isPresent()) {
                     IRI iri = aval.asIRI().or(IRI.create("WRONGANNOTATIONPROPERTY"));
-                    indexRelation(e, manager.typedEntity(iri, o), manager.getNode(a.getProperty()));
+                    indexRelation(e, manager.typedEntity(iri, o), manager.getNode(a.getProperty()), a.getAnnotations());
                 }
             }
         }
@@ -765,7 +773,7 @@ public class OWL2OntologyImporter {
         }
     }
 
-    private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, Map<String,Object> rel) {
+    private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, Map<String, Object> rel) {
         if (N2OConfig.getInstance().isBatch()) {
             //inserter.createRelationship(nodeIndex.get(start_neo.getEntity()), nodeIndex.get(end_neo.getEntity()), () -> rel, props);
             manager.updateRelation(start_neo, end_neo, rel);
