@@ -24,7 +24,7 @@ public class OWL2OntologyExporterTest {
     @Test
     public void owl2Export() throws Exception {
         GraphDatabaseService db = prepareImporterExporterDB();
-        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl','https://github.com/VirtualFlyBrain/vfb-pipeline-config/blob/master/neo4j2owl-config.yaml')");
+        Result importResult = db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl','https://raw.githubusercontent.com/VirtualFlyBrain/vfb-prod/master/neo4j2owl-config.yaml')");
         Result exportResult = db.execute("CALL ebi.spot.neo4j2owl.exportOWL()");
         System.out.println("Export Results");
         exportResult.stream().forEach(m->System.out.println(m.get("o")));
