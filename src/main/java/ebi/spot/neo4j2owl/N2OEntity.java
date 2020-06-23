@@ -26,7 +26,7 @@ public class N2OEntity {
         safe_label = curies.getSafeLabel(e,o);
         label = curies.getLabel(e,o);
         types = new HashSet<>();
-        types.add(OWL2NeoMapping.getNeoType(e));
+        types.add(N2OStatic.getNeoType(e));
         ns = curies.getNamespace(e.getIRI());
         qualified_safe_label = curies.getQualifiedSafeLabel(e,o);
         short_form = curies.getShortForm(e.getIRI());

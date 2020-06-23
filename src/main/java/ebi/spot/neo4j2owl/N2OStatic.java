@@ -2,7 +2,7 @@ package ebi.spot.neo4j2owl;
 
 import org.semanticweb.owlapi.model.*;
 
-public class OWL2NeoMapping {
+public class N2OStatic {
     public static final String NODETYPE_NAMEDINDIVIDUAL = "Individual";
     public static final String NODETYPE_OWLCLASS = "Class";
     public static final String NODETYPE_OWLOBJECTPROPERTY = "ObjectProperty";
@@ -26,15 +26,15 @@ public class OWL2NeoMapping {
 
     public static String getNeoType(OWLEntity e) {
         if(e instanceof OWLClass) {
-            return OWL2NeoMapping.NODETYPE_OWLCLASS;
+            return N2OStatic.NODETYPE_OWLCLASS;
         } else if(e instanceof OWLIndividual) {
-            return OWL2NeoMapping.NODETYPE_NAMEDINDIVIDUAL;
+            return N2OStatic.NODETYPE_NAMEDINDIVIDUAL;
         } else if(e instanceof OWLObjectProperty) {
-            return OWL2NeoMapping.NODETYPE_OWLOBJECTPROPERTY;
+            return N2OStatic.NODETYPE_OWLOBJECTPROPERTY;
         } else if(e instanceof OWLAnnotationProperty) {
-            return OWL2NeoMapping.NODETYPE_OWLANNOTATIONPROPERTY;
+            return N2OStatic.NODETYPE_OWLANNOTATIONPROPERTY;
         } else if(e instanceof OWLDataProperty) {
-            return OWL2NeoMapping.NODETYPE_OWLDATAPROPERTY;
+            return N2OStatic.NODETYPE_OWLDATAPROPERTY;
         }
         return "UnknownType";
     }
