@@ -16,7 +16,7 @@ enum RELATION_TYPE
     QSL, SL_STRICT, SL_LOSE;
 }
 
-public class N2OManager {
+public class N2OImportManager {
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
     private final Map<String,N2OEntity> qslEntityIndex = new HashMap<>();
     private final Map<N2OEntity,String> entityQSLIndex = new HashMap<>();
@@ -30,7 +30,7 @@ public class N2OManager {
     private final OWLOntology o;
     long nextavailableid = 1;
 
-    N2OManager(OWLOntology o, IRIManager curies) {
+    N2OImportManager(OWLOntology o, IRIManager curies) {
         this.curies = curies;
         this.o = o;
         primaryEntityPropertyKeys.add(N2OStatic.ATT_LABEL);

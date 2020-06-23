@@ -53,7 +53,7 @@ public class OWL2OntologyImporter {
     private static OWLAnnotationProperty ap_neo4jLabel = df.getOWLAnnotationProperty(IRI.create(N2OStatic.NEO4J_LABEL));
     private static IRIManager iriManager;
     private static Set<OWLClass> filterout;
-    private static N2OManager manager;
+    private static N2OImportManager manager;
 
     private static int classesLoaded = 0;
     private static int individualsLoaded = 0;
@@ -141,7 +141,7 @@ public class OWL2OntologyImporter {
         iriManager.setStrict(N2OConfig.getInstance().isStrict());
         filterout = new HashSet<>();
 
-        manager = new N2OManager(o, iriManager);
+        manager = new N2OImportManager(o, iriManager);
 
         log("Preparing reasoner");
         OWLReasoner r = new ElkReasonerFactory().createReasoner(o);

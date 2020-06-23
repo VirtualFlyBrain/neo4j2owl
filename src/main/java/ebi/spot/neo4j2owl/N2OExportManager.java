@@ -10,7 +10,7 @@ import org.semanticweb.owlapi.model.OWLNamedIndividual;
 
 import java.util.*;
 
-public class N2OEntityManager {
+public class N2OExportManager {
 
     private final OWLDataFactory df = OWLManager.getOWLDataFactory();
     private final Map<Long, OWLEntity> mapIdEntity = new HashMap<>();
@@ -20,7 +20,7 @@ public class N2OEntityManager {
     private final Map<OWLEntity, Set<String>> mapTypes = new HashMap<>();
     private final Set<String> annotationPropertyQSLs = new HashSet<>(Arrays.asList("short_form", "curie", "iri", "sl", "qsl", "label"));
 
-    public N2OEntityManager() {
+    public N2OExportManager() {
         prepare_built_ins();
     }
 
