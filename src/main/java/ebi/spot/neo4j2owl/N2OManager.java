@@ -165,8 +165,9 @@ public class N2OManager {
         for (String type : prop_columns.keySet()) {
             List<String> csvout = new ArrayList<>();
             List<String> columns_sorted = new ArrayList<>(prop_columns.get(type));
-            csvout.add(constructHeaderForRelationships(columns_sorted));
             Collections.sort(columns_sorted);
+            String headerrow = constructHeaderForRelationships(columns_sorted);
+            csvout.add(headerrow);
             for (N2OOWLRelationship e : relationships.get(type)) {
                 StringBuilder sb = new StringBuilder();
                 Map<String, Object> rec = this.relationship_properties.get(e);
