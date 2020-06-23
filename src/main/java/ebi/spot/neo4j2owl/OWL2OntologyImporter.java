@@ -50,7 +50,7 @@ public class OWL2OntologyImporter {
     public Log log;
 
     private static OWLDataFactory df = OWLManager.getOWLDataFactory();
-    private static OWLAnnotationProperty ap_neo4jLabel = df.getOWLAnnotationProperty(IRI.create(OWL2NeoMapping.NEO4J_LABEL));
+    private static OWLAnnotationProperty ap_neo4jLabel = df.getOWLAnnotationProperty(IRI.create(N2OStatic.NEO4J_LABEL));
     private static IRIManager iriManager;
     private static Set<OWLClass> filterout;
     private static N2OManager manager;
@@ -407,7 +407,7 @@ public class OWL2OntologyImporter {
             } else {
                 String function = "to" + N2OConfig.getInstance().slToDatatype(h);
                 //TODO somevalue = [ x in split(cl.somevalue) | colaesce(apoc.util.toBoolean(x), apoc.util.toInteger(x), apoc.util.toFloat(x), x) ]
-                sb.append("SET " + neovar + "." + h + " = [value IN split(" + csvalias + "." + h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\") | " + function + "(trim(value))] ");
+                sb.append("SET " + neovar + "." + h + " = [value IN split(" + csvalias + "." + h + ",\"" + N2OStatic.ANNOTATION_DELIMITER + "\") | " + function + "(trim(value))] ");
             }
         }
         return sb.toString().trim().replaceAll(",$", "");
@@ -434,7 +434,7 @@ public class OWL2OntologyImporter {
                 sb.append(h + ":" + alias + h + ", ");
             } else {
 
-                sb.append(h + ":split(" + alias + h + ",\"" + OWL2NeoMapping.ANNOTATION_DELIMITER + "\"), ");
+                sb.append(h + ":split(" + alias + h + ",\"" + N2OStatic.ANNOTATION_DELIMITER + "\"), ");
             }
         }
         return sb.toString().trim().replaceAll(",$", "");
@@ -460,7 +460,7 @@ public class OWL2OntologyImporter {
 
                 //System.out.println(e+" sub: "+sub);
                 Map<String, Object> props = new HashMap<>();
-                props.put("id", OWL2NeoMapping.RELTYPE_SUBCLASSOF);
+                props.put("id", N2OStatic.RELTYPE_SUBCLASSOF);
                 updateRelationship(manager.getNode(sub), manager.getNode(e), props);
             }
         }
@@ -631,7 +631,7 @@ public class OWL2OntologyImporter {
                     continue;
                 }
                 Map<String, Object> props = new HashMap<>();
-                props.put("id", OWL2NeoMapping.RELTYPE_INSTANCEOF);
+                props.put("id", N2OStatic.RELTYPE_INSTANCEOF);
                 updateRelationship(manager.getNode(e), manager.getNode(type), props);
             }
         }
@@ -647,13 +647,12 @@ public class OWL2OntologyImporter {
             }
             N2OEntity ne = manager.getNode(e);
             Map<String, Object> props = new HashMap<>();
-            //props.put(OWL2NeoMapping.ATT_LABEL, ne.getLabel());
-            props.put(OWL2NeoMapping.ATT_SAFE_LABEL, ne.getSafe_label());
-            props.put(OWL2NeoMapping.ATT_QUALIFIED_SAFE_LABEL, ne.getQualified_safe_label());
-            props.put(OWL2NeoMapping.ATT_SHORT_FORM, ne.getShort_form());
-            props.put(OWL2NeoMapping.ATT_CURIE, ne.getCurie());
-            props.put(OWL2NeoMapping.ATT_IRI, ne.getIri());
             props.put(N2OStatic.ATT_LABEL, ne.getLabel());
+            props.put(N2OStatic.ATT_SAFE_LABEL, ne.getSafe_label());
+            props.put(N2OStatic.ATT_QUALIFIED_SAFE_LABEL, ne.getQualified_safe_label());
+            props.put(N2OStatic.ATT_SHORT_FORM, ne.getShort_form());
+            props.put(N2OStatic.ATT_CURIE, ne.getCurie());
+            props.put(N2OStatic.ATT_IRI, ne.getIri());
             extractIndividualAnnotations(e, props, o);
             createNode(ne, props);
             countLoaded(e);
@@ -679,9 +678,9 @@ public class OWL2OntologyImporter {
                     if (!propertyAnnotationValueMap.containsKey(p)) {
                         propertyAnnotationValueMap.put(p, "");
                     }
-                    if (value.toString().contains(OWL2NeoMapping.ANNOTATION_DELIMITER)) {
-                        System.err.println("Warning: annotation value " + value + " contains delimiter sequence " + OWL2NeoMapping.ANNOTATION_DELIMITER + " which will not be preserved!");
-                        value = value.toString().replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED, "|Content removed during Neo4J Import|");
+                    if (value.toString().contains(N2OStatic.ANNOTATION_DELIMITER)) {
+                        System.err.println("Warning: annotation value " + value + " contains delimiter sequence " + N2OStatic.ANNOTATION_DELIMITER + " which will not be preserved!");
+                        value = value.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED, "|Content removed during Neo4J Import|");
                     }
                     Set<OWLAnnotation> axiomAnnotations = ax.getAnnotations();
                     if (!axiomAnnotations.isEmpty() && N2OConfig.getInstance().isOBOAssumption()) {
@@ -694,7 +693,7 @@ public class OWL2OntologyImporter {
                                 Object valueAxAnn = extractValueFromOWLAnnotationValue(avalAx);
                                 String pAx = neoPropertyKey(axAnn);
                                 if (valueAxAnn instanceof String) {
-                                    valueAxAnn = valueAxAnn.toString().replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED,
+                                    valueAxAnn = valueAxAnn.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED,
                                             "|Content removed during Neo4J Import|");
                                     valueAxAnn = String.format("'%s'", valueAxAnn);
                                 }
@@ -711,15 +710,15 @@ public class OWL2OntologyImporter {
                             valueAnnotated += String.format("{ %s: [ %s ]}", axAnnosRel, va);
                         }
                         valueAnnotated += "]}";
-                        propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + valueAnnotated + OWL2NeoMapping.ANNOTATION_DELIMITER);
+                        propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + valueAnnotated + N2OStatic.ANNOTATION_DELIMITER);
                     } else {
-                        propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + value + OWL2NeoMapping.ANNOTATION_DELIMITER);
+                        propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + value + N2OStatic.ANNOTATION_DELIMITER);
                     }
                 }
 
             }
         }
-        propertyAnnotationValueMap.forEach((k, v) -> props.put(k, v.replaceAll(OWL2NeoMapping.ANNOTATION_DELIMITER_ESCAPED + "$", "")));
+        propertyAnnotationValueMap.forEach((k, v) -> props.put(k, v.replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED + "$", "")));
         //props.forEach((k,v)->System.out.println("KK "+v));
     }
 
@@ -760,7 +759,7 @@ public class OWL2OntologyImporter {
         if (N2OConfig.getInstance().isBatch()) {
             manager.updateNode(e.getEntity(), props);
             /*
-            props.put(OWL2NeoMapping.ATT_IRI,e.getIri());
+            props.put(N2OStatic.ATT_IRI,e.getIri());
             long id = inserter.createNode(props, ()->e.getRelationId());
             nodeIndex.put(e.getEntity(),id);
             */
