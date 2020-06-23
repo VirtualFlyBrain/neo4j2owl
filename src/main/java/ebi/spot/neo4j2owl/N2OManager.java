@@ -316,40 +316,47 @@ public class N2OManager {
     2. In case of SL_Lose, if unsafe (clash), use QSL
     3. else use whatever was configured (SL/QSL).
      */
-    public String prepareQSL(N2OEntity rel) {
-        if(entityQSLIndex.containsKey(rel)) {
-            return entityQSLIndex.get(rel);
+    public String prepareQSL(N2OEntity n2OEntity) {
+        if(entityQSLIndex.containsKey(n2OEntity)) {
+            return entityQSLIndex.get(n2OEntity);
         }
-        Optional<String> sl = N2OConfig.getInstance().iriToSl(IRI.create(rel.getIri()));
-        String sls = rel.getQualified_safe_label();
+        Optional<String> sl = N2OConfig.getInstance().iriToSl(IRI.create(n2OEntity.getIri()));
+        String sls = n2OEntity.getQualified_safe_label();
         switch (N2OConfig.getInstance().safeLabelMode()) {
             case QSL:
-                sls = rel.getQualified_safe_label();
+                sls = n2OEntity.getQualified_safe_label();
                 break;
             case SL_STRICT:
                 if (sl.isPresent()) {
                     sls = sl.get();
                 } else {
-                    sls = rel.getSafe_label();
+                    sls = n2OEntity.getSafe_label();
                 }
                 break;
             case SL_LOSE:
                 if (sl.isPresent()) {
                     sls = sl.get();
                 } else {
-                    if (this.isUnsafeRelation(rel.getEntity())) {
-                        sls = rel.getQualified_safe_label();
+                    if (this.isUnsafeRelation(n2OEntity.getEntity())) {
+                        sls = n2OEntity.getQualified_safe_label();
                     } else {
-                        sls = rel.getSafe_label();
+                        sls = n2OEntity.getSafe_label();
+                        if(isN2OBuitInProperty(sls)) {
+                            sls = n2OEntity.getQualified_safe_label();
+                        }
                     }
                 }
                 break;
             default:
-                sls = rel.getQualified_safe_label();
+                sls = n2OEntity.getQualified_safe_label();
                 break;
         }
-        entityQSLIndex.put(rel,sls);
+        entityQSLIndex.put(n2OEntity,sls);
         return sls;
+    }
+
+    public boolean isN2OBuitInProperty(String prop) {
+        return getPrimaryEntityPropertyKeys().contains(prop);
     }
 
     public Optional<N2OEntity> fromSL(String sl) {

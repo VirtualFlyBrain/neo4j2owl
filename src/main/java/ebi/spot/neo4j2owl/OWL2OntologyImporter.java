@@ -331,6 +331,9 @@ public class OWL2OntologyImporter {
                             for (Object iri : iris) {
                                 if (pmmhm.containsKey("id")) {
                                     String id = pmmhm.get("id").toString();
+                                    if(manager.isN2OBuitInProperty(id)){
+                                        throw new RuntimeException("ERROR: trying to use a built-in property ("+id+") as safe label..");
+                                    }
                                     n2o_config.setIriToSl(IRI.create(iri.toString()), id);
                                     if (pmmhm.containsKey("datatype")) {
                                         String datatype = pmmhm.get("datatype").toString();
