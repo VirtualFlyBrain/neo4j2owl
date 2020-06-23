@@ -39,6 +39,7 @@ public class N2OManager {
         primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_SHORT_FORM);
         primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_CURIE);
         primaryEntityPropertyKeys.add(OWL2NeoMapping.ATT_IRI);
+        primaryEntityPropertyKeys.add(N2OStatic.ATT_LABEL);
     }
 
     public N2OEntity updateNode(OWLEntity entity, Map<String, Object> props) {

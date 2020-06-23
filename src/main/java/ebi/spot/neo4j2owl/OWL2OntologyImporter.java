@@ -653,6 +653,7 @@ public class OWL2OntologyImporter {
             props.put(OWL2NeoMapping.ATT_SHORT_FORM, ne.getShort_form());
             props.put(OWL2NeoMapping.ATT_CURIE, ne.getCurie());
             props.put(OWL2NeoMapping.ATT_IRI, ne.getIri());
+            props.put(N2OStatic.ATT_LABEL, ne.getLabel());
             extractIndividualAnnotations(e, props, o);
             createNode(ne, props);
             countLoaded(e);
