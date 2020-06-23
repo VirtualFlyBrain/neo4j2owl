@@ -205,7 +205,7 @@ public class OWL2OntologyImporter {
                     dbapi.execute(cypher);
                     return "Finished: " + filename;
                 });
-                System.out.println(cf.get());
+                log(cf.get());
                 /*if(fn.contains("Individual")) {
                     FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
                     System.exit(0);
@@ -234,7 +234,7 @@ public class OWL2OntologyImporter {
                     dbapi.execute(cypher);
                     return "Finished: " + filename;
                 });
-                System.out.println(cf.get());
+                log(cf.get());
                 /*if(fn.contains("Class")) {
                     FileUtils.readLines(new File(fn),"utf-8").forEach(System.out::println);
                 }
@@ -331,7 +331,7 @@ public class OWL2OntologyImporter {
                             for (Object iri : iris) {
                                 if (pmmhm.containsKey("id")) {
                                     String id = pmmhm.get("id").toString();
-                                    if(manager.isN2OBuitInProperty(id)){
+                                    if(N2OStatic.isN2OBuiltInProperty(id)) {
                                         throw new RuntimeException("ERROR: trying to use a built-in property ("+id+") as safe label..");
                                     }
                                     n2o_config.setIriToSl(IRI.create(iri.toString()), id);
