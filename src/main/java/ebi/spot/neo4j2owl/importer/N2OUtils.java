@@ -1,4 +1,4 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.importer;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
@@ -15,7 +15,7 @@ import java.util.concurrent.locks.LockSupport;
  * @author mh
  * @since 04.07.17
  */
-public class Util {
+public class N2OUtils {
 
     private static final Label[] NO_LABELS = new Label[0];
     private static  final OWLDataFactory df = OWLManager.getOWLDataFactory();

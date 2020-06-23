@@ -1,4 +1,4 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.exporter;
 
 import org.neo4j.graphdb.Label;
 import org.neo4j.kernel.impl.core.NodeProxy;
@@ -54,7 +54,7 @@ public class N2OExportManager {
         return new HashSet<>(iriEntity.values());
     }
 
-    void createEntity(NodeProxy n, String l) {
+    public void createEntity(NodeProxy n, String l) {
         switch (l) {
             case "Individual":
                 createIndividual(n.getId(), n.getAllProperties(),n.getLabels());

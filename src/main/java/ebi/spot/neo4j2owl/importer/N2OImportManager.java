@@ -1,5 +1,6 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.io.FileUtils;
 import org.codehaus.jackson.io.JsonStringEncoder;
 import org.semanticweb.owlapi.model.IRI;
@@ -10,11 +11,6 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-
-enum RELATION_TYPE
-{
-    QSL, SL_STRICT, SL_LOSE;
-}
 
 public class N2OImportManager {
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
@@ -30,7 +26,7 @@ public class N2OImportManager {
     private final OWLOntology o;
     long nextavailableid = 1;
 
-    N2OImportManager(OWLOntology o, IRIManager curies) {
+    public N2OImportManager(OWLOntology o, IRIManager curies) {
         this.curies = curies;
         this.o = o;
         primaryEntityPropertyKeys.add(N2OStatic.ATT_LABEL);

@@ -1,5 +1,9 @@
 package ebi.spot.neo4j2owl;
 
+import ebi.spot.neo4j2owl.N2OStatic;
+import ebi.spot.neo4j2owl.exporter.N2OException;
+import ebi.spot.neo4j2owl.exporter.N2OExportManager;
+import ebi.spot.neo4j2owl.exporter.N2OReturnValue;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.impl.core.NodeProxy;

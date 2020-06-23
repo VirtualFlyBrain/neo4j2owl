@@ -1,4 +1,4 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.exporter;
 
 /**
  * Datastructure that wraps the returnvalue of neo4j2owl

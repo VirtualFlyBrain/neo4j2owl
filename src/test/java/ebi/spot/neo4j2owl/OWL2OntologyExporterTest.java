@@ -37,15 +37,6 @@ public class OWL2OntologyExporterTest {
         return db;
     }
 
-   // @Test
-    public void testMakeN2OCompliant() throws  Exception {
-        GraphDatabaseService db = prepareImporterExporterDB();
-        db.execute("CALL ebi.spot.neo4j2owl.owl2Import('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl','n')");
-        db.execute("CALL ebi.spot.neo4j2owl.makeN2OCompliant('https://raw.githubusercontent.com/matentzn/ontologies/master/smalltest.owl')");
-
-
-    }
-
     private GraphDatabaseService prepareExporterDB() throws KernelException {
         GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabase();
         ((GraphDatabaseAPI)db).getDependencyResolver().resolveDependency(Procedures.class).registerProcedure(OWL2OntologyExporter.class);

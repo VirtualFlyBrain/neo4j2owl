@@ -1,5 +1,6 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OStatic;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLObjectProperty;

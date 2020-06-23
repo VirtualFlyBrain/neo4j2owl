@@ -1,6 +1,8 @@
 package ebi.spot.neo4j2owl;
 
 import com.google.common.collect.Iterables;
+import ebi.spot.neo4j2owl.N2OStatic;
+import ebi.spot.neo4j2owl.importer.*;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.kernel.configuration.Config;
@@ -30,8 +32,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static ebi.spot.neo4j2owl.RELATION_TYPE.QSL;
 
 /**
  * Created by Nicolas Matentzoglu for EMBL-EBI and Virtual Fly Brain. Code roughly based on jbarrasa neosemantics.
@@ -660,7 +660,7 @@ public class OWL2OntologyImporter {
             createNode(ne, props);
             countLoaded(e);
         }
-        if (!N2OConfig.getInstance().safeLabelMode().equals(QSL))
+        if (!N2OConfig.getInstance().safeLabelMode().equals(RELATION_TYPE.QSL))
             manager.checkUniqueSafeLabel(N2OConfig.getInstance().safeLabelMode());
     }
 
@@ -768,7 +768,7 @@ public class OWL2OntologyImporter {
             */
         } else {
             String cypher = String.format("MERGE (p:%s { uri:'%s'}) SET p+={props}",
-                    Util.concat(e.getTypes(), ":"),
+                    N2OUtils.concat(e.getTypes(), ":"),
                     e.getIri());
             Map<String, Object> params = new HashMap<>();
             params.put("props", props);

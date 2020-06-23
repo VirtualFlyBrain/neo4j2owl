@@ -1,14 +1,12 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.importer;
 
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.util.DefaultPrefixManager;
-import sun.security.provider.PolicyParser;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 public class IRIManager {
@@ -20,7 +18,7 @@ public class IRIManager {
     private int NAMESPACECOUNTER = 0;
     private boolean strict = false;
 
-    IRIManager() {
+    public IRIManager() {
         prefixNamespaceMap.put("nic:","http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#");
         prefixNamespaceMap.put("obo:"," http://purl.obolibrary.org/obo/");
         prefixNamespaceMap.put("vfb:","http://www.virtualflybrain.org/owl/");
@@ -102,7 +100,7 @@ public class IRIManager {
 
 
     public String getLabel(OWLEntity e, OWLOntology o) {
-        for(String l:Util.getLabels(e,o)) {
+        for(String l: N2OUtils.getLabels(e,o)) {
             return l;
         }
         if(strict) {

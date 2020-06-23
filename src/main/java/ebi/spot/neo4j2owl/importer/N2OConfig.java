@@ -1,4 +1,4 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.importer;
 
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
