@@ -1,65 +1,39 @@
-package ebi.spot.neo4j2owl;
+package ebi.spot.neo4j2owl.exporter;
 
+import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
-import ebi.spot.neo4j2owl.exporter.N2OException;
-import ebi.spot.neo4j2owl.exporter.N2OExportManager;
-import ebi.spot.neo4j2owl.exporter.N2OReturnValue;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.impl.core.NodeProxy;
 import org.neo4j.kernel.impl.core.RelationshipProxy;
-import org.neo4j.logging.Log;
-import org.neo4j.procedure.Context;
-import org.neo4j.procedure.Mode;
-import org.neo4j.procedure.Procedure;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.RDFXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-/**
- * Created by matentzn on 05/03/2018.
- * <p>
- */
-public class OWL2OntologyExporter {
+public class N2OExportService {
 
-    @Context
-    public GraphDatabaseService db;
-
-    @Context
-    public Log log;
-
-    static OWLDataFactory df = OWLManager.getOWLDataFactory();
+    private GraphDatabaseService db;
+    private static N2OLog logger = N2OLog.getInstance();
+    private OWLDataFactory df = OWLManager.getOWLDataFactory();
     //static IRIManager iriManager = new IRIManager();
-    static N2OExportManager n2OEntityManager;
-    static Set<String> qsls_with_no_matching_properties;
+    private N2OExportManager n2OEntityManager;
+    private Set<String> qsls_with_no_matching_properties;
 
-
-    static long start;
-
-
-    private void log(Object msg) {
-        log.info(msg.toString());
-        System.out.println(msg + " " + getTimePassed());
+    public N2OExportService(GraphDatabaseService db) {
+        this.db = db;
     }
 
-    private String getTimePassed() {
-        long time = System.currentTimeMillis() - start;
-        return ((double) time / 1000.0) + " sec";
-    }
-
-    @Procedure(mode = Mode.WRITE)
-    public Stream<N2OReturnValue> exportOWL() throws Exception { //@Name("file") String fileName
+    public N2OReturnValue owl2Export() {
         n2OEntityManager = new N2OExportManager();
         qsls_with_no_matching_properties = new HashSet<>();
-        start = System.currentTimeMillis();
+        logger.resetTimer();
+        N2OReturnValue returnValue = new N2OReturnValue();
+
         try {
             OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 
@@ -79,20 +53,16 @@ public class OWL2OntologyExporter {
             }
             ByteArrayOutputStream os = new ByteArrayOutputStream(); //new FileOutputStream(new File(fileName))
             man.saveOntology(o, new RDFXMLDocumentFormat(), os);
-            qsls_with_no_matching_properties.forEach(this::log);
-            return Stream.of(new N2OReturnValue(os.toString(java.nio.charset.StandardCharsets.UTF_8.name()), o.getLogicalAxiomCount() + ""));
+            qsls_with_no_matching_properties.forEach(logger::log);
+            returnValue.setOntology(os.toString(java.nio.charset.StandardCharsets.UTF_8.name()));
+            returnValue.setLog(o.getLogicalAxiomCount() + "");
         } catch (Exception e) {
             e.printStackTrace();
-            return Stream.of(new N2OReturnValue(e.getClass().getSimpleName(), getStackTrace(e)));
+            returnValue.setLog(logger.getStackTrace(e));
         }
+        return returnValue;
     }
 
-    public static String getStackTrace(final Throwable throwable) {
-        final StringWriter sw = new StringWriter();
-        final PrintWriter pw = new PrintWriter(sw, true);
-        throwable.printStackTrace(pw);
-        return sw.getBuffer().toString();
-    }
 
     private Set<String> getRelations(Class cl) {
         return n2OEntityManager.relationshipQSLs().stream().filter(k -> cl.isInstance(n2OEntityManager.getRelationshipByQSL(k))).collect(Collectors.toSet());
@@ -162,7 +132,7 @@ public class OWL2OntologyExporter {
                     } else if (e_to instanceof OWLNamedIndividual) {
                         return df.getOWLSubClassOfAxiom((OWLClass) e_from, df.getOWLObjectHasValue((OWLObjectProperty) p, (OWLNamedIndividual) e_to));
                     } else {
-                        log("Not deal with OWLClass-" + type + "-X");
+                        logger.log("Not deal with OWLClass-" + type + "-X");
                     }
                 } else if (e_from instanceof OWLNamedIndividual) {
                     if (e_to instanceof OWLClass) {
@@ -170,10 +140,10 @@ public class OWL2OntologyExporter {
                     } else if (e_to instanceof OWLNamedIndividual) {
                         return df.getOWLObjectPropertyAssertionAxiom((OWLObjectProperty) p, (OWLNamedIndividual) e_from, (OWLNamedIndividual) e_to);
                     } else {
-                        log("Not deal with OWLClass-" + type + "-X");
+                        logger.log("Not deal with OWLClass-" + type + "-X");
                     }
                 } else {
-                    log("Not deal with X-" + type + "-X");
+                    logger.log("Not deal with X-" + type + "-X");
                 }
             }
             if (p instanceof OWLAnnotationProperty) {
@@ -287,6 +257,4 @@ public class OWL2OntologyExporter {
     private void createEntityForEachLabel(NodeProxy n) {
         n.getLabels().forEach(l -> n2OEntityManager.createEntity(n, l.name()));
     }
-
-
 }

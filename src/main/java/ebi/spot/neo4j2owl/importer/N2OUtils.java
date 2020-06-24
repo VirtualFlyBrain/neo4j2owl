@@ -46,6 +46,26 @@ public class N2OUtils {
         return labels;
     }
 
+
+    public static Object extractValueFromOWLAnnotationValue(OWLAnnotationValue aval) {
+        if (aval.isLiteral()) {
+            OWLLiteral literal = aval.asLiteral().or(df.getOWLLiteral("unknownX"));
+            if (literal.isBoolean()) {
+                return literal.parseBoolean();
+            } else if (literal.isDouble()) {
+                return literal.parseDouble();
+            } else if (literal.isFloat()) {
+                return literal.parseFloat();
+            } else if (literal.isInteger()) {
+                return literal.parseInteger();
+            } else {
+                return literal.getLiteral();
+            }
+        }
+        return "neo4j2owl_UnknownValue";
+    }
+
+
     public static <T> Future<T> inTxFuture(ExecutorService pool, GraphDatabaseService db, Callable<T> callable) {
         try {
             return pool.submit(() -> {

@@ -6,7 +6,9 @@ import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLObjectProperty;
 import org.semanticweb.owlapi.model.OWLOntology;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class N2OEntity {
@@ -36,6 +38,16 @@ public class N2OEntity {
         this.id = id;
     }
 
+    public Map<String, Object> getNodeBuiltInMetadataAsMap() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(N2OStatic.ATT_LABEL, getLabel());
+        props.put(N2OStatic.ATT_SAFE_LABEL, getSafe_label());
+        props.put(N2OStatic.ATT_QUALIFIED_SAFE_LABEL, getQualified_safe_label());
+        props.put(N2OStatic.ATT_SHORT_FORM, getShort_form());
+        props.put(N2OStatic.ATT_CURIE, getCurie());
+        props.put(N2OStatic.ATT_IRI, getIri());
+        return props;
+    }
 
     public String getIri() {
         return iri;

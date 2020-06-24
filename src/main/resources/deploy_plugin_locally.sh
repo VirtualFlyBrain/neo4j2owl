@@ -8,7 +8,7 @@ PLUGIN="$NEO4J2OWLDIR/target/neo4j2owl-1.0.jar"
 
 
 cd $NEO4J2OWLDIR
-mvn clean compiler:compile package
+#mvn clean compiler:compile package
 
 IMPORTS=${NEODIR}"imports"
 DATA=${NEODIR}"data/databases/graph.db"

@@ -4,11 +4,18 @@ package ebi.spot.neo4j2owl.exporter;
  * Datastructure that wraps the returnvalue of neo4j2owl
  */
 public class N2OReturnValue {
-    public final String o;
-    public final String log;
+    public String o;
+    public String log;
 
-    public N2OReturnValue(String o, String log) {
+    public N2OReturnValue() {
+
+    }
+
+    public void setOntology(String o) {
         this.o = o;
+    }
+
+    public void setLog(String log) {
         this.log = log;
     }
 

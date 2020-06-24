@@ -3,16 +3,15 @@ package ebi.spot.neo4j2owl.importer;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.io.FileUtils;
 import org.codehaus.jackson.io.JsonStringEncoder;
-import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLEntity;
-import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 public class N2OImportManager {
+    private final Map<String, Set<String>> prop_columns = new HashMap<>();
+    private final Map<String, Set<String>> node_columns = new HashMap<>();
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
     private final Map<String,N2OEntity> qslEntityIndex = new HashMap<>();
     private final Map<N2OEntity,String> entityQSLIndex = new HashMap<>();
@@ -24,7 +23,7 @@ public class N2OImportManager {
     private final Set<OWLEntity> entitiesWithClashingSafeLabels = new HashSet<>();
     private final IRIManager curies;
     private final OWLOntology o;
-    long nextavailableid = 1;
+    private long nextavailableid = 1;
 
     public N2OImportManager(OWLOntology o, IRIManager curies) {
         this.curies = curies;
@@ -82,8 +81,7 @@ public class N2OImportManager {
         }
     }
 
-    Map<String, Set<String>> node_columns = new HashMap();
-    Map<String, Set<String>> prop_columns = new HashMap();
+
 
     public void exportOntologyToCSV(File dir) {
         processExportForNodes(dir);
@@ -337,7 +335,7 @@ public class N2OImportManager {
                         sls = n2OEntity.getQualified_safe_label();
                     } else {
                         sls = n2OEntity.getSafe_label();
-                        if(isN2OBuitInProperty(sls)) {
+                        if(N2OStatic.isN2OBuiltInProperty(sls)) {
                             sls = n2OEntity.getQualified_safe_label();
                         }
                     }
@@ -351,10 +349,6 @@ public class N2OImportManager {
         return sls;
     }
 
-    public boolean isN2OBuitInProperty(String prop) {
-        return getPrimaryEntityPropertyKeys().contains(prop);
-    }
-
     public Optional<N2OEntity> fromSL(String sl) {
         if(qslEntityIndex.containsKey(sl)) {
             return Optional.of(qslEntityIndex.get(sl));
@@ -362,21 +356,17 @@ public class N2OImportManager {
         return Optional.empty();
     }
 
-    public boolean isUnsafeRelation(OWLEntity entity) {
+    private boolean isUnsafeRelation(OWLEntity entity) {
         return entitiesWithClashingSafeLabels.contains(entity);
-    }
-
-    Map<String,Class> propertyTypeMap = new HashMap<>();
-
-    public void setPropertyType(String property,Class type) {
-        propertyTypeMap.put(property,type);
-    }
-    public boolean isPropertyOfType(String h,Class c) {
-        return propertyTypeMap.containsKey(h) && propertyTypeMap.get(h)==c;
     }
 
     public void addRelation(N2ORelationship nr) {
         rels.add(nr);
+    }
+
+    public String getSLFromAnnotation(OWLAnnotation a) {
+        N2OEntity n = getNode(a.getProperty());
+        return prepareQSL(n);
     }
 
     public Iterable<? extends N2ORelationship> getRelationships() {

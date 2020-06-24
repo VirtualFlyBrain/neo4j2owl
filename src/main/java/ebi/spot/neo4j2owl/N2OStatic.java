@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl;
 
+import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
 public class N2OStatic {
@@ -23,6 +24,7 @@ public class N2OStatic {
     public static final String ANNOTATION_DELIMITER  = "~|~|~";
     public static final String ANNOTATION_DELIMITER_ESCAPED  = "\\~\\|\\~\\|\\~";
 
+    public static OWLAnnotationProperty ap_neo4jLabel = OWLManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(N2OStatic.NEO4J_LABEL));
 
     public static String getNeoType(OWLEntity e) {
         if(e instanceof OWLClass) {
