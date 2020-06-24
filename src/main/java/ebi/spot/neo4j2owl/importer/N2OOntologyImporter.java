@@ -5,7 +5,6 @@ import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
-import org.neo4j.procedure.Context;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
@@ -111,7 +110,7 @@ public class N2OOntologyImporter {
             createNode(ne, props);
             result.countLoaded(e);
         }
-        if (!N2OConfig.getInstance().safeLabelMode().equals(RELATION_TYPE.QSL))
+        if (!N2OConfig.getInstance().safeLabelMode().equals(LABELLING_MODE.QSL))
             manager.checkUniqueSafeLabel(N2OConfig.getInstance().safeLabelMode());
     }
 

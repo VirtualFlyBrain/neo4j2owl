@@ -275,7 +275,7 @@ public class N2OImportManager {
     Checks whether the safe labels are unique in the context of the current import (for Properties).
     This is important so that not two distinct properties are mapped to the same neo edge type.
      */
-    public void checkUniqueSafeLabel(RELATION_TYPE relation_type) {
+    public void checkUniqueSafeLabel(LABELLING_MODE LABELLINGMODE) {
         Map<String,OWLEntity> sls = new HashMap<>();
         Set<String> non_unique = new HashSet<>();
         Set<String> non_unique_iri = new HashSet<>();
@@ -296,7 +296,7 @@ public class N2OImportManager {
             String nu = String.join("\n ", non_unique);
             String nuiri = String.join("\n ", non_unique_iri);
             String msg = String.format("There are %d non-unique safe labels \n (%s), pertaining to the following properties: \n %s", non_unique.size(), nu, nuiri);
-            if(relation_type.equals(RELATION_TYPE.SL_STRICT)) {
+            if(LABELLINGMODE.equals(LABELLING_MODE.SL_STRICT)) {
                 throw new IllegalStateException(msg);
             } else {
                 System.out.println("WARNING: "+msg);

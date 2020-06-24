@@ -20,7 +20,7 @@ public class N2OConfig {
     private boolean batch = true;
     private boolean testmode = true;
     private boolean oboassumption = false;
-    private RELATION_TYPE relation_type = RELATION_TYPE.SL_LOSE;
+    private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
     private boolean index = false;
     private long timeoutinminutes = 180;
     private int batch_size = 999000000;
@@ -76,7 +76,11 @@ public class N2OConfig {
         return timeoutinminutes;
     }
 
-    void setPrepareIndex(Boolean index) {
+    private void setTimeoutInMinutes(long timeout) {
+        this.timeoutinminutes = timeout;
+    }
+
+    private void setPrepareIndex(Boolean index) {
         this.index = index;
     }
 
@@ -88,25 +92,25 @@ public class N2OConfig {
         return testmode;
     }
 
-    RELATION_TYPE safeLabelMode() {
-        return relation_type;
+    LABELLING_MODE safeLabelMode() {
+        return LABELLINGMODE;
     }
 
-    void setTestmode(boolean testmode) {
+    private void setTestmode(boolean testmode) {
         this.testmode = testmode;
     }
 
-    void setBatch(boolean batch) {
+    private void setBatch(boolean batch) {
         this.batch = batch;
     }
 
-    void setSafeLabelMode(String sl_mode) {
+    private void setSafeLabelMode(String sl_mode) {
         if(sl_mode.equals("strict")) {
-            relation_type = RELATION_TYPE.SL_STRICT;
+            LABELLINGMODE = LABELLING_MODE.SL_STRICT;
         } else if(sl_mode.equals("loose")) {
-            relation_type = RELATION_TYPE.SL_LOSE;
+            LABELLINGMODE = LABELLING_MODE.SL_LOSE;
         } else if(sl_mode.equals("qsl")) {
-            relation_type = RELATION_TYPE.QSL;
+            LABELLINGMODE = LABELLING_MODE.QSL;
         } else {
             log.info("Warning: "+sl_mode+ " not a valid mode, keeping default");
         }
@@ -228,6 +232,12 @@ public class N2OConfig {
         if (configs.containsKey("obo_assumption")) {
             if (configs.get("obo_assumption") instanceof Boolean) {
                 N2OConfig.getInstance().setOBOAssumption((Boolean) configs.get("obo_assumption"));
+            }
+        }
+
+        if (configs.containsKey("timeout")) {
+            if (configs.get("timeout") instanceof Long) {
+                N2OConfig.getInstance().setTimeoutInMinutes((Long) configs.get("timeout"));
             }
         }
 
