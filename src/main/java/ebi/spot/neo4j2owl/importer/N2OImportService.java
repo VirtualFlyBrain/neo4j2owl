@@ -108,7 +108,6 @@ public class N2OImportService {
 
     private File prepareImportDirectory() {
         Map<String, String> params = dbapi.getDependencyResolver().resolveDependency(Config.class).getRaw();
-        params.keySet().forEach(logger::log);
         String par_neo4jhome = "unsupported.dbms.directories.neo4j_home";
         String par_importdirpath = "dbms.directories.import";
         File importdir = new File(dbapi.getStoreDir(), "import");
@@ -123,7 +122,7 @@ public class N2OImportService {
                 importdir = new File(neo4j_home_path, import_dir_path);
             }
         } else {
-            logger.error("Import directory (or base neo4j directory) not set.");
+            logger.warning("Import directory path (or base neo4j directory) not in neo4j config. Trying to find manually.");
         }
         if (!importdir.exists()) {
             logger.error(importdir.getAbsolutePath() + " does not exist! Select valid import dir.");
