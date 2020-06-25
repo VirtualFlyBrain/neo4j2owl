@@ -23,3 +23,8 @@ property_mapping:
       - "http://www.w3.org/2002/07/owl#deprecated"
     id: deprecated
     datatype: "Boolean"
+neo_node_labelling:
+  - label:  Neuron_adult
+    classes:
+      - nic:A
+      - BFO:0000051 some owl:Thing

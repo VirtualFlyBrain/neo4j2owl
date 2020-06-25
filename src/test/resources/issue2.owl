@@ -1,0 +1,169 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <Prefix name="" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="fn" IRI="http://www.w3.org/2005/xpath-functions#"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Prefix name="sesame" IRI="http://www.openrdf.org/schema/sesame#"/>
+    <Declaration>
+        <Class IRI="http://flybase.org/reports/FBtp0064177"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://org.semanticweb.owlapi/error#Error7"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://org.semanticweb.owlapi/error#Error8"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://purl.obolibrary.org/obo/FBbt_00001919"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://purl.obolibrary.org/obo/FBbt_00007064"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://purl.obolibrary.org/obo/FBbt_00007723"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://purl.obolibrary.org/obo/FBbt_00111204"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://virtualflybrain.org/reports/VFBexp_FBtp0064177"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="http://purl.obolibrary.org/obo/BFO_0000050"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="http://purl.obolibrary.org/obo/RO_0002131"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="http://purl.obolibrary.org/obo/RO_0002292"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://virtualflybrain.org/data/TrumanWood2018"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/license"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/source"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#creation_date"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="ttp://www.geneontology.org/formats/oboInOwl#created_by"/>
+    </Declaration>
+    <EquivalentClasses>
+        <Class IRI="http://org.semanticweb.owlapi/error#Error7"/>
+        <Class IRI="http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004"/>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="http://org.semanticweb.owlapi/error#Error8"/>
+        <Class IRI="http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004"/>
+    </EquivalentClasses>
+    <ClassAssertion>
+        <Class IRI="http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004"/>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="http://purl.obolibrary.org/obo/BFO_0000050"/>
+            <Class IRI="http://purl.obolibrary.org/obo/FBbt_00001919"/>
+        </ObjectSomeValuesFrom>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="http://purl.obolibrary.org/obo/BFO_0000050"/>
+            <Class IRI="http://virtualflybrain.org/reports/VFBexp_FBtp0064177"/>
+        </ObjectSomeValuesFrom>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="http://purl.obolibrary.org/obo/RO_0002131"/>
+            <Class IRI="http://purl.obolibrary.org/obo/FBbt_00007064"/>
+        </ObjectSomeValuesFrom>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="http://purl.obolibrary.org/obo/RO_0002131"/>
+            <Class IRI="http://purl.obolibrary.org/obo/FBbt_00007723"/>
+        </ObjectSomeValuesFrom>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="http://purl.obolibrary.org/obo/RO_0002131"/>
+            <Class IRI="http://purl.obolibrary.org/obo/FBbt_00111204"/>
+        </ObjectSomeValuesFrom>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="http://purl.obolibrary.org/obo/RO_0002292"/>
+            <Class IRI="http://flybase.org/reports/FBtp0064177"/>
+        </ObjectSomeValuesFrom>
+        <NamedIndividual IRI="http://virtualflybrain.org/reports/VFB_00055130"/>
+    </ClassAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#creation_date"/>
+        <IRI>http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#dateTime">2018-03-04T10:55:59Z</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:comment"/>
+        <IRI>http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004</IRI>
+        <Literal>A multicellular structure that is part of an expression pattern.</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004</IRI>
+        <Literal xml:lang="en">expression pattern fragment</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="ttp://www.geneontology.org/formats/oboInOwl#created_by"/>
+        <IRI>http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_0000004</IRI>
+        <Literal>dos</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/license"/>
+        <IRI>http://virtualflybrain.org/data/TrumanWood2018</IRI>
+        <IRI>http://virtualflybrain.org/licenses/unlicensed</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://virtualflybrain.org/data/TrumanWood2018</IRI>
+        <Literal xml:lang="en">DS</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://virtualflybrain.org/data/TrumanWood2018</IRI>
+        <Literal>DS2</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/source"/>
+        <IRI>http://virtualflybrain.org/reports/VFB_00055130</IRI>
+        <IRI>http://virtualflybrain.org/data/TrumanWood2018</IRI>
+    </AnnotationAssertion>
+</Ontology>
+
+
+
+<!-- Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi -->
+
