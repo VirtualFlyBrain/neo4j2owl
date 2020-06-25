@@ -1,6 +1,6 @@
 strict: false
 index: false
-testmode: false
+testmode: true
 obo_assumption: true
 batch: true
 safe_label: loose
