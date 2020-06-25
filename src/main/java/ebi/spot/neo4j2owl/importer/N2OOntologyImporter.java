@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-public class N2OOntologyImporter {
+class N2OOntologyImporter {
 
     private Set<OWLEntity> filterout = new HashSet<>();
     private N2OImportManager manager;

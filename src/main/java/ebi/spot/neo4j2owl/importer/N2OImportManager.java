@@ -73,9 +73,9 @@ class N2OImportManager {
         }
     }
 
-    public Optional<N2OEntity> getNode(OWLEntity e) {
+    Optional<N2OEntity> getNode(OWLEntity e) {
         //System.out.println("|||"+e.getIRI().toString());
-        if(e.getIRI().toString().startsWith(N2OStatic.NEO4J_UNMAPPED_PROPERTY_PREFIX_URI)) {
+        if(N2OStatic.isN2OBuiltInProperty(e)) {
             return Optional.empty();
         }
         if (!nodeindex.containsKey(e)) {
@@ -90,11 +90,7 @@ class N2OImportManager {
     }
 
     private Set<String> getLabels(OWLEntity e) {
-        if (nodeLabels.containsKey(e)) {
-            return nodeLabels.get(e);
-        } else {
-            return Collections.emptySet();
-        }
+        return nodeLabels.getOrDefault(e, Collections.emptySet());
     }
 
 
@@ -399,8 +395,7 @@ class N2OImportManager {
 
     OWLClassExpression parseExpression(String manchesterSyntaxString) {
         parser.setStringToParse(manchesterSyntaxString);
-        OWLClassExpression ce = parser.parseClassExpression();
-        return ce;
+        return parser.parseClassExpression();
     }
 
     private boolean isUnsafeRelation(OWLEntity entity) {

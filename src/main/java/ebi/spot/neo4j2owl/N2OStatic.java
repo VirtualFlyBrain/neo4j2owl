@@ -4,11 +4,12 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
 public class N2OStatic {
-    public static final String NODETYPE_NAMEDINDIVIDUAL = "Individual";
-    public static final String NODETYPE_OWLCLASS = "Class";
-    public static final String NODETYPE_OWLOBJECTPROPERTY = "ObjectProperty";
-    public static final String NODETYPE_OWLANNOTATIONPROPERTY = "AnnotationProperty";
-    public static final String NODETYPE_OWLDATAPROPERTY = "DataProperty";
+    private static OWLDataFactory df = OWLManager.getOWLDataFactory();
+    private static final String NODETYPE_NAMEDINDIVIDUAL = "Individual";
+    private static final String NODETYPE_OWLCLASS = "Class";
+    private static final String NODETYPE_OWLOBJECTPROPERTY = "ObjectProperty";
+    private static final String NODETYPE_OWLANNOTATIONPROPERTY = "AnnotationProperty";
+    private static final String NODETYPE_OWLDATAPROPERTY = "DataProperty";
     public static final String RELTYPE_SUBCLASSOF = "SUBCLASSOF";
     public static final String RELTYPE_INSTANCEOF = "INSTANCEOF";
     public static final String NEO4J_LABEL = "http://neo4j.com#nodeLabel";
@@ -43,6 +44,14 @@ public class N2OStatic {
 
     public static boolean isN2OBuiltInProperty(String property) {
         return property.equals(ATT_LABEL) || property.equals(ATT_SAFE_LABEL) || property.equals(ATT_QUALIFIED_SAFE_LABEL) || property.equals(ATT_CURIE) || property.equals(ATT_SHORT_FORM) || property.equals(ATT_IRI);
+    }
+
+    public static boolean isN2OBuiltInProperty(OWLEntity property) {
+        return property.equals(abp(ATT_LABEL)) || property.equals(ATT_SAFE_LABEL) || property.equals(ATT_QUALIFIED_SAFE_LABEL) || property.equals(ATT_CURIE) || property.equals(ATT_SHORT_FORM) || property.equals(ATT_IRI);
+    }
+
+    private static OWLEntity abp(String s) {
+        return df.getOWLAnnotationProperty(IRI.create(NEO4J_UNMAPPED_PROPERTY_PREFIX_URI+s));
     }
 
 

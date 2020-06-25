@@ -103,15 +103,17 @@ public class N2OExportService {
         Map<String, Object> rpros = rp.getAllProperties();
         for (String propertykey : rpros.keySet()) {
             OWLAnnotationProperty ap = getAnnotationProperty(propertykey);
-            Object v = rpros.get(propertykey);
-            if (v.getClass().isArray()) {
-                for (Object val : toObjectArray(v)) {
-                    OWLAnnotationValue value = getLiteral(val);
+            if(!N2OStatic.isN2OBuiltInProperty(ap)) {
+                Object v = rpros.get(propertykey);
+                if (v.getClass().isArray()) {
+                    for (Object val : toObjectArray(v)) {
+                        OWLAnnotationValue value = getLiteral(val);
+                        axiomAnnotations.add(df.getOWLAnnotation(ap, value));
+                    }
+                } else {
+                    OWLAnnotationValue value = getLiteral(v);
                     axiomAnnotations.add(df.getOWLAnnotation(ap, value));
                 }
-            } else {
-                OWLAnnotationValue value = getLiteral(v);
-                axiomAnnotations.add(df.getOWLAnnotation(ap, value));
             }
         }
         return axiomAnnotations;
@@ -175,12 +177,14 @@ public class N2OExportService {
     private void addEntityForEntityAndAnnotationProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno) {
         Object annos = n2OEntityManager.annotationValues(e, qsl_anno);
         OWLAnnotationProperty annoP = getAnnotationProperty(qsl_anno);
-        if (annos instanceof Collection) {
-            for (Object aa : (Collection) annos) {
-                if (annoP == null) {
-                    qsls_with_no_matching_properties.add(qsl_anno);
-                } else {
-                    addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, annoP, aa);
+        if(!N2OStatic.isN2OBuiltInProperty(annoP)) {
+            if (annos instanceof Collection) {
+                for (Object aa : (Collection) annos) {
+                    if (annoP == null) {
+                        qsls_with_no_matching_properties.add(qsl_anno);
+                    } else {
+                        addAnnotationForEntityAndAnnotationAndValueProperty(o, changes, e, annoP, aa);
+                    }
                 }
             }
         }
