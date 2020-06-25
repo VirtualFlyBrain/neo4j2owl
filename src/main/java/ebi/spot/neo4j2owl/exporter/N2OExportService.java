@@ -166,7 +166,7 @@ public class N2OExportService {
         n2OEntityManager.annotationsProperties(e).forEach(qsl_anno -> addEntityForEntityAndAnnotationProperty(o, changes, e, qsl_anno));
 
         // Add all neo4jlabels to node
-        OWLAnnotationProperty annop = df.getOWLAnnotationProperty(IRI.create(N2OStatic.NEO4J_LABEL));
+        OWLAnnotationProperty annop = N2OStatic.ap_neo4jLabel;
         n2OEntityManager.nodeLabels(e).forEach(type -> changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(type)))));
 
         // Add entity declarations for all entities
