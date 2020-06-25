@@ -33,11 +33,10 @@ public class N2OConfig {
     private static N2OConfig config = null;
 
     private N2OConfig() {
-
     }
 
-    private void resetConfig() {
-        config = new N2OConfig();
+    static void resetConfig() {
+        config = null;
     }
 
     static N2OConfig getInstance() {
@@ -129,7 +128,7 @@ public class N2OConfig {
         return new HashSet<>(this.oboProperties);
     }
 
-    public Map<String,String> getClassExpressionNeoLabelMap() {
+    Map<String,String> getClassExpressionNeoLabelMap() {
         return this.classExpressionNeoLabelMap;
     }
 
@@ -158,7 +157,6 @@ public class N2OConfig {
     }
 
     void prepareConfig(String url, String config, File importdir) throws IOException {
-        resetConfig();
         File configfile = new File(importdir, "config.yaml");
         N2OConfig n2o_config = N2OConfig.getInstance();
         if (config.startsWith("file://")) {
@@ -209,7 +207,6 @@ public class N2OConfig {
 
             }
         }
-
         if (configs.containsKey("neo_node_labelling")) {
             Object pm = configs.get("neo_node_labelling");
             if (pm instanceof ArrayList) {

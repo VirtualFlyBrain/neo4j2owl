@@ -68,6 +68,7 @@ public class N2OImportService {
             importResults.setTerminationKO(e.getMessage());
         } finally {
             logger.log("done");
+            N2OConfig.resetConfig();
             //logger.error("delete CSV file IN IMPORTS DIR IS UNCOMMENTED! COMMENT!!!");
             deleteCSVFilesInImportsDir(importdir);
         }
