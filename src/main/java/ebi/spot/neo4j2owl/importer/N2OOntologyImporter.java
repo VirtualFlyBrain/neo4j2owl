@@ -340,7 +340,7 @@ public class N2OOntologyImporter {
                 String fn = filename;
                 if (N2OConfig.getInstance().isTestmode()) {
                     fn = "/" + new File(importdir, filename).getAbsolutePath();
-                    System.err.println("CURRENTLY RUNNING IN TESTMODE, UNCOMMENT BEFORE COMPILING");
+                    log.warning("CURRENTLY RUNNING IN TESTMODE, should set to testmode: false.");
                     FileUtils.readLines(new File(importdir, filename), "utf-8").forEach(System.out::println);
                 }
                 String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");
@@ -374,7 +374,7 @@ public class N2OOntologyImporter {
                 String fn = filename;
                 if (N2OConfig.getInstance().isTestmode()) {
                     fn = "/" + new File(importdir, filename).getAbsolutePath();
-                    System.err.println("CURRENTLY RUNNING IN TESTMODE, UNCOMMENT BEFORE COMPILING");
+                    log.warning("CURRENTLY RUNNING IN TESTMODE, should set to testmode: false.");
                     FileUtils.readLines(new File(importdir, filename), "utf-8").forEach(System.out::println);
                 }
                 String type = filename.substring(f.getName().indexOf("_") + 1).replaceAll(".txt", "");

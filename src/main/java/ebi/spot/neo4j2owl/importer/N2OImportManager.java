@@ -55,7 +55,7 @@ public class N2OImportManager {
         return  entityMap;
     }
 
-    public N2OEntity updateNode(OWLEntity entity, Map<String, Object> props) {
+    N2OEntity updateNode(OWLEntity entity, Map<String, Object> props) {
         N2OEntity e = getNode(entity);
         if (!node_properties.containsKey(e.getEntity())) {
             node_properties.put(e.getEntity(), new HashMap<>());
@@ -375,7 +375,7 @@ public class N2OImportManager {
         return Optional.empty();
     }
 
-    public OWLClassExpression parseExpression(String manchesterSyntaxString) {
+    OWLClassExpression parseExpression(String manchesterSyntaxString) {
         parser.setStringToParse(manchesterSyntaxString);
         OWLClassExpression ce = parser.parseClassExpression();
         return ce;
@@ -385,11 +385,11 @@ public class N2OImportManager {
         return entitiesWithClashingSafeLabels.contains(entity);
     }
 
-    public void addRelation(N2ORelationship nr) {
+    void addRelation(N2ORelationship nr) {
         rels.add(nr);
     }
 
-    public String getSLFromAnnotation(OWLAnnotation a) {
+    String getSLFromAnnotation(OWLAnnotation a) {
         N2OEntity n = getNode(a.getProperty());
         return prepareQSL(n);
     }
