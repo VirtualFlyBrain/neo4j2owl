@@ -36,6 +36,10 @@ public class N2OConfig {
 
     }
 
+    private void resetConfig() {
+        config = new N2OConfig();
+    }
+
     static N2OConfig getInstance() {
         if (config == null) {
             config = new N2OConfig();
@@ -154,6 +158,7 @@ public class N2OConfig {
     }
 
     void prepareConfig(String url, String config, File importdir) throws IOException {
+        resetConfig();
         File configfile = new File(importdir, "config.yaml");
         N2OConfig n2o_config = N2OConfig.getInstance();
         if (config.startsWith("file://")) {
