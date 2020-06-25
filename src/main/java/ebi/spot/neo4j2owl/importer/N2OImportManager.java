@@ -13,8 +13,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
-public class N2OImportManager {
+class N2OImportManager {
     private final DLSyntaxObjectRenderer ren = new DLSyntaxObjectRenderer();
+    private final OWLDataFactory df = OWLManager.getOWLDataFactory();
     private final ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
     private final Map<String, Set<String>> prop_columns = new HashMap<>();
     private final Map<String, Set<String>> node_columns = new HashMap<>();
@@ -25,7 +26,6 @@ public class N2OImportManager {
     private final Map<OWLEntity, Map<String, Object>> node_properties = new HashMap<>();
     private final List<N2ORelationship> rels = new ArrayList<>();
     private final Map<N2OOWLRelationship, Map<String, Object>> relationship_properties = new HashMap<>();
-    private final Set<String> primaryEntityPropertyKeys = new HashSet<>();
     private final Set<OWLEntity> entitiesWithClashingSafeLabels = new HashSet<>();
     private final IRIManager curies;
     private final OWLOntology o;
@@ -36,12 +36,6 @@ public class N2OImportManager {
         Map<String,OWLEntity> entityMap = prepareEntityMap(o);
         parser.setOWLEntityChecker(new N2OEntityChecker(entityMap));
         this.o = o;
-        primaryEntityPropertyKeys.add(N2OStatic.ATT_LABEL);
-        primaryEntityPropertyKeys.add(N2OStatic.ATT_SAFE_LABEL);
-        primaryEntityPropertyKeys.add(N2OStatic.ATT_QUALIFIED_SAFE_LABEL);
-        primaryEntityPropertyKeys.add(N2OStatic.ATT_SHORT_FORM);
-        primaryEntityPropertyKeys.add(N2OStatic.ATT_CURIE);
-        primaryEntityPropertyKeys.add(N2OStatic.ATT_IRI);
     }
 
     private Map<String, OWLEntity> prepareEntityMap(OWLOntology o) {
@@ -55,32 +49,35 @@ public class N2OImportManager {
         return  entityMap;
     }
 
-    N2OEntity updateNode(OWLEntity entity, Map<String, Object> props) {
-        N2OEntity e = getNode(entity);
-        if (!node_properties.containsKey(e.getEntity())) {
-            node_properties.put(e.getEntity(), new HashMap<>());
+    void updateNode(OWLEntity entity, Map<String, Object> props) {
+        Optional<N2OEntity> oe = getNode(entity);
+        if(oe.isPresent()) {
+            N2OEntity e = oe.get();
+            if (!node_properties.containsKey(e.getEntity())) {
+                node_properties.put(e.getEntity(), new HashMap<>());
+            }
+            node_properties.get(e.getEntity()).putAll(props);
         }
-        node_properties.get(e.getEntity()).putAll(props);
-
-        return e;
     }
 
-    public N2OOWLRelationship updateRelation(N2OEntity start, N2OEntity end, Map<String,Object> rel_data) {
+    void updateRelation(N2OEntity start, N2OEntity end, Map<String,Object> rel_data) {
 
         N2OOWLRelationship rel = new N2OOWLRelationship(start.getEntity(), end.getEntity(), rel_data.get("id").toString());
         if (!relationship_properties.containsKey(rel)) {
             relationship_properties.put(rel, new HashMap<>());
         }
         for(String k:rel_data.keySet()) {
-            if (k!="id") {
+            if (!k.equals("id")) {
                 relationship_properties.get(rel).put(k,rel_data.get(k));
             }
         }
-        return rel;
     }
 
-    public N2OEntity getNode(OWLEntity e) {
+    public Optional<N2OEntity> getNode(OWLEntity e) {
         //System.out.println("|||"+e.getIRI().toString());
+        if(e.getIRI().toString().startsWith(N2OStatic.NEO4J_UNMAPPED_PROPERTY_PREFIX_URI)) {
+            return Optional.empty();
+        }
         if (!nodeindex.containsKey(e)) {
             nodeindex.put(e, new N2OEntity(e, o, curies, nextavailableid));
             nextavailableid++;
@@ -89,7 +86,7 @@ public class N2OImportManager {
         N2OEntity en = nodeindex.get(e);
         en.addLabels(getLabels(e));
         qslEntityIndex.put(prepareQSL(en),en);
-        return en;
+        return Optional.of(en);
     }
 
     private Set<String> getLabels(OWLEntity e) {
@@ -129,11 +126,15 @@ public class N2OImportManager {
         }
     }
 
+    /**
+     *
+     * @return Map of relationship types (ids) and all corresponding Relationship. This will be imported one by one into neo.
+     */
     private Map<String, List<N2OOWLRelationship>> indexRelationshipsByType() {
         Map<String, List<N2OOWLRelationship>> relationships = new HashMap<>();
         for (N2OOWLRelationship e : this.relationship_properties.keySet()) {
             String type = e.getRelationId();
-            indexRelationshipColumns(e, type);
+            indexRelationshipColumns(e);
             if (!relationships.containsKey(type)) {
                 relationships.put(type, new ArrayList<>());
             }
@@ -142,11 +143,11 @@ public class N2OImportManager {
         return relationships;
     }
 
-    private void indexRelationshipColumns(N2OOWLRelationship e, String type) {
-        if (!this.prop_columns.containsKey(type)) {
-            prop_columns.put(type, new HashSet<>());
+    private void indexRelationshipColumns(N2OOWLRelationship e) {
+        if (!this.prop_columns.containsKey(e.getRelationId())) {
+            prop_columns.put(e.getRelationId(), new HashSet<>());
         }
-        prop_columns.get(type).addAll(this.relationship_properties.get(e).keySet());
+        prop_columns.get(e.getRelationId()).addAll(this.relationship_properties.get(e).keySet());
     }
 
     public OWLEntity typedEntity(IRI iri, OWLOntology o) {
@@ -155,9 +156,28 @@ public class N2OImportManager {
                 return e;
             }
         }
+        // If its nowhere on the node index, pretend its a class, and add it to the node index.
         OWLClass c = o.getOWLOntologyManager().getOWLDataFactory().getOWLClass(iri);
         getNode(c);
         return c;
+    }
+
+    Map<String, Object> owlAnnotationsToMapOfProperties(Set<OWLAnnotation> owlans) {
+        Map<String, Object> ans = new HashMap<>();
+        for (OWLAnnotation a : owlans) {
+            OWLAnnotationValue aval = a.annotationValue();
+            String value = "UNKNOWN_ANNOTATION_VALUE";
+            if (aval.asIRI().isPresent()) {
+                value = aval.asIRI().or(IRI.create("UNKNOWN_ANNOTATION_IRI_VALUE")).toString();
+            } else if (aval.isLiteral()) {
+                value = aval.asLiteral().or(df.getOWLLiteral("UNKNOWN_ANNOTATION_LITERAL_VALUE")).getLiteral();
+            }
+            Optional<String> sl = getSLFromAnnotation(a);
+            if(sl.isPresent()) {
+                ans.put(sl.get(), value);
+            }
+        }
+        return ans;
     }
 
 
@@ -249,15 +269,20 @@ public class N2OImportManager {
         Map<String, List<OWLEntity>> entities = new HashMap<>();
         for (OWLEntity e : node_properties.keySet()) {
             //System.out.println(e.getIRI());
-            for (String type : getNode(e).getTypes()) {
-                if (!columns.containsKey(type)) {
-                    columns.put(type, new HashSet<>());
+            Optional<N2OEntity> oe = getNode(e);
+            if (oe.isPresent()) {
+                N2OEntity entity = oe.get();
+
+                for (String type : entity.getTypes()) {
+                    if (!columns.containsKey(type)) {
+                        columns.put(type, new HashSet<>());
+                    }
+                    columns.get(type).addAll(node_properties.get(e).keySet());
+                    if (!entities.containsKey(type)) {
+                        entities.put(type, new ArrayList<>());
+                    }
+                    entities.get(type).add(e);
                 }
-                columns.get(type).addAll(node_properties.get(e).keySet());
-                if (!entities.containsKey(type)) {
-                    entities.put(type, new ArrayList<>());
-                }
-                entities.get(type).add(e);
             }
         }
         //System.exit(0);
@@ -279,9 +304,6 @@ public class N2OImportManager {
         return prop_columns.get(type);
     }
 
-    public Set<String> getPrimaryEntityPropertyKeys() {
-        return primaryEntityPropertyKeys;
-    }
 
     public void addNodeLabel(OWLEntity e, String label) {
         if (!nodeLabels.containsKey(e)) {
@@ -389,9 +411,13 @@ public class N2OImportManager {
         rels.add(nr);
     }
 
-    String getSLFromAnnotation(OWLAnnotation a) {
-        N2OEntity n = getNode(a.getProperty());
-        return prepareQSL(n);
+    Optional<String> getSLFromAnnotation(OWLAnnotation a) {
+        Optional<N2OEntity> n = getNode(a.getProperty());
+        if(n.isPresent()) {
+            return Optional.of(prepareQSL(n.get()));
+        } else {
+            return Optional.empty();
+        }
     }
 
     public Iterable<? extends N2ORelationship> getRelationships() {

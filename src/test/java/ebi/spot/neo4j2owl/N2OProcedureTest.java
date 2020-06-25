@@ -83,8 +83,8 @@ public class N2OProcedureTest {
    @Test
     public void owl2ImportLarge() throws Exception {
 
-        String ontologyUrl = "https://raw.githubusercontent.com/matentzn/ontologies/master/issue2_neo2owl.owl";
-        String configUrl = "https://raw.githubusercontent.com/VirtualFlyBrain/vfb-prod/master/neo4j2owl-config.yaml";
+       String ontologyUrl = test_resources_web+"issue2.owl";
+       String configUrl = test_resources_web+"issue2-config.yaml";
 
         GraphDatabaseService db = setUpDB();
         String call = String.format("CALL ebi.spot.neo4j2owl.owl2Import('%s','%s')",ontologyUrl, configUrl);
@@ -101,8 +101,8 @@ public class N2OProcedureTest {
 
     @Test
     public void owl2Export() throws Exception {
-        String ontologyUrl = "https://raw.githubusercontent.com/matentzn/ontologies/master/issue2_neo2owl.owl";
-        String configUrl = "https://raw.githubusercontent.com/VirtualFlyBrain/vfb-prod/master/neo4j2owl-config.yaml";
+        String ontologyUrl = test_resources_web+"smalltest.owl";
+        String configUrl = test_resources_web+"smalltest-config.yaml";
 
         GraphDatabaseService db = setUpDB();
         String call = String.format("CALL ebi.spot.neo4j2owl.owl2Import('%s','%s')",ontologyUrl, configUrl);
