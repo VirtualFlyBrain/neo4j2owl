@@ -1,4 +1,4 @@
-<rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"><?xml version="1.0"?>
+<?xml version="1.0"?>
 <rdf:RDF xmlns="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#"
      xml:base="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
