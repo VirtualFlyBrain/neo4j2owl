@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.exporter;
 
+import ebi.spot.neo4j2owl.N2OStatic;
 import org.neo4j.graphdb.Label;
 import org.neo4j.kernel.impl.core.NodeProxy;
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -102,7 +103,9 @@ public class N2OExportManager {
             mapTypes.put(e,new HashSet<>());
         }
         for(Label l:labels) {
-            mapTypes.get(e).add(l.name());
+            if(!N2OStatic.isOWLPropertyTypeLabel(l.name())) {
+                mapTypes.get(e).add(l.name());
+            }
         }
     }
 
