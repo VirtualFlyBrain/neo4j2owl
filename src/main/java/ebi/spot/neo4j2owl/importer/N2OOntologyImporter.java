@@ -3,6 +3,7 @@ package ebi.spot.neo4j2owl.importer;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
@@ -69,6 +70,8 @@ public class N2OOntologyImporter {
         addClassAssertions(o, r);
         log.log("Extracting existential relations");
         addExistentialRelationships(o, r);
+        log.log("Computing dynamic node labels..");
+        addDynamicNodeLabels(r);
         if (N2OConfig.getInstance().isBatch()) {
             log.log("Loading in Database: " + importdir.getAbsolutePath());
 
@@ -86,6 +89,37 @@ public class N2OOntologyImporter {
             loadRelationshipsToNeoFromCSV(exService, importdir);
             log.log("Loading done..");
         }
+    }
+
+    private void addDynamicNodeLabels(OWLReasoner r) {
+        Map<String,String> classExpressionLabelMap = N2OConfig.getInstance().getClassExpressionNeoLabelMap();
+        for(String ces:classExpressionLabelMap.keySet()) {
+            String label = classExpressionLabelMap.get(ces);
+            log.info("Adding label "+label+" to "+ces+".");
+            OWLClassExpression ce = manager.parseExpression(ces);
+            log.info("Parsed: "+N2OUtils.render(ce)+".");
+            if(label.isEmpty()) {
+                if(ce.isClassExpressionLiteral()) {
+                    label = formatAsNeoNodeLabel(ce.asOWLClass());
+                } else {
+                    log.warning("During adding of dynamic neo labels, an empty label was encountered in conjunction with a complex class expression ("+N2OUtils.render(ce)+"). The label was not added.");
+                }
+            }
+            Set<OWLClass> subclasses = r.getSubClasses(ce,false).getFlattened();
+            subclasses.removeAll(filterout);
+            for(OWLClass sc:subclasses) {
+                manager.addNodeLabel(sc,label);
+            }
+        }
+
+
+    }
+
+    private String formatAsNeoNodeLabel(OWLClass c) {
+        String s = manager.getNode(c).getLabel();
+        s = s.replaceAll("[^A-Za-z0-9]", "_");
+        s = StringUtils.capitalize(s.toLowerCase());
+        return s;
     }
 
     /**

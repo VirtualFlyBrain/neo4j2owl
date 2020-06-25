@@ -32,12 +32,12 @@ public class N2OLog {
 
     public void error(Object msg) {
         //log.error(msg.toString());
-        System.err.println(msg + " " + getTimePassed());
+        System.err.println("ERROR: "+msg + " " + getTimePassed());
     }
 
     public void info(Object msg) {
         //log.info(msg.toString());
-        System.out.println(msg + " " + getTimePassed());
+        System.out.println("INFO: "+msg + " " + getTimePassed());
     }
 
     private String getTimePassed() {
@@ -52,4 +52,7 @@ public class N2OLog {
         return sw.getBuffer().toString();
     }
 
+    public void warning(String s) {
+        System.out.println("WARNING: "+s + " " + getTimePassed());
+    }
 }

@@ -27,6 +27,7 @@ public class N2OConfig {
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
     private Set<IRI> oboProperties = new HashSet<>();
+    private Map<String,String> classExpressionNeoLabelMap = new HashMap<>(); //this is for the dynamic neo typing feature: an OWLClassExpression string that maps to a a neo node label
 
 
     private static N2OConfig config = null;
@@ -120,10 +121,13 @@ public class N2OConfig {
         this.oboProperties.add(prop);
     }
 
-    Set<IRI> getOboAssumptionProperties() {
+    private Set<IRI> getOboAssumptionProperties() {
         return new HashSet<>(this.oboProperties);
     }
 
+    public Map<String,String> getClassExpressionNeoLabelMap() {
+        return this.classExpressionNeoLabelMap;
+    }
 
     boolean isOBOAssumption() {
         return this.oboassumption;
@@ -215,9 +219,8 @@ public class N2OConfig {
                             }
                             for(Object o:expressions) {
                                 String s = o.toString();
-
+                                classExpressionNeoLabelMap.put(s,label);
                             }
-                            //set
                         }
                     }
                 }
@@ -265,8 +268,8 @@ public class N2OConfig {
         if (configs.containsKey("testmode")) {
             if (configs.get("testmode") instanceof Boolean) {
                 N2OConfig.getInstance().setTestmode((Boolean) configs.get("testmode"));
-                log.error("TESTMODE!!!");
-                N2OConfig.getInstance().setTestmode(true);
+                //log.error("TESTMODE!!!");
+                //N2OConfig.getInstance().setTestmode(true);
             }
         }
 

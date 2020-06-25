@@ -3,13 +3,19 @@ package ebi.spot.neo4j2owl.importer;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.io.FileUtils;
 import org.codehaus.jackson.io.JsonStringEncoder;
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.dlsyntax.renderer.DLSyntaxObjectRenderer;
 import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.model.parameters.Imports;
+import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 public class N2OImportManager {
+    private final DLSyntaxObjectRenderer ren = new DLSyntaxObjectRenderer();
+    private final ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
     private final Map<String, Set<String>> prop_columns = new HashMap<>();
     private final Map<String, Set<String>> node_columns = new HashMap<>();
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
@@ -25,8 +31,10 @@ public class N2OImportManager {
     private final OWLOntology o;
     private long nextavailableid = 1;
 
-    public N2OImportManager(OWLOntology o, IRIManager curies) {
+    N2OImportManager(OWLOntology o, IRIManager curies) {
         this.curies = curies;
+        Map<String,OWLEntity> entityMap = prepareEntityMap(o);
+        parser.setOWLEntityChecker(new N2OEntityChecker(entityMap));
         this.o = o;
         primaryEntityPropertyKeys.add(N2OStatic.ATT_LABEL);
         primaryEntityPropertyKeys.add(N2OStatic.ATT_SAFE_LABEL);
@@ -34,6 +42,17 @@ public class N2OImportManager {
         primaryEntityPropertyKeys.add(N2OStatic.ATT_SHORT_FORM);
         primaryEntityPropertyKeys.add(N2OStatic.ATT_CURIE);
         primaryEntityPropertyKeys.add(N2OStatic.ATT_IRI);
+    }
+
+    private Map<String, OWLEntity> prepareEntityMap(OWLOntology o) {
+        Map<String, OWLEntity> entityMap = new HashMap<>();
+        for(OWLEntity e:o.getSignature(Imports.INCLUDED)) {
+            String iri = e.getIRI().toString();
+            String curie = curies.getCurie(e);
+            entityMap.put(iri,e);
+            entityMap.put(curie,e);
+        }
+        return  entityMap;
     }
 
     public N2OEntity updateNode(OWLEntity entity, Map<String, Object> props) {
@@ -354,6 +373,12 @@ public class N2OImportManager {
             return Optional.of(qslEntityIndex.get(sl));
         }
         return Optional.empty();
+    }
+
+    public OWLClassExpression parseExpression(String manchesterSyntaxString) {
+        parser.setStringToParse(manchesterSyntaxString);
+        OWLClassExpression ce = parser.parseClassExpression();
+        return ce;
     }
 
     private boolean isUnsafeRelation(OWLEntity entity) {

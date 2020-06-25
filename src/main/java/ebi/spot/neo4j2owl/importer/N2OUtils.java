@@ -4,8 +4,11 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Transaction;
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.dlsyntax.renderer.DLSyntaxObjectRenderer;
+import org.semanticweb.owlapi.expression.OWLEntityChecker;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.search.EntitySearcher;
+import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -19,6 +22,7 @@ public class N2OUtils {
 
     private static final Label[] NO_LABELS = new Label[0];
     private static  final OWLDataFactory df = OWLManager.getOWLDataFactory();
+    private static final DLSyntaxObjectRenderer ren = new DLSyntaxObjectRenderer();
 
     public static <T> T inTx(GraphDatabaseService db, Callable<T> callable) {
         try {
@@ -66,6 +70,9 @@ public class N2OUtils {
     }
 
 
+
+
+
     public static <T> Future<T> inTxFuture(ExecutorService pool, GraphDatabaseService db, Callable<T> callable) {
         try {
             return pool.submit(() -> {
@@ -104,6 +111,10 @@ public class N2OUtils {
             out+=(s+":");
         }
         return out.replaceAll("[:]$","");
+    }
+
+    public static String render(OWLClassExpression ce) {
+        return ren.render(ce);
     }
 
 
