@@ -253,7 +253,7 @@ public class N2OExportService {
     private void addEntities(OWLOntology o) {
         String cypher = "MATCH (n:Entity) Return n";
         db.execute(cypher).stream().forEach(r -> createEntityForEachLabel((NodeProxy) r.get("n")));
-        n2OEntityManager.entities().forEach((e -> addDeclaration(e, o)));
+        n2OEntityManager.entities().stream().filter(e->!e.isBuiltIn()).forEach((e -> addDeclaration(e, o)));
     }
 
     private void addDeclaration(OWLEntity e, OWLOntology o) {
