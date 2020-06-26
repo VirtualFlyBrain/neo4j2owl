@@ -235,6 +235,7 @@ public class N2OExportService {
     }
 
     private OWLAnnotationProperty getAnnotationProperty(String qsl_anno) {
+        //logger.info("QSL::::"+qsl_anno);
         OWLEntity e = n2OEntityManager.getRelationshipByQSL(qsl_anno);
         if (e instanceof OWLAnnotationProperty) {
             return (OWLAnnotationProperty) e;
