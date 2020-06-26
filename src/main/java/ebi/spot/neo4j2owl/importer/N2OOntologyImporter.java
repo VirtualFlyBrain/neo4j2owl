@@ -141,6 +141,7 @@ class N2OOntologyImporter {
             if(one.isPresent()) {
                 N2OEntity ne = one.get();
                 Map<String, Object> props = ne.getNodeBuiltInMetadataAsMap();
+                props.put(N2OStatic.ATT_QUALIFIED_SAFE_LABEL,manager.prepareQSL(ne));
                 extractIndividualAnnotations(e, props, o);
                 createNode(ne, props);
                 result.countLoaded(e);
@@ -439,14 +440,14 @@ class N2OOntologyImporter {
         String rel = relationship.getRelationId();
         Optional<N2OEntity> relEntity = manager.fromSL(rel);
         Map<String, Object> props = relationship.getProps();
-        props.remove("iri");
-        props.remove("label");
-        props.remove("type");
+        props.remove(N2OStatic.ATT_IRI);
+        props.remove(N2OStatic.ATT_LABEL);
+        props.remove(N2OStatic.ATT_NODE_TYPE);
         props.put("id", rel);
         if (relEntity.isPresent()) {
-            props.put("iri", relEntity.get().getIri());
-            props.put("type", relEntity.get().getEntityType());
-            props.put("label", relEntity.get().getLabel());
+            props.put(N2OStatic.ATT_IRI, relEntity.get().getIri());
+            props.put(N2OStatic.ATT_NODE_TYPE, relEntity.get().getEntityType());
+            props.put(N2OStatic.ATT_LABEL, relEntity.get().getLabel());
         }
         return props;
     }

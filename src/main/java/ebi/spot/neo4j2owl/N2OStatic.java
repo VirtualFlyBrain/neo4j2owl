@@ -22,6 +22,7 @@ public class N2OStatic {
     public static final String ATT_CURIE = "curie";
     public static final String ATT_IRI = "iri";
     public static final String ATT_SHORT_FORM = "short_form";
+    public static final String ATT_NODE_TYPE = "type";
 
     public static final String ANNOTATION_DELIMITER  = "~|~|~";
     public static final String ANNOTATION_DELIMITER_ESCAPED  = "\\~\\|\\~\\|\\~";
@@ -44,11 +45,11 @@ public class N2OStatic {
     }
 
     public static boolean isN2OBuiltInProperty(String property) {
-        return property.equals(ATT_LABEL) || property.equals(ATT_SAFE_LABEL) || property.equals(ATT_QUALIFIED_SAFE_LABEL) || property.equals(ATT_CURIE) || property.equals(ATT_SHORT_FORM) || property.equals(ATT_IRI);
+        return property.equals(ATT_LABEL) || property.equals(ATT_SAFE_LABEL) || property.equals(ATT_QUALIFIED_SAFE_LABEL) || property.equals(ATT_CURIE) || property.equals(ATT_SHORT_FORM) || property.equals(ATT_IRI) || property.equals(ATT_NODE_TYPE);
     }
 
     public static boolean isN2OBuiltInProperty(OWLEntity property) {
-        return property.equals(abp(ATT_LABEL)) || property.equals(abp(ATT_SAFE_LABEL)) || property.equals(abp(ATT_QUALIFIED_SAFE_LABEL)) || property.equals(abp(ATT_CURIE)) || property.equals(abp(ATT_SHORT_FORM)) || property.equals(abp(ATT_IRI));
+        return property.equals(abp(ATT_LABEL)) || property.equals(abp(ATT_SAFE_LABEL)) || property.equals(abp(ATT_QUALIFIED_SAFE_LABEL)) || property.equals(abp(ATT_CURIE)) || property.equals(abp(ATT_SHORT_FORM)) || property.equals(abp(ATT_IRI)) || property.equals(abp(ATT_NODE_TYPE));
     }
 
     private static OWLEntity abp(String s) {
@@ -56,6 +57,6 @@ public class N2OStatic {
     }
 
     public static boolean isOWLPropertyTypeLabel(String label) {
-        return label.equals(NODETYPE_NAMEDINDIVIDUAL) || label.equals(NODETYPE_OWLCLASS) || label.equals(NODETYPE_OWLOBJECTPROPERTY) || label.equals(NODETYPE_OWLANNOTATIONPROPERTY) || label.equals(NODETYPE_OWLDATAPROPERTY)|| label.equals(NODETYPE_OWLENTITY);
+        return label.equals(NODETYPE_NAMEDINDIVIDUAL) || label.equals(NODETYPE_OWLCLASS) || label.equals(NODETYPE_OWLOBJECTPROPERTY) || label.equals(NODETYPE_OWLANNOTATIONPROPERTY) || label.equals(NODETYPE_OWLDATAPROPERTY) || label.equals(NODETYPE_OWLENTITY);
     }
 }
