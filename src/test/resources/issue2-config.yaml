@@ -6,9 +6,9 @@ batch: true
 safe_label: loose
 batch_size: 100000000
 obo_assumption_overwrite_defaults:
-  - iris:
-      - "http://purl.obolibrary.org/obo/IAO_0000115"
-      - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"
+  iris:
+    - "http://purl.obolibrary.org/obo/IAO_0000115"
+    - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"
 property_mapping:
   - iris:
       - "http://purl.obolibrary.org/obo/so#part_of"
