@@ -9,8 +9,12 @@ import org.neo4j.kernel.impl.core.RelationshipProxy;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.RDFXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -103,7 +107,7 @@ public class N2OExportService {
         Map<String, Object> rpros = rp.getAllProperties();
         for (String propertykey : rpros.keySet()) {
             OWLAnnotationProperty ap = getAnnotationProperty(propertykey);
-            if(!N2OStatic.isN2OBuiltInProperty(ap)) {
+            if (!N2OStatic.isN2OBuiltInProperty(ap)) {
                 Object v = rpros.get(propertykey);
                 if (v.getClass().isArray()) {
                     for (Object val : toObjectArray(v)) {
@@ -134,7 +138,7 @@ public class N2OExportService {
                     } else if (e_to instanceof OWLNamedIndividual) {
                         return df.getOWLSubClassOfAxiom((OWLClass) e_from, df.getOWLObjectHasValue((OWLObjectProperty) p, (OWLNamedIndividual) e_to));
                     } else {
-                        logger.log("Not deal with OWLClass-" + type + "-X");
+                        logger.warning("Not deal with OWLClass-" + type + "-X");
                     }
                 } else if (e_from instanceof OWLNamedIndividual) {
                     if (e_to instanceof OWLClass) {
@@ -142,10 +146,10 @@ public class N2OExportService {
                     } else if (e_to instanceof OWLNamedIndividual) {
                         return df.getOWLObjectPropertyAssertionAxiom((OWLObjectProperty) p, (OWLNamedIndividual) e_from, (OWLNamedIndividual) e_to);
                     } else {
-                        logger.log("Not deal with OWLClass-" + type + "-X");
+                        logger.warning("Not deal with OWLClass-" + type + "-X");
                     }
                 } else {
-                    logger.log("Not deal with X-" + type + "-X");
+                    logger.warning("Not deal with X-" + type + "-X");
                 }
             }
             if (p instanceof OWLAnnotationProperty) {
@@ -166,8 +170,7 @@ public class N2OExportService {
         n2OEntityManager.annotationsProperties(e).forEach(qsl_anno -> addEntityForEntityAndAnnotationProperty(o, changes, e, qsl_anno));
 
         // Add all neo4jlabels to node
-        OWLAnnotationProperty annop = N2OStatic.ap_neo4jLabel;
-        n2OEntityManager.nodeLabels(e).forEach(type -> changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), df.getOWLLiteral(type)))));
+        n2OEntityManager.nodeLabels(e).forEach(type -> changes.add(createAnnotationAxiom(o, e, N2OStatic.ap_neo4jLabel, df.getOWLLiteral(type))));
 
         // Add entity declarations for all entities
         // TODO this is probably redundant with the initial addEntities(o); call.
@@ -177,7 +180,7 @@ public class N2OExportService {
     private void addEntityForEntityAndAnnotationProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno) {
         Object annos = n2OEntityManager.annotationValues(e, qsl_anno);
         OWLAnnotationProperty annoP = getAnnotationProperty(qsl_anno);
-        if(!N2OStatic.isN2OBuiltInProperty(annoP)) {
+        if (!N2OStatic.isN2OBuiltInProperty(annoP)) {
             if (annos instanceof Collection) {
                 for (Object aa : (Collection) annos) {
                     if (annoP == null) {
@@ -199,11 +202,45 @@ public class N2OExportService {
             for (Object value : (Object[]) aa) {
                 //System.out.println("AVV: " + value.getClass());
                 //System.out.println("IRI: " + annop.getIRI());
-                changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), getLiteral(value))));
+                changes.add(createAnnotationAxiom(o, e, annop, getLiteral(value)));
             }
         } else {
-            changes.add(new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), getLiteral(aa))));
+            changes.add(createAnnotationAxiom(o, e, annop, getLiteral(aa)));
         }
+    }
+
+    private AddAxiom createAnnotationAxiom(OWLOntology o, OWLEntity e, OWLAnnotationProperty annop, OWLAnnotationValue literal) {
+        Set<OWLAnnotation> annotations = new HashSet<>();
+        if (literal.isLiteral()) {
+            OWLLiteral l = literal.asLiteral().get();
+            String lit = l.getLiteral();
+            if (lit.startsWith("{ \"value\":") && lit.contains(", \"annotations\": {")) {
+                Yaml yaml = new Yaml();
+                InputStream inputStream = new ByteArrayInputStream(lit.getBytes());
+                Map<String, Object> c = yaml.load(inputStream);
+                if (c.containsKey("value")) {
+                    OWLAnnotationValue val = getLiteral(c.get("value"));
+                    if (c.containsKey("annotations")) {
+                        Object pm = c.get("annotations");
+                        for (Object anno_sl : ((Map) pm).keySet()) {
+                            OWLAnnotationProperty annoP = getAnnotationProperty(anno_sl.toString());
+                            if (!N2OStatic.isN2OBuiltInProperty(annoP)) {
+                                ArrayList annoSetValues = (ArrayList) ((Map) pm).get(anno_sl);
+                                for (Object s : annoSetValues) {
+                                    annotations.add(df.getOWLAnnotation(annoP,getLiteral(s)));
+                                }
+                            }
+
+                        }
+                        if(!annotations.isEmpty()) {
+                            return new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), val, annotations));
+                        }
+                    }
+
+                }
+            }
+        }
+        return new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), literal));
     }
 
     /*
@@ -253,7 +290,7 @@ public class N2OExportService {
     private void addEntities(OWLOntology o) {
         String cypher = "MATCH (n:Entity) Return n";
         db.execute(cypher).stream().forEach(r -> createEntityForEachLabel((NodeProxy) r.get("n")));
-        n2OEntityManager.entities().stream().filter(e->!e.isBuiltIn()).forEach((e -> addDeclaration(e, o)));
+        n2OEntityManager.entities().stream().filter(e -> !e.isBuiltIn()).forEach((e -> addDeclaration(e, o)));
     }
 
     private void addDeclaration(OWLEntity e, OWLOntology o) {

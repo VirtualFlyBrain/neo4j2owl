@@ -97,7 +97,6 @@ class N2OOntologyImporter {
             String label = classExpressionLabelMap.get(ces);
             log.info("Adding label "+label+" to "+ces+".");
             OWLClassExpression ce = manager.parseExpression(ces);
-            log.info("Parsed: "+N2OUtils.render(ce)+".");
             if(label.isEmpty()) {
                 if(ce.isClassExpressionLiteral()) {
                     label = formatAsNeoNodeLabel(ce.asOWLClass());
@@ -165,54 +164,63 @@ class N2OOntologyImporter {
             OWLAnnotation a = ax.getAnnotation();
             OWLAnnotationValue aval = a.annotationValue();
             if (!aval.asIRI().isPresent()) {
-                Optional<String> op = manager.getSLFromAnnotation(a);
-                if(op.isPresent()) {
-                    String p = op.get();
+                Optional<String> opt_sl_annop = manager.getSLFromAnnotation(a);
+                if(opt_sl_annop.isPresent()) {
+                    String sl_annop = opt_sl_annop.get();
                     Object value = N2OUtils.extractValueFromOWLAnnotationValue(aval);
                     if (a.getProperty().equals(N2OStatic.ap_neo4jLabel)) {
                         manager.addNodeLabel(e, value.toString());
                     } else {
-                        if (!propertyAnnotationValueMap.containsKey(p)) {
-                            propertyAnnotationValueMap.put(p, "");
+                        if (!propertyAnnotationValueMap.containsKey(sl_annop)) {
+                            propertyAnnotationValueMap.put(sl_annop, "");
                         }
                         if (value.toString().contains(N2OStatic.ANNOTATION_DELIMITER)) {
                             System.err.println("Warning: annotation value " + value + " contains delimiter sequence " + N2OStatic.ANNOTATION_DELIMITER + " which will not be preserved!");
                             value = value.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED, "|Content removed during Neo4J Import|");
                         }
                         Set<OWLAnnotation> axiomAnnotations = ax.getAnnotations();
-                        if (!axiomAnnotations.isEmpty() && N2OConfig.getInstance().isOBOAssumption()) {
+                        if (!axiomAnnotations.isEmpty() && N2OConfig.getInstance().isOBOAssumption() && N2OConfig.getInstance().isPropertyInOBOAssumption(a.getProperty())) {
                             Map<String, Set<Object>> axAnnos = new HashMap<>();
                             for (OWLAnnotation axAnn : axiomAnnotations) {
                                 OWLAnnotationValue avalAx = axAnn.annotationValue();
                                 OWLAnnotationProperty ap = axAnn.getProperty();
 
-                                if (!avalAx.asIRI().isPresent() && N2OConfig.getInstance().isPropertyInOBOAssumption(ap)) {
+                                if (!avalAx.asIRI().isPresent()) {
                                     Object valueAxAnn = N2OUtils.extractValueFromOWLAnnotationValue(avalAx);
-                                    Optional<String> opAx = manager.getSLFromAnnotation(axAnn);
-                                    if(opAx.isPresent()) {
-                                        String pAx = opAx.get();
+                                    Optional<String> opt_sl_axiom_anno = manager.getSLFromAnnotation(axAnn);
+                                    if(opt_sl_axiom_anno.isPresent()) {
+                                        String sl_axiom_anno = opt_sl_axiom_anno.get();
                                         if (valueAxAnn instanceof String) {
                                             valueAxAnn = valueAxAnn.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED,
                                                     "|Content removed during Neo4J Import|");
-                                            valueAxAnn = String.format("'%s'", valueAxAnn);
+                                            valueAxAnn = String.format("\"%s\"", valueAxAnn);
                                         }
                                         //dbxref: [], seeAlso: []]
-                                        if (!axAnnos.containsKey(pAx)) {
-                                            axAnnos.put(pAx, new HashSet<>());
+                                        if (!axAnnos.containsKey(sl_axiom_anno)) {
+                                            axAnnos.put(sl_axiom_anno, new HashSet<>());
                                         }
-                                        axAnnos.get(pAx).add(valueAxAnn);
+                                        axAnnos.get(sl_axiom_anno).add(valueAxAnn);
                                     }
                                 }
                             }
-                            String valueAnnotated = String.format("{ value: \"%s\", annotations: [", value);
-                            for (String axAnnosRel : axAnnos.keySet()) {
-                                String va = String.join(",", axAnnos.get(axAnnosRel).stream().map(Object::toString).collect(Collectors.toSet()));
-                                valueAnnotated += String.format("{ %s: [ %s ]}", axAnnosRel, va);
+                            if(!axAnnos.isEmpty()) {
+                                String valueAnnotated = String.format("{ \"value\": \"%s\", \"annotations\": {", value);                        Set<String> annoSet = new HashSet<>();
+                                for (String axAnnosRel : axAnnos.keySet()) {
+                                    Set<String> values = new HashSet<>();
+                                    for(Object ov:axAnnos.get(axAnnosRel)) {
+                                        values.add(ov.toString());
+                                    }
+                                    String va = String.join(",", values);
+                                    annoSet.add(String.format("\"%s\": [ %s ]", axAnnosRel, va));
+                                }
+                                valueAnnotated += String.join(",", annoSet);
+                                valueAnnotated += "}}";
+                                propertyAnnotationValueMap.put(sl_annop, propertyAnnotationValueMap.get(sl_annop) + valueAnnotated + N2OStatic.ANNOTATION_DELIMITER);
+                            } else {
+                                propertyAnnotationValueMap.put(sl_annop, propertyAnnotationValueMap.get(sl_annop) + value + N2OStatic.ANNOTATION_DELIMITER);
                             }
-                            valueAnnotated += "]}";
-                            propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + valueAnnotated + N2OStatic.ANNOTATION_DELIMITER);
                         } else {
-                            propertyAnnotationValueMap.put(p, propertyAnnotationValueMap.get(p) + value + N2OStatic.ANNOTATION_DELIMITER);
+                            propertyAnnotationValueMap.put(sl_annop, propertyAnnotationValueMap.get(sl_annop) + value + N2OStatic.ANNOTATION_DELIMITER);
                         }
                     }
                 }

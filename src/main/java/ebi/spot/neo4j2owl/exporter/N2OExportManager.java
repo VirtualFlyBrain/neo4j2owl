@@ -11,7 +11,7 @@ import org.semanticweb.owlapi.model.OWLNamedIndividual;
 
 import java.util.*;
 
-public class N2OExportManager {
+class N2OExportManager {
 
     private final OWLDataFactory df = OWLManager.getOWLDataFactory();
     private final Map<Long, OWLEntity> mapIdEntity = new HashMap<>();
@@ -19,9 +19,8 @@ public class N2OExportManager {
     private final Map<IRI, OWLEntity> iriEntity = new HashMap<>();
     private final Map<OWLEntity, Map<String, Set<Object>>> mapAnnotations = new HashMap<>();
     private final Map<OWLEntity, Set<String>> mapTypes = new HashMap<>();
-    private final Set<String> annotationPropertyQSLs = new HashSet<>(Arrays.asList("short_form", "curie", "iri", "sl", "qsl", "label"));
 
-    public N2OExportManager() {
+    N2OExportManager() {
         prepare_built_ins();
     }
 
@@ -35,27 +34,27 @@ public class N2OExportManager {
         qslEntity.put("incompatiblewith_owl", df.getOWLIncompatibleWith());
     }
 
-    public OWLEntity getEntity(Long e) throws N2OException {
+    OWLEntity getEntity(Long e) throws N2OException {
         if(!mapIdEntity.containsKey(e)) {
             throw new N2OException("Node with key "+e+" not in map! This can happen if the node does not have one of the valid base types.",new NullPointerException());
         }
         return mapIdEntity.get(e);
     }
 
-    public OWLEntity getRelationshipByQSL(String qsl) {
+    OWLEntity getRelationshipByQSL(String qsl) {
         return qslEntity.get(qsl);
     }
 
 
-    public Set<String> relationshipQSLs() {
+    Set<String> relationshipQSLs() {
         return qslEntity.keySet();
     }
 
-    public Collection<OWLEntity> entities() {
+    Collection<OWLEntity> entities() {
         return new HashSet<>(iriEntity.values());
     }
 
-    public void createEntity(NodeProxy n, String l) {
+    void createEntity(NodeProxy n, String l) {
         switch (l) {
             case "Individual":
                 createIndividual(n.getId(), n.getAllProperties(),n.getLabels());
@@ -114,17 +113,13 @@ public class N2OExportManager {
             mapAnnotations.put(i, new HashMap<>());
         }
         for (String key : allProperties.keySet()) {
-            if (isAnnotationProperty(key)) {
-                if (!mapAnnotations.get(i).containsKey(i)) {
+            if (!N2OStatic.isN2OBuiltInProperty(key)) {
+                if (!mapAnnotations.get(i).containsKey(key)) {
                     mapAnnotations.get(i).put(key, new HashSet<>());
                 }
                 mapAnnotations.get(i).get(key).add(allProperties.get(key));
             }
         }
-    }
-
-    public boolean isAnnotationProperty(String key) {
-        return !annotationPropertyQSLs.contains(key);
     }
 
     private void createClass(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
@@ -133,7 +128,7 @@ public class N2OExportManager {
 
     private IRI getIRI(Map<String, Object> allProperties) {
         String iri = allProperties.get("iri").toString();
-        if(iri!=iri.trim()) {
+        if(!iri.equals(iri.trim())) {
             System.out.println("IRI contains illegal whitspace, stripping: |"+iri+"|");
         }
         return IRI.create(iri.trim());
@@ -148,23 +143,18 @@ public class N2OExportManager {
     }
 
     private void createAnnotationProperty(long id, Map<String, Object> allProperties, Iterable<Label> labels) {
-        if(allProperties.containsKey("qsl")) {
-            // this should always be true: if you are an AP, you need a qsl.
-            annotationPropertyQSLs.add(allProperties.get("qsl").toString());
-        }
-
         createEntity(df.getOWLAnnotationProperty(getIRI(allProperties)), id, allProperties,labels);
     }
 
-    public Set<String> annotationsProperties(OWLEntity e) {
+    Set<String> annotationsProperties(OWLEntity e) {
         return mapAnnotations.containsKey(e) ? mapAnnotations.get(e).keySet() : new HashSet<>();
     }
 
-    public Object annotationValues(OWLEntity e, String qsl_anno) {
+    Object annotationValues(OWLEntity e, String qsl_anno) {
         return mapAnnotations.containsKey(e) && mapAnnotations.get(e).containsKey(qsl_anno) ? mapAnnotations.get(e).get(qsl_anno) : new HashSet<>();
     }
 
-    public Set<String> nodeLabels(OWLEntity e) {
+    Set<String> nodeLabels(OWLEntity e) {
         if(mapTypes.containsKey(e)) {
             return mapTypes.get(e);
         } else {

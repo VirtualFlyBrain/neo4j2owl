@@ -3,9 +3,9 @@ package ebi.spot.neo4j2owl;
 import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
-import org.neo4j.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
+import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.test.TestGraphDatabaseFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
@@ -109,20 +109,16 @@ public class N2OProcedureTest {
         db.shutdown();
     }
 
+    /*
+    The importer does not really roundtrip, because of the use of reasoner, and because we dont import equivalent class axioms. Still, a few check can be run, especially on annotations.
+     */
     private void equalOntologies(OWLOntology o_orginal, OWLOntology o_neoexport) {
         assertFalse(o_orginal.isEmpty());
         //assertEquals(o_orginal.getSignature(Imports.INCLUDED), o_neoexport.getSignature(Imports.INCLUDED));
-        Set<OWLAxiom> axioms_original = new HashSet<>(o_orginal.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).collect(Collectors.toSet()));
-        Set<OWLAxiom> axioms_export = new HashSet<>(o_neoexport.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).collect(Collectors.toSet()));
+        Set<OWLAxiom> axioms_original = new HashSet<>(o_orginal.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).filter(ax2 -> !(ax2 instanceof OWLEquivalentClassesAxiom)).collect(Collectors.toSet()));
+        //Set<OWLAxiom> axioms_export = new HashSet<>(o_neoexport.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).filter(ax2 -> !(ax2 instanceof OWLEquivalentClassesAxiom)).collect(Collectors.toSet()));
         axioms_original.removeAll(o_neoexport.getAxioms());
-        axioms_export.removeAll(o_orginal.getAxioms());
-        System.out.println("**********");
-        axioms_export.forEach(System.out::println);
-        System.out.println("**********");
-        System.out.println("**********");
-        axioms_original.forEach(System.out::println);
-        System.out.println("**********");
-        //assertTrue(axioms_original.isEmpty());
+        assertTrue(axioms_original.isEmpty());
         //assertTrue(axioms_export.isEmpty());
         //assertEquals(o_orginal.getAxiomCount(), o_neoexport.getAxiomCount());
     }
