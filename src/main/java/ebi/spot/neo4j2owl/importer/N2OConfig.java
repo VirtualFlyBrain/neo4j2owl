@@ -14,7 +14,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 
-public class N2OConfig {
+class N2OConfig {
     private N2OLog log = N2OLog.getInstance();
     private boolean strict = true;
     private boolean batch = true;
