@@ -118,6 +118,7 @@ public class N2OProcedureTest {
         Set<OWLAxiom> axioms_original = new HashSet<>(o_orginal.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).filter(ax2 -> !(ax2 instanceof OWLEquivalentClassesAxiom)).collect(Collectors.toSet()));
         //Set<OWLAxiom> axioms_export = new HashSet<>(o_neoexport.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).filter(ax2 -> !(ax2 instanceof OWLEquivalentClassesAxiom)).collect(Collectors.toSet()));
         axioms_original.removeAll(o_neoexport.getAxioms());
+        axioms_original.forEach(System.out::println);
         assertTrue(axioms_original.isEmpty());
         //assertTrue(axioms_export.isEmpty());
         //assertEquals(o_orginal.getAxiomCount(), o_neoexport.getAxiomCount());
