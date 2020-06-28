@@ -104,13 +104,31 @@ class N2OOntologyImporter {
                     log.warning("During adding of dynamic neo labels, an empty label was encountered in conjunction with a complex class expression ("+N2OUtils.render(ce)+"). The label was not added.");
                 }
             }
-            Set<OWLClass> subclasses = getSubClasses(r, ce);
-            for(OWLClass sc:subclasses) {
-                manager.addNodeLabel(sc,label);
+            if(!label.isEmpty()) {
+                for (OWLClass sc : getSubClasses(r, ce, false)) manager.addNodeLabel(sc, label);
+                for (OWLNamedIndividual sc : getInstances(r, ce, false)) manager.addNodeLabel(sc, label);
             }
         }
 
 
+    }
+
+    private Set<OWLNamedIndividual> getInstances(OWLReasoner r, OWLClassExpression e, boolean direct) {
+        Set<OWLNamedIndividual> instances = new HashSet<>(r.getInstances(e, direct).getFlattened());
+        instances.removeAll(filterout.stream().filter(OWLEntity::isOWLNamedIndividual).map(OWLEntity::asOWLNamedIndividual).collect(Collectors.toSet()));
+        return instances;
+
+    }
+
+
+    private Set<OWLClass> getSubClasses(OWLReasoner r, OWLClassExpression e, boolean direct) {
+        Set<OWLClass> subclasses = new HashSet<>(r.getSubClasses(e, direct).getFlattened());
+        subclasses.addAll(r.getEquivalentClasses(e).getEntities());
+        subclasses.removeAll(filterout.stream().filter(OWLEntity::isOWLClass).map(OWLEntity::asOWLClass).collect(Collectors.toSet()));
+        if(e.isClassExpressionLiteral()) {
+            subclasses.remove(e.asOWLClass());
+        }
+        return subclasses;
     }
 
     private String formatAsNeoNodeLabel(OWLClass c) {
@@ -301,7 +319,7 @@ class N2OOntologyImporter {
             if (filterout.contains(e)) {
                 continue;
             }
-            for (OWLClass sub : getSubClasses(r, e)) {
+            for (OWLClass sub : getSubClasses(r, e, true)) {
 
                 //System.out.println(e+" sub: "+sub);
                 Map<String, Object> props = new HashMap<>();
@@ -428,15 +446,6 @@ class N2OOntologyImporter {
     }
 
 
-    private Set<OWLClass> getSubClasses(OWLReasoner r, OWLClassExpression e) {
-        Set<OWLClass> subclasses = new HashSet<>(r.getSubClasses(e, true).getFlattened());
-        subclasses.addAll(r.getEquivalentClasses(e).getEntities());
-        subclasses.removeAll(filterout.stream().filter(OWLEntity::isOWLClass).map(OWLEntity::asOWLClass).collect(Collectors.toSet()));
-        if(e.isClassExpressionLiteral()) {
-            subclasses.remove(e.asOWLClass());
-        }
-        return subclasses;
-    }
 
 
     /**
