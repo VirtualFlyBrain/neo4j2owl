@@ -17,7 +17,6 @@ class IRIManager {
     private final Map<String,String> prefixNamespaceMap = new HashMap<>();
     private final Map<String,String> namespacePrefixMap = new HashMap<>();
     private int NAMESPACECOUNTER = 0;
-    private boolean strict = false;
 
     IRIManager() {
         prefixNamespaceMap.put("nic:","http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#");
@@ -104,7 +103,7 @@ class IRIManager {
         if(!labels.isEmpty()) {
             return labels.iterator().next();
         }
-        if(strict) {
+        if(!N2OConfig.getInstance().isAllowEntitiesWithoutLabels()) {
             throw new RuntimeException("No label for entity "+e.getIRI()+", which is not allowed in 'strict' mode!");
         }
         String shortform = getShortForm(e.getIRI());
@@ -141,10 +140,6 @@ class IRIManager {
             return p.matcher(remain).matches();
         }
         return false;
-    }
-
-    void setStrict(boolean strict) {
-        this.strict = strict;
     }
 
 

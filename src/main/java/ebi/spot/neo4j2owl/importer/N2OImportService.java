@@ -35,8 +35,10 @@ public class N2OImportService {
         File importdir = prepareImportDirectory();
         N2OImportResult importResults = new N2OImportResult();
         try {
-            logger.log("Loading config: " + config);
-            N2OConfig.getInstance().prepareConfig(url, config, importdir);
+            if(config!=null) {
+                logger.log("Loading config: " + config);
+                N2OConfig.getInstance().prepareConfig(url, config, importdir);
+            }
 
             logger.log("Preparing of Indices: " + N2OConfig.getInstance().prepareIndex());
             if (N2OConfig.getInstance().prepareIndex()) {

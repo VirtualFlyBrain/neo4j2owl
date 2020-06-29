@@ -43,9 +43,6 @@ class N2OOntologyImporter {
      */
     void importOntology(ExecutorService exService, File importdir, OWLOntology o, N2OImportResult result) throws IOException, InterruptedException, ExecutionException {
         IRIManager iriManager = new IRIManager();
-        iriManager.setStrict(N2OConfig.getInstance().isStrict());
-
-
         manager = new N2OImportManager(o, iriManager);
 
         log.log("Preparing reasoner");

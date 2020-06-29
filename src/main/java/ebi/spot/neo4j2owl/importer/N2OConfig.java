@@ -16,9 +16,9 @@ import java.util.*;
 
 class N2OConfig {
     private N2OLog log = N2OLog.getInstance();
-    private boolean strict = true;
+    private boolean allow_entities_without_labels = true;
     private boolean batch = true;
-    private boolean testmode = true;
+    private boolean testmode = false;
     private boolean oboassumption = false;
     private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
     private boolean index = false;
@@ -33,6 +33,7 @@ class N2OConfig {
     private static N2OConfig config = null;
 
     private N2OConfig() {
+        addPropertyForOBOAssumption(IRI.create("http://purl.obolibrary.org/obo/IAO_0000115"));
     }
 
     static void resetConfig() {
@@ -46,8 +47,8 @@ class N2OConfig {
         return config;
     }
 
-    private void setStrict(boolean strict) {
-        this.strict = strict;
+    private void setAllowEntitiesWithoutLabels(boolean allow_entities_without_labels) {
+        this.allow_entities_without_labels = allow_entities_without_labels;
     }
 
     private void setSlToDatatype(String iri, String datatype) {
@@ -109,14 +110,19 @@ class N2OConfig {
     }
 
     private void setSafeLabelMode(String sl_mode) {
-        if(sl_mode.equals("strict")) {
-            LABELLINGMODE = LABELLING_MODE.SL_STRICT;
-        } else if(sl_mode.equals("loose")) {
-            LABELLINGMODE = LABELLING_MODE.SL_LOSE;
-        } else if(sl_mode.equals("qsl")) {
-            LABELLINGMODE = LABELLING_MODE.QSL;
-        } else {
-            log.info("Warning: "+sl_mode+ " not a valid mode, keeping default");
+        switch (sl_mode) {
+            case "strict":
+                LABELLINGMODE = LABELLING_MODE.SL_STRICT;
+                break;
+            case "loose":
+                LABELLINGMODE = LABELLING_MODE.SL_LOSE;
+                break;
+            case "qsl":
+                LABELLINGMODE = LABELLING_MODE.QSL;
+                break;
+            default:
+                log.info("Warning: " + sl_mode + " not a valid mode, keeping default");
+                break;
         }
     }
 
@@ -140,8 +146,8 @@ class N2OConfig {
         this.oboassumption = oboassumption;
     }
 
-    boolean isStrict() {
-        return this.strict;
+    boolean isAllowEntitiesWithoutLabels() {
+        return this.allow_entities_without_labels;
     }
 
     boolean isPropertyInOBOAssumption(OWLAnnotationProperty ap) {
@@ -163,20 +169,26 @@ class N2OConfig {
             File config_ = new File(importdir, url.replaceAll("file://", ""));
             FileUtils.copyFile(config_, configfile);
         } else {
-            URL url_ = new URL(config);
-            FileUtils.copyURLToFile(
-                    url_,
-                    configfile);
+            try {
+                URL url_ = new URL(config);
+                FileUtils.copyURLToFile(
+                        url_,
+                        configfile);
+            }
+            catch(Exception e) {
+                log.warning("No valid config provided: "+config);
+                return;
+            }
         }
 
         Yaml yaml = new Yaml();
         InputStream inputStream = new FileInputStream(configfile);
         Map<String, Object> configs = yaml.load(inputStream);
-        if (configs.containsKey("strict")) {
-            if (configs.get("strict") instanceof Boolean) {
-                n2o_config.setStrict((Boolean) configs.get("strict"));
+        if (configs.containsKey("allow_entities_without_labels")) {
+            if (configs.get("allow_entities_without_labels") instanceof Boolean) {
+                n2o_config.setAllowEntitiesWithoutLabels((Boolean) configs.get("allow_entities_without_labels"));
             } else {
-                log.log("CONFIG: strict value is not boolean");
+                log.warning("CONFIG: allow_entities_without_labels value is not boolean");
             }
         }
         if (configs.containsKey("property_mapping")) {
