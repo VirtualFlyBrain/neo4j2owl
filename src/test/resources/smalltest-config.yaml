@@ -1,4 +1,4 @@
-strict: false
+allow_entities_without_labels: false
 index: false
 testmode: true
 obo_assumption: true

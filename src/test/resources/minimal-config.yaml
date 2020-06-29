@@ -1,0 +1,6 @@
+obo_assumption: true
+property_mapping:
+  - iris:
+      - "http://www.w3.org/2002/07/owl#deprecated"
+    id: deprecated
+    datatype: "Boolean"
