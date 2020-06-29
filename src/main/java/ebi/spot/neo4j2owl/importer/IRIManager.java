@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OStatic;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -7,18 +8,18 @@ import org.semanticweb.owlapi.util.DefaultPrefixManager;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
-public class IRIManager {
+class IRIManager {
 
-    private final String OBONS = "http://purl.obolibrary.org/obo/";
     private final Pattern p = Pattern.compile("[a-zA-Z]+[_]+[0-9]+");
     private final Map<String,String> prefixNamespaceMap = new HashMap<>();
     private final Map<String,String> namespacePrefixMap = new HashMap<>();
     private int NAMESPACECOUNTER = 0;
     private boolean strict = false;
 
-    public IRIManager() {
+    IRIManager() {
         prefixNamespaceMap.put("nic:","http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#");
         prefixNamespaceMap.put("obo:"," http://purl.obolibrary.org/obo/");
         prefixNamespaceMap.put("vfb:","http://www.virtualflybrain.org/owl/");
@@ -59,7 +60,7 @@ public class IRIManager {
         return namespacePrefixMap.get(ns);
     }
 
-    public String getCurie(OWLEntity e) {
+    String getCurie(OWLEntity e) {
         String shortform = getShortForm(e.getIRI());
         if(isOBOesque(e.getIRI())) {
             return shortform.replaceAll("_",":");
@@ -70,10 +71,9 @@ public class IRIManager {
     }
 
 
-    public String getSafeLabel(OWLEntity e, OWLOntology o) {
+    String getSafeLabel(OWLEntity e, OWLOntology o) {
         String label = getLabel(e,o).trim();
-        String sl = label.chars().collect(StringBuilder::new, (sb, c) -> sb.append(encode(c)), StringBuilder::append).toString();
-        return sl;
+        return label.chars().collect(StringBuilder::new, (sb, c) -> sb.append(encode(c)), StringBuilder::append).toString();
     }
 
     private char encode(int c) {
@@ -90,18 +90,19 @@ public class IRIManager {
         }
     }
 
-    public String getQualifiedSafeLabel(OWLEntity e, OWLOntology o) {
+    String getQualifiedSafeLabel(OWLEntity e, OWLOntology o) {
         return getSafeLabel(e,o)+"_"+getPrefix(e.getIRI()).replaceAll(":","");
     }
 
-    public String getShortForm(IRI e) {
+    String getShortForm(IRI e) {
        return e.getShortForm();
     }
 
 
-    public String getLabel(OWLEntity e, OWLOntology o) {
-        for(String l: N2OUtils.getLabels(e,o)) {
-            return l;
+    String getLabel(OWLEntity e, OWLOntology o) {
+        Set<String> labels = N2OUtils.getLabels(e,o);
+        if(!labels.isEmpty()) {
+            return labels.iterator().next();
         }
         if(strict) {
             throw new RuntimeException("No label for entity "+e.getIRI()+", which is not allowed in 'strict' mode!");
@@ -114,7 +115,7 @@ public class IRIManager {
         }
     }
 
-    public String getNamespace(IRI e) {
+    String getNamespace(IRI e) {
         if(isOBOesque(e)) {
             String remain = getShortForm(e);
             String id = remain.substring(remain.indexOf("_") + 1);
@@ -135,14 +136,14 @@ public class IRIManager {
 
     private boolean isOBOesque(IRI e) {
         String s = e.toString();
-        if(s.startsWith(OBONS)) {
-            String remain = s.replaceAll(OBONS,"");
+        if(s.startsWith(N2OStatic.OBONS)) {
+            String remain = s.replaceAll(N2OStatic.OBONS,"");
             return p.matcher(remain).matches();
         }
         return false;
     }
 
-    public void setStrict(boolean strict) {
+    void setStrict(boolean strict) {
         this.strict = strict;
     }
 

@@ -2,10 +2,7 @@ package ebi.spot.neo4j2owl.importer;
 
 import org.semanticweb.owlapi.model.OWLEntity;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class N2OOWLRelationship {
+class N2OOWLRelationship {
     private final OWLEntity start;
     private final OWLEntity end;
     private final String relation;
@@ -15,13 +12,13 @@ public class N2OOWLRelationship {
         this.relation = relation;
     }
 
-    public OWLEntity getStart() {
+    OWLEntity getStart() {
         return start;
     }
-    public OWLEntity getEnd() {
+    OWLEntity getEnd() {
         return end;
     }
-    public String getRelationId() {
+    String getRelationId() {
         return relation;
     }
 

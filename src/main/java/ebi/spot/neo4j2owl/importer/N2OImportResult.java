@@ -13,7 +13,7 @@ public class N2OImportResult {
     public long elementsLoaded = 0;
     public String extraInfo = "";
 
-    public void countLoaded(OWLEntity e) {
+    void countLoaded(OWLEntity e) {
         if (e instanceof OWLClass) {
             classesLoaded++;
         } else if (e instanceof OWLNamedIndividual) {
@@ -28,7 +28,7 @@ public class N2OImportResult {
         elementsLoaded++;
     }
 
-    public void setTerminationKO(String message) {
+    void setTerminationKO(String message) {
         this.terminationStatus = "KO";
         this.extraInfo = message;
     }

@@ -5,6 +5,7 @@ import org.semanticweb.owlapi.model.*;
 
 public class N2OStatic {
     private static OWLDataFactory df = OWLManager.getOWLDataFactory();
+    public static final String OBONS = "http://purl.obolibrary.org/obo/";
     private static final String NODETYPE_NAMEDINDIVIDUAL = "Individual";
     private static final String NODETYPE_OWLCLASS = "Class";
     private static final String NODETYPE_OWLOBJECTPROPERTY = "ObjectProperty";

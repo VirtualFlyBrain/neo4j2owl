@@ -1,20 +1,14 @@
 package ebi.spot.neo4j2owl.importer;
 
 import ebi.spot.neo4j2owl.N2OStatic;
-import org.apache.commons.io.FileUtils;
-import org.codehaus.jackson.io.JsonStringEncoder;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.dlsyntax.renderer.DLSyntaxObjectRenderer;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
 
 class N2OImportManager {
-    private final DLSyntaxObjectRenderer ren = new DLSyntaxObjectRenderer();
     private final OWLDataFactory df = OWLManager.getOWLDataFactory();
     private final ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
     private final Map<String, Set<String>> prop_columns = new HashMap<>();
@@ -29,7 +23,7 @@ class N2OImportManager {
     private final Set<OWLEntity> entitiesWithClashingSafeLabels = new HashSet<>();
     private final IRIManager curies;
     private final OWLOntology o;
-    private long nextavailableid = 1;
+    //private long nextavailableid = 1;
 
     N2OImportManager(OWLOntology o, IRIManager curies) {
         this.curies = curies;
@@ -79,8 +73,8 @@ class N2OImportManager {
             return Optional.empty();
         }
         if (!nodeindex.containsKey(e)) {
-            nodeindex.put(e, new N2OEntity(e, o, curies, nextavailableid));
-            nextavailableid++;
+            nodeindex.put(e, new N2OEntity(e, o, curies));
+            //nextavailableid++;
             //System.out.println(nodeindex.get(e));
         }
         N2OEntity en = nodeindex.get(e);
@@ -94,59 +88,7 @@ class N2OImportManager {
     }
 
 
-
-    public void exportOntologyToCSV(File dir) {
-        processExportForNodes(dir);
-        processExportForRelationships(dir);
-    }
-
-    private void processExportForRelationships(File dir) {
-        Map<String, List<N2OOWLRelationship>> relationships = indexRelationshipsByType();
-        Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(relationships);
-        writeToFile(dir, dataout_rel, "relationship");
-    }
-
-    private void processExportForNodes(File dir) {
-        Map<String, List<OWLEntity>> entities = indexEntitiesByType(node_columns);
-        Map<String, List<String>> dataout = prepareNodeCSVsForExport(node_columns, entities);
-        writeToFile(dir, dataout, "nodes");
-    }
-
-    private void writeToFile(File dir, Map<String, List<String>> dataout, String nodeclass) {
-        for (String type : dataout.keySet()) {
-            try {
-                FileUtils.writeLines(new File(dir, nodeclass + "_" + type + ".txt"), dataout.get(type));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     *
-     * @return Map of relationship types (ids) and all corresponding Relationship. This will be imported one by one into neo.
-     */
-    private Map<String, List<N2OOWLRelationship>> indexRelationshipsByType() {
-        Map<String, List<N2OOWLRelationship>> relationships = new HashMap<>();
-        for (N2OOWLRelationship e : this.relationship_properties.keySet()) {
-            String type = e.getRelationId();
-            indexRelationshipColumns(e);
-            if (!relationships.containsKey(type)) {
-                relationships.put(type, new ArrayList<>());
-            }
-            relationships.get(type).add(e);
-        }
-        return relationships;
-    }
-
-    private void indexRelationshipColumns(N2OOWLRelationship e) {
-        if (!this.prop_columns.containsKey(e.getRelationId())) {
-            prop_columns.put(e.getRelationId(), new HashSet<>());
-        }
-        prop_columns.get(e.getRelationId()).addAll(this.relationship_properties.get(e).keySet());
-    }
-
-    public OWLEntity typedEntity(IRI iri, OWLOntology o) {
+    OWLEntity typedEntity(IRI iri, OWLOntology o) {
         for (OWLEntity e : nodeindex.keySet()) {
             if (e.getIRI().equals(iri)) {
                 return e;
@@ -176,132 +118,18 @@ class N2OImportManager {
         return ans;
     }
 
-
-    private String constructHeaderForRelationships(List<String> columns_sorted) {
-        StringBuilder sb = new StringBuilder();
-        for (String column : columns_sorted) {
-            sb.append(markupColumn(column, "") + ",");
-        }
-        sb.append("start,");
-        sb.append("end");
-        //sb.append("type");
-        return sb.toString();
-    }
-
-
-    private Map<String, List<String>> prepareRelationCSVsForExport(Map<String, List<N2OOWLRelationship>> relationships) {
-        Map<String, List<String>> dataout = new HashMap<>();
-        for (String type : prop_columns.keySet()) {
-            List<String> csvout = new ArrayList<>();
-            List<String> columns_sorted = new ArrayList<>(prop_columns.get(type));
-            Collections.sort(columns_sorted);
-            String headerrow = constructHeaderForRelationships(columns_sorted);
-            csvout.add(headerrow);
-            for (N2OOWLRelationship e : relationships.get(type)) {
-                StringBuilder sb = new StringBuilder();
-                Map<String, Object> rec = this.relationship_properties.get(e);
-                writeCSVRowFromColumns(columns_sorted, sb, rec);
-                sb.append(nodeindex.get(e.getStart()).getIri() + ",");
-                sb.append(nodeindex.get(e.getEnd()).getIri() + ",");
-                //sb.append(e.getRelationId());
-                String s = sb.toString();
-                csvout.add(s.substring(0, s.length() - 1));
-            }
-            dataout.put(type, csvout);
-        }
-        return dataout;
-    }
-
-    private void writeCSVRowFromColumns(List<String> columns_sorted, StringBuilder sb, Map<String, Object> rec) {
-        for (String column : columns_sorted) {
-            String value = "";
-            if (rec.containsKey(column)) {
-                value = csvCellValue(rec.get(column));
-            }
-            sb.append(value + ",");
-        }
-    }
-
-    private Map<String, List<String>> prepareNodeCSVsForExport(Map<String, Set<String>> columns, Map<String, List<OWLEntity>> entities) {
-        Map<String, List<String>> dataout = new HashMap<>();
-        for (String type : columns.keySet()) {
-            List<String> csvout = new ArrayList<>();
-            List<String> columns_sorted = new ArrayList<>(columns.get(type));
-            Collections.sort(columns_sorted);
-            csvout.add(constructHeaderForEntities(columns_sorted, type));
-
-            for (OWLEntity e : entities.get(type)) {
-                StringBuilder sb = new StringBuilder();
-                Map<String, Object> rec = node_properties.get(e);
-                writeCSVRowFromColumns(columns_sorted, sb, rec);
-                sb.append(type);
-                String s = sb.toString();
-                //System.out.println("KKA"+s);
-                csvout.add(s);//.substring(0, s.length() - 1)
-            }
-            dataout.put(type, csvout);
-        }
-        return dataout;
-    }
-
-    private String constructHeaderForEntities(List<String> columns_sorted, String type) {
-        StringBuilder sb = new StringBuilder();
-        for (String column : columns_sorted) {
-            sb.append(markupColumn(column, type) + ",");
-        }
-        sb.append(":LABEL");
-        return sb.toString();
-    }
-
-    private String markupColumn(String column, String type) {
-        if (false) {
-            return "iri:ID(" + type + ")";
-        } else {
-            return column;
-        }
-    }
-
-    private Map<String, List<OWLEntity>> indexEntitiesByType(Map<String, Set<String>> columns) {
-        Map<String, List<OWLEntity>> entities = new HashMap<>();
-        for (OWLEntity e : node_properties.keySet()) {
-            //System.out.println(e.getIRI());
-            Optional<N2OEntity> oe = getNode(e);
-            if (oe.isPresent()) {
-                N2OEntity entity = oe.get();
-
-                for (String type : entity.getTypes()) {
-                    if (!columns.containsKey(type)) {
-                        columns.put(type, new HashSet<>());
-                    }
-                    columns.get(type).addAll(node_properties.get(e).keySet());
-                    if (!entities.containsKey(type)) {
-                        entities.put(type, new ArrayList<>());
-                    }
-                    entities.get(type).add(e);
-                }
-            }
-        }
-        //System.exit(0);
-        return entities;
-    }
-
-    private String csvCellValue(Object o) {
-        String val = new String(JsonStringEncoder.getInstance().quoteAsString(o.toString()));
-        return "\"" + val + "\"";
-    }
-
-    public Set<String> getHeadersForNodes(String type) {
+    Set<String> getHeadersForNodes(String type) {
         Set<String> headers = node_columns.get(type);
         headers.remove("iri");
         return headers;
     }
 
-    public Set<String> getHeadersForRelationships(String type) {
+    Set<String> getHeadersForRelationships(String type) {
         return prop_columns.get(type);
     }
 
 
-    public void addNodeLabel(OWLEntity e, String label) {
+    void addNodeLabel(OWLEntity e, String label) {
         if (!nodeLabels.containsKey(e)) {
             nodeLabels.put(e, new HashSet<>());
         }
@@ -312,7 +140,7 @@ class N2OImportManager {
     Checks whether the safe labels are unique in the context of the current import (for Properties).
     This is important so that not two distinct properties are mapped to the same neo edge type.
      */
-    public void checkUniqueSafeLabel(LABELLING_MODE LABELLINGMODE) {
+    void checkUniqueSafeLabel(LABELLING_MODE LABELLINGMODE) {
         Map<String,OWLEntity> sls = new HashMap<>();
         Set<String> non_unique = new HashSet<>();
         Set<String> non_unique_iri = new HashSet<>();
@@ -347,22 +175,24 @@ class N2OImportManager {
     2. In case of SL_Lose, if unsafe (clash), use QSL
     3. else use whatever was configured (SL/QSL).
      */
-    public String prepareQSL(N2OEntity n2OEntity) {
+    String prepareQSL(N2OEntity n2OEntity) {
         if(entityQSLIndex.containsKey(n2OEntity)) {
             return entityQSLIndex.get(n2OEntity);
         }
         Optional<String> sl = N2OConfig.getInstance().iriToSl(IRI.create(n2OEntity.getIri()));
-        String sls = n2OEntity.getQualified_safe_label();
+        String sls = computeSafeLabel(n2OEntity, sl);
+        entityQSLIndex.put(n2OEntity,sls);
+        return sls;
+    }
+
+    private String computeSafeLabel(N2OEntity n2OEntity, Optional<String> sl) {
+        String sls;
         switch (N2OConfig.getInstance().safeLabelMode()) {
             case QSL:
                 sls = n2OEntity.getQualified_safe_label();
                 break;
             case SL_STRICT:
-                if (sl.isPresent()) {
-                    sls = sl.get();
-                } else {
-                    sls = n2OEntity.getSafe_label();
-                }
+                sls = sl.orElseGet(n2OEntity::getSafe_label);
                 break;
             case SL_LOSE:
                 if (sl.isPresent()) {
@@ -382,11 +212,10 @@ class N2OImportManager {
                 sls = n2OEntity.getQualified_safe_label();
                 break;
         }
-        entityQSLIndex.put(n2OEntity,sls);
         return sls;
     }
 
-    public Optional<N2OEntity> fromSL(String sl) {
+    Optional<N2OEntity> fromSL(String sl) {
         if(qslEntityIndex.containsKey(sl)) {
             return Optional.of(qslEntityIndex.get(sl));
         }
@@ -408,14 +237,41 @@ class N2OImportManager {
 
     Optional<String> getSLFromAnnotation(OWLAnnotation a) {
         Optional<N2OEntity> n = getNode(a.getProperty());
-        if(n.isPresent()) {
-            return Optional.of(prepareQSL(n.get()));
-        } else {
-            return Optional.empty();
-        }
+        return n.map(this::prepareQSL);
     }
 
-    public Iterable<? extends N2ORelationship> getRelationships() {
+    Iterable<? extends N2ORelationship> getRelationships() {
         return rels;
+    }
+
+    Set<N2OOWLRelationship> getN2OWLRelationships() {
+        return relationship_properties.keySet();
+    }
+
+    Map<String, Set<String>> getNodeColumns() {
+        return node_columns;
+    }
+
+    Map<String, Set<String>> getPropertyColumns() {
+        return prop_columns;
+    }
+
+    Map<OWLEntity, Map<String, Object>> getNodeProperties() {
+        return node_properties;
+    }
+
+    void indexRelationshipColumns(N2OOWLRelationship e) {
+        if (!this.prop_columns.containsKey(e.getRelationId())) {
+            prop_columns.put(e.getRelationId(), new HashSet<>());
+        }
+        prop_columns.get(e.getRelationId()).addAll(this.relationship_properties.get(e).keySet());
+    }
+
+    Map<OWLEntity, N2OEntity> getNodeIndex() {
+        return this.nodeindex;
+    }
+
+    Map<String, Object> getRelationshipProperties(N2OOWLRelationship e) {
+        return this.relationship_properties.get(e);
     }
 }

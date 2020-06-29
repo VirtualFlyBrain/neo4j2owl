@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.importer;
 
+import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Transaction;
@@ -10,6 +11,8 @@ import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.search.EntitySearcher;
 import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
@@ -70,7 +73,15 @@ public class N2OUtils {
     }
 
 
-
+    public static void writeToFile(File dir, Map<String, List<String>> dataout, String nodeclass) {
+        for (String type : dataout.keySet()) {
+            try {
+                FileUtils.writeLines(new File(dir, nodeclass + "_" + type + ".txt"), dataout.get(type));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 
     public static <T> Future<T> inTxFuture(ExecutorService pool, GraphDatabaseService db, Callable<T> callable) {
