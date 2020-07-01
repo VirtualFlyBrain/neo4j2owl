@@ -21,12 +21,12 @@ class N2OConfig {
     private boolean testmode = false;
     private boolean oboassumption = false;
     private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
-    private boolean index = false;
     private long timeoutinminutes = 180;
     private int batch_size = 999000000;
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
     private Set<IRI> oboProperties = new HashSet<>();
+    private Set<String> preprocessingCypherQueries = new HashSet<>();
     private Map<String,String> classExpressionNeoLabelMap = new HashMap<>(); //this is for the dynamic neo typing feature: an OWLClassExpression string that maps to a a neo node label
 
 
@@ -73,20 +73,12 @@ class N2OConfig {
         return Optional.empty();
     }
 
-    boolean prepareIndex() {
-        return index;
-    }
-
     long getTimeoutInMinutes() {
         return timeoutinminutes;
     }
 
     private void setTimeoutInMinutes(long timeout) {
         this.timeoutinminutes = timeout;
-    }
-
-    private void setPrepareIndex(Boolean index) {
-        this.index = index;
     }
 
     boolean isBatch() {
@@ -132,6 +124,10 @@ class N2OConfig {
 
     private Set<IRI> getOboAssumptionProperties() {
         return new HashSet<>(this.oboProperties);
+    }
+
+    Set<String> getPreprocessingCypherQueries() {
+        return new HashSet<>(this.preprocessingCypherQueries);
     }
 
     Map<String,String> getClassExpressionNeoLabelMap() {
@@ -240,9 +236,10 @@ class N2OConfig {
                 }
             }
         }
-        if (configs.containsKey("index")) {
-            if (configs.get("index") instanceof Boolean) {
-                N2OConfig.getInstance().setPrepareIndex((Boolean) configs.get("index"));
+
+        if (configs.containsKey("preprocessing")) {
+            if (configs.get("preprocessing") instanceof ArrayList) {
+                ((ArrayList) configs.get("preprocessing")).forEach(q->preprocessingCypherQueries.add(q.toString()));
             }
         }
 

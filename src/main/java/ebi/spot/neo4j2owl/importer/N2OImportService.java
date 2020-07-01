@@ -40,10 +40,8 @@ public class N2OImportService {
                 N2OConfig.getInstance().prepareConfig(url, config, importdir);
             }
 
-            logger.log("Preparing of Indices: " + N2OConfig.getInstance().prepareIndex());
-            if (N2OConfig.getInstance().prepareIndex()) {
-                prepareIndices();
-            }
+            logger.log("Preprocessing...");
+            N2OConfig.getInstance().getPreprocessingCypherQueries().forEach(db::execute);
 
             //inserter = BatchInserters.inserter( inserttmp);
             logger.log("Loading Ontology");
@@ -75,20 +73,6 @@ public class N2OImportService {
             deleteCSVFilesInImportsDir(importdir);
         }
         return importResults;
-    }
-
-
-    private void prepareIndices() {
-        db.execute("CREATE INDEX ON :Individual(iri)");
-        db.execute("CREATE INDEX ON :Class(iri)");
-        db.execute("CREATE INDEX ON :ObjectProperty(iri)");
-        db.execute("CREATE INDEX ON :DataProperty(iri)");
-        db.execute("CREATE INDEX ON :AnnotationProperty(iri)");
-        db.execute("CREATE CONSTRAINT ON (c:Individual) ASSERT c.iri IS UNIQUE");
-        db.execute("CREATE CONSTRAINT ON (c:Class) ASSERT c.iri IS UNIQUE");
-        db.execute("CREATE CONSTRAINT ON (c:ObjectProperty) ASSERT c.iri IS UNIQUE");
-        db.execute("CREATE CONSTRAINT ON (c:DataProperty) ASSERT c.iri IS UNIQUE");
-        db.execute("CREATE CONSTRAINT ON (c:AnnotationProperty) ASSERT c.iri IS UNIQUE");
     }
 
     private List<OWLOntology> chunk(OWLOntology o, int chunksize) {
