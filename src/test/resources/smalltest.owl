@@ -142,6 +142,14 @@
     </owl:Class>
     <owl:Axiom>
         <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
+        <owl:annotatedTarget>yaiusy08u s8ua 9 . (**T %&amp;^%</owl:annotatedTarget>
+        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seeAlso value 1</rdfs:seeAlso>
+        <rdfs:seeAlso>seeAlso value 2</rdfs:seeAlso>
+        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:incompatibleWith>
+    </owl:Axiom>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
         <owl:annotatedProperty rdf:resource="http://www.w3.org/2002/07/owl#equivalentClass"/>
         <owl:annotatedTarget>
             <owl:Restriction>
@@ -154,11 +162,15 @@
     </owl:Axiom>
     <owl:Axiom>
         <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
-        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
-        <owl:annotatedTarget>yaiusy08u s8ua 9 . (**T %&amp;^%</owl:annotatedTarget>
-        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seeAlso value 1</rdfs:seeAlso>
-        <rdfs:seeAlso>seeAlso value 2</rdfs:seeAlso>
-        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:incompatibleWith>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#subClassOf"/>
+        <owl:annotatedTarget>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#B"/>
+            </owl:Restriction>
+        </owl:annotatedTarget>
+        <rdfs:comment>rc comment 1</rdfs:comment>
+        <rdfs:comment>rc comment 2</rdfs:comment>
     </owl:Axiom>
     
 
