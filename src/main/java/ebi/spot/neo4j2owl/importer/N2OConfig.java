@@ -23,6 +23,7 @@ class N2OConfig {
     private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
     private long timeoutinminutes = 180;
     private int batch_size = 999000000;
+    private double relationTypeThreshold = 0.95;
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
     private Set<IRI> oboProperties = new HashSet<>();
@@ -55,11 +56,11 @@ class N2OConfig {
         this.mapRelationshipToDatatype.put(iri, datatype);
     }
 
-    String slToDatatype(String sl) {
+    Optional<String> slToDatatype(String sl) {
         if (this.mapRelationshipToDatatype.containsKey(sl)) {
-            return this.mapRelationshipToDatatype.get(sl);
+            return Optional.of(this.mapRelationshipToDatatype.get(sl));
         }
-        return "String";
+        return Optional.empty();
     }
 
     private void setIriToSl(IRI e, String relationship) {
@@ -290,9 +291,23 @@ class N2OConfig {
             }
         }
 
+        if (configs.containsKey("relation_type_threshold")) {
+            if (configs.get("relation_type_threshold") instanceof Double) {
+                N2OConfig.getInstance().setRelationTypeThreshold((Double) configs.get("relation_type_threshold"));
+            }
+        }
+
         if (configs.containsKey("safe_label")) {
             N2OConfig.getInstance().setSafeLabelMode(configs.get("safe_label").toString());
         }
 
+    }
+
+    private void setRelationTypeThreshold(double relationTypeThreshold) {
+        this.relationTypeThreshold = relationTypeThreshold;
+    }
+
+    double getRelationTypeThreshold() {
+        return this.relationTypeThreshold;
     }
 }

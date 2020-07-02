@@ -25,8 +25,7 @@ class N2OOntologyImporter {
     private N2OLog log = N2OLog.getInstance();
     private GraphDatabaseAPI dbapi;
     private GraphDatabaseService db;
-    private MapCounter booleanTrueCounter = new MapCounter();
-    private MapCounter booleanFalseCounter = new MapCounter();
+    private RelationTypeCounter relationTypeCounter;
 
     N2OOntologyImporter(GraphDatabaseAPI dbapi, GraphDatabaseService db) {
         this.dbapi = dbapi;
@@ -46,6 +45,7 @@ class N2OOntologyImporter {
     void importOntology(ExecutorService exService, File importdir, OWLOntology o, N2OImportResult result) throws IOException, InterruptedException, ExecutionException {
         IRIManager iriManager = new IRIManager();
         manager = new N2OImportManager(o, iriManager);
+        this.relationTypeCounter = new RelationTypeCounter(N2OConfig.getInstance().getRelationTypeThreshold());
 
         log.log("Preparing reasoner");
         OWLReasoner r = new ElkReasonerFactory().createReasoner(o);
@@ -77,7 +77,7 @@ class N2OOntologyImporter {
             });
 
             log.log("Loading nodes to neo from CSV.");
-            N2ONeoCSVLoader csvLoader = new N2ONeoCSVLoader(dbapi,manager);
+            N2ONeoCSVLoader csvLoader = new N2ONeoCSVLoader(dbapi,manager,relationTypeCounter);
             csvLoader.loadNodesToNeoFromCSV(exService, importdir);
 
             log.log("Loading relationships to neo from CSV.");
@@ -179,6 +179,7 @@ class N2OOntologyImporter {
                 if (opt_sl_annop.isPresent()) {
                     String sl_annop = opt_sl_annop.get();
                     Object value = N2OUtils.extractValueFromOWLAnnotationValue(aval);
+                    relationTypeCounter.increment(sl_annop,value);
                     if (a.getProperty().equals(N2OStatic.ap_neo4jLabel)) {
                         manager.addNodeLabel(e, value.toString());
                     } else {
@@ -188,6 +189,7 @@ class N2OOntologyImporter {
                                 && N2OConfig.getInstance().isOBOAssumption()
                                 && N2OConfig.getInstance().isPropertyInOBOAssumption(a.getProperty())) {
                             Map<String, Set<Object>> axAnnos = manager.extractAxiomAnnotationsIntoValueMap(axiomAnnotations,true);
+                            axAnnos.forEach((k,v)->v.forEach(obj->relationTypeCounter.increment(k,obj)));
                             if (!axAnnos.isEmpty()) {
                                 String valueAnnotated = createAxiomAnnotationJSONString(value, axAnnos);
                                 addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, valueAnnotated);
@@ -311,6 +313,7 @@ class N2OOntologyImporter {
         String roletype = manager.prepareQSL(rel);
 
         Map<String, Set<Object>> props = manager.extractAxiomAnnotationsIntoValueMap(annos,true);
+        props.forEach((k,v)->v.forEach(obj->relationTypeCounter.increment(k,obj)));
         manager.addRelation(new N2ORelationship(from_n.get(), to_n.get(), roletype, props));
     }
 

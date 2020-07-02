@@ -52,7 +52,7 @@ public class N2OProcedureTest {
 
         Result importResult = db.execute(call);
         Map<String, Object> resMap = importResult.next();
-        assertEquals(25L, resMap.get("elementsLoaded"));
+        assertEquals(28L, resMap.get("elementsLoaded"));
         assertEquals(9L, resMap.get("classesLoaded"));
         assertEquals("", resMap.get("extraInfo"));
         assertEquals(9L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
@@ -93,7 +93,7 @@ public class N2OProcedureTest {
         Result exportResult = db.execute("CALL ebi.spot.neo4j2owl.exportOWL()");
         Map<String,Object> resMapExport = exportResult.next();
 
-        assertEquals(25L, resMap.get("elementsLoaded"));
+        assertEquals(28L, resMap.get("elementsLoaded"));
         assertEquals(9L, resMap.get("classesLoaded"));
         assertEquals("", resMap.get("extraInfo"));
         assertEquals(9L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));

@@ -60,7 +60,10 @@ public class N2OUtils {
             if (literal.isBoolean()) {
                 return literal.parseBoolean();
             } else if (literal.isDouble()) {
-                return literal.parseDouble();
+                Double d = literal.parseDouble();
+                //because neo does not have a double datatype, lets cast this to float:
+                System.out.println(d);
+                return d.floatValue();
             } else if (literal.isFloat()) {
                 return literal.parseFloat();
             } else if (literal.isInteger()) {

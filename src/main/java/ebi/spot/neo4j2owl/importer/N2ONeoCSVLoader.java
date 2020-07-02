@@ -7,6 +7,7 @@ import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -16,10 +17,12 @@ class N2ONeoCSVLoader {
     private N2OLog log = N2OLog.getInstance();
     private final GraphDatabaseAPI dbapi;
     private final N2OImportManager manager;
+    private final RelationTypeCounter relationTypeCounter;
 
-    N2ONeoCSVLoader(GraphDatabaseAPI dbapi, N2OImportManager manager) {
+    N2ONeoCSVLoader(GraphDatabaseAPI dbapi, N2OImportManager manager, RelationTypeCounter relationTypeCounter) {
         this.dbapi = dbapi;
         this.manager = manager;
+        this.relationTypeCounter = relationTypeCounter;
     }
 
     void loadRelationshipsToNeoFromCSV(ExecutorService exService, File importdir) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
@@ -92,11 +95,27 @@ class N2ONeoCSVLoader {
             if (N2OStatic.isN2OBuiltInProperty(h)) {
                 sb.append("SET ").append(neovar).append(".").append(h).append(" = ").append(csvalias).append(".").append(h).append(" ");
             } else {
-                String function = "to" + N2OConfig.getInstance().slToDatatype(h);
+                String function = "to" + computeDatatype(h);
                 //TODO somevalue = [ x in split(cl.somevalue) | colaesce(apoc.util.toBoolean(x), apoc.util.toInteger(x), apoc.util.toFloat(x), x) ]
                 sb.append("SET ").append(neovar).append(".").append(h).append(" = [value IN split(").append(csvalias).append(".").append(h).append(",\"").append(N2OStatic.ANNOTATION_DELIMITER).append("\") | ").append(function).append("(trim(value))] ");
             }
         }
         return sb.toString().trim().replaceAll(",$", "");
+    }
+
+    private String computeDatatype(String h) {
+        Optional<String> dt_config = N2OConfig.getInstance().slToDatatype(h);
+        if(dt_config.isPresent()) {
+            return dt_config.get();
+        } else {
+            Optional<String> dt_counter = this.relationTypeCounter.computeTypeForRelation(h);
+            if(dt_counter.isPresent()) {
+                return dt_counter.get();
+            } else {
+                String explanation = this.relationTypeCounter.getExplanationForTyping(h);
+                log.warning("Cant decide datatype of annotation property. Ambiguous typing for "+h+": "+explanation);
+            }
+        }
+        return "String";
     }
 }
