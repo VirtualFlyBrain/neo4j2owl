@@ -211,8 +211,7 @@ public class N2OExportService {
     private AddAxiom createAnnotationAxiom(OWLOntology o, OWLEntity e, OWLAnnotationProperty annop, OWLAnnotationValue literal) {
         Set<OWLAnnotation> annotations = new HashSet<>();
         if (literal.isLiteral()) {
-            OWLLiteral l = literal.asLiteral().get();
-            String lit = l.getLiteral();
+            String lit = literal.asLiteral().or(df.getOWLLiteral("UNKNOWN")).getLiteral();
             if (lit.startsWith("{ \"value\":") && lit.contains(", \"annotations\": {")) {
                 Yaml yaml = new Yaml();
                 InputStream inputStream = new ByteArrayInputStream(lit.getBytes());
