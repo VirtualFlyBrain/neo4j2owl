@@ -1,4 +1,4 @@
-allow_entities_without_labels: false
+allow_entities_without_labels: true
 testmode: false
 obo_assumption: true
 batch: true
