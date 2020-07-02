@@ -146,6 +146,7 @@
         <owl:annotatedTarget>yaiusy08u s8ua 9 . (**T %&amp;^%</owl:annotatedTarget>
         <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seeAlso value 1</rdfs:seeAlso>
         <rdfs:seeAlso>seeAlso value 2</rdfs:seeAlso>
+        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</owl:incompatibleWith>
         <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:incompatibleWith>
     </owl:Axiom>
     <owl:Axiom>
