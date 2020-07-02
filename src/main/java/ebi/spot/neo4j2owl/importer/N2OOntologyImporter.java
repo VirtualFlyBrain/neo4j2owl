@@ -25,6 +25,8 @@ class N2OOntologyImporter {
     private N2OLog log = N2OLog.getInstance();
     private GraphDatabaseAPI dbapi;
     private GraphDatabaseService db;
+    private MapCounter booleanTrueCounter = new MapCounter();
+    private MapCounter booleanFalseCounter = new MapCounter();
 
     N2OOntologyImporter(GraphDatabaseAPI dbapi, GraphDatabaseService db) {
         this.dbapi = dbapi;
@@ -185,7 +187,7 @@ class N2OOntologyImporter {
                         if (!axiomAnnotations.isEmpty()
                                 && N2OConfig.getInstance().isOBOAssumption()
                                 && N2OConfig.getInstance().isPropertyInOBOAssumption(a.getProperty())) {
-                            Map<String, Set<Object>> axAnnos = extractAxiomAnnotationsIntoValueMap(axiomAnnotations);
+                            Map<String, Set<Object>> axAnnos = manager.extractAxiomAnnotationsIntoValueMap(axiomAnnotations,true);
                             if (!axAnnos.isEmpty()) {
                                 String valueAnnotated = createAxiomAnnotationJSONString(value, axAnnos);
                                 addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, valueAnnotated);
@@ -223,29 +225,7 @@ class N2OOntologyImporter {
         return value;
     }
 
-    private Map<String, Set<Object>> extractAxiomAnnotationsIntoValueMap(Set<OWLAnnotation> axiomAnnotations) {
-        Map<String, Set<Object>> axAnnos = new HashMap<>();
-        for (OWLAnnotation axAnn : axiomAnnotations) {
-            OWLAnnotationValue avalAx = axAnn.annotationValue();
-            if (!avalAx.asIRI().isPresent()) {
-                Object valueAxAnn = N2OUtils.extractValueFromOWLAnnotationValue(avalAx);
-                Optional<String> opt_sl_axiom_anno = manager.getSLFromAnnotation(axAnn);
-                if (opt_sl_axiom_anno.isPresent()) {
-                    String sl_axiom_anno = opt_sl_axiom_anno.get();
-                    if (valueAxAnn instanceof String) {
-                        valueAxAnn = valueAxAnn.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED,
-                                "|Content removed during Neo4J Import|");
-                        valueAxAnn = String.format("\"%s\"", valueAxAnn);
-                    }
-                    if (!axAnnos.containsKey(sl_axiom_anno)) {
-                        axAnnos.put(sl_axiom_anno, new HashSet<>());
-                    }
-                    axAnnos.get(sl_axiom_anno).add(valueAxAnn);
-                }
-            }
-        }
-        return axAnnos;
-    }
+
 
     private String createAxiomAnnotationJSONString(Object value, Map<String, Set<Object>> axAnnos) {
         String valueAnnotated = String.format("{ \"value\": \"%s\", \"annotations\": {", value);
@@ -253,9 +233,15 @@ class N2OOntologyImporter {
         for (String axAnnosRel : axAnnos.keySet()) {
             Set<String> values = new HashSet<>();
             for (Object ov : axAnnos.get(axAnnosRel)) {
+                if (ov instanceof String) {
+                    ov = ov.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED,
+                            "|Content removed during Neo4J Import|");
+                    ov = String.format("\"%s\"", ov);
+                }
                 values.add(ov.toString());
             }
             String va = String.join(",", values);
+
             annoSet.add(String.format("\"%s\": [ %s ]", axAnnosRel, va));
         }
         valueAnnotated += String.join(",", annoSet);
@@ -324,7 +310,7 @@ class N2OOntologyImporter {
 
         String roletype = manager.prepareQSL(rel);
 
-        Map<String, Object> props = manager.owlAnnotationsToMapOfProperties(annos);
+        Map<String, Set<Object>> props = manager.extractAxiomAnnotationsIntoValueMap(annos,true);
         manager.addRelation(new N2ORelationship(from_n.get(), to_n.get(), roletype, props));
     }
 
@@ -407,11 +393,13 @@ class N2OOntologyImporter {
     private Map<String, Object> prepareRelationshipProperties(N2ORelationship relationship) {
         String rel = relationship.getRelationId();
         Optional<N2OEntity> relEntity = manager.fromSL(rel);
-        Map<String, Object> props = relationship.getProps();
-        props.remove(N2OStatic.ATT_IRI);
-        props.remove(N2OStatic.ATT_LABEL);
-        props.remove(N2OStatic.ATT_NODE_TYPE);
+        Map<String, Object> props = new HashMap<>();
+        Map<String, Set<Object>> props_rel = relationship.getProps();
+        props_rel.remove(N2OStatic.ATT_IRI);
+        props_rel.remove(N2OStatic.ATT_LABEL);
+        props_rel.remove(N2OStatic.ATT_NODE_TYPE);
         props.put("id", rel);
+        convertPropertyAnnotationValueMapToEntityPropertyMap(props, props_rel);
         if (relEntity.isPresent()) {
             props.put(N2OStatic.ATT_IRI, relEntity.get().getIri());
             props.put(N2OStatic.ATT_NODE_TYPE, relEntity.get().getEntityType());
@@ -507,17 +495,7 @@ class N2OOntologyImporter {
 
     private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, Map<String, Object> rel) {
         if (N2OConfig.getInstance().isBatch()) {
-            //inserter.createRelationship(nodeIndex.get(start_neo.getEntity()), nodeIndex.get(end_neo.getEntity()), () -> rel, props);
             manager.updateRelation(start_neo, end_neo, rel);
-        } else {
-            String cypher = String.format(
-                    "MATCH (p { uri:'%s'}), (c { uri:'%s'}) CREATE (p)-[:%s]->(c)",
-                    // c can be a class or an object property
-                    start_neo.getIri(), end_neo.getIri(), rel.get("id"));
-
-            Map<String, Object> params = new HashMap<>();
-            //params.put("props", props);
-            db.execute(cypher, params);
         }
     }
 

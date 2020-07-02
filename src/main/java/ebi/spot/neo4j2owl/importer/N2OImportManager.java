@@ -100,22 +100,40 @@ class N2OImportManager {
         return c;
     }
 
-    Map<String, Object> owlAnnotationsToMapOfProperties(Set<OWLAnnotation> owlans) {
-        Map<String, Object> ans = new HashMap<>();
-        for (OWLAnnotation a : owlans) {
-            OWLAnnotationValue aval = a.annotationValue();
-            String value = "UNKNOWN_ANNOTATION_VALUE";
-            if (aval.asIRI().isPresent()) {
-                value = aval.asIRI().or(IRI.create("UNKNOWN_ANNOTATION_IRI_VALUE")).toString();
-            } else if (aval.isLiteral()) {
-                value = aval.asLiteral().or(df.getOWLLiteral("UNKNOWN_ANNOTATION_LITERAL_VALUE")).getLiteral();
+
+    Map<String, Set<Object>> extractAxiomAnnotationsIntoValueMap(Set<OWLAnnotation> axiomAnnotations, boolean includeiri) {
+        Map<String, Set<Object>> axAnnos = new HashMap<>();
+        for (OWLAnnotation axAnn : axiomAnnotations) {
+            Optional<String> opt_sl_axiom_anno = getSLFromAnnotation(axAnn);
+            if (opt_sl_axiom_anno.isPresent()) {
+                String sl_axiom_anno = opt_sl_axiom_anno.get();
+                boolean iri = false;
+                OWLAnnotationValue avalAx = axAnn.annotationValue();
+
+                Object value;
+                if (avalAx.asIRI().isPresent()) {
+                    value = avalAx.asIRI().or(IRI.create("UNKNOWN_ANNOTATION_IRI_VALUE")).toString();
+                    iri=true;
+                } else {
+                    value = N2OUtils.extractValueFromOWLAnnotationValue(avalAx);
+                }
+
+                if (value instanceof String) {
+                    value = value.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED,
+                            "|Content removed during Neo4J Import|");
+                    //value = String.format("\"%s\"", value);
+                }
+
+                if (!axAnnos.containsKey(sl_axiom_anno)) {
+                    axAnnos.put(sl_axiom_anno, new HashSet<>());
+                }
+                if(!(!includeiri && iri)) {
+                    axAnnos.get(sl_axiom_anno).add(value);
+                }
             }
-            Optional<String> sl = getSLFromAnnotation(a);
-            if(sl.isPresent()) {
-                ans.put(sl.get(), value);
-            }
+
         }
-        return ans;
+        return axAnnos;
     }
 
     Set<String> getHeadersForNodes(String type) {
