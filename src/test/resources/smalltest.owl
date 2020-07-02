@@ -6,8 +6,32 @@
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-     xmlns:untitled-ontology-73="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#">
+     xmlns:untitled-ontology-73="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#"
+     xmlns:untitled-ontology-731="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/">
     <owl:Ontology rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/testAnnoP2 -->
+
+    <owl:AnnotationProperty rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/testAnnoP2"/>
+    
+
+
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/testAnnoProp -->
+
+    <owl:AnnotationProperty rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/testAnnoProp"/>
     
 
 
@@ -99,6 +123,8 @@
                 <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
             </owl:Restriction>
         </owl:equivalentClass>
+        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</untitled-ontology-731:testAnnoProp>
+        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testAnnoProp>
     </owl:Class>
     <owl:Axiom>
         <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#C"/>
@@ -137,6 +163,7 @@
                 <owl:hasValue rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#i"/>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testAnnoProp>
         <rdfs:isDefinedBy>yaiusy08u s8ua 9 . (**T %&amp;^%</rdfs:isDefinedBy>
         <rdfs:seeAlso rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#i"/>
     </owl:Class>
@@ -215,6 +242,7 @@
                 </owl:intersectionOf>
             </owl:Class>
         </owl:equivalentClass>
+        <untitled-ontology-731:testAnnoP2 rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.22</untitled-ontology-731:testAnnoP2>
     </owl:Class>
     
 
