@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLEntity;
@@ -19,60 +20,73 @@ class IRIManager {
     private int NAMESPACECOUNTER = 0;
 
     IRIManager() {
-        prefixNamespaceMap.put("nic:","http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#");
-        prefixNamespaceMap.put("obo:"," http://purl.obolibrary.org/obo/");
-        prefixNamespaceMap.put("vfb:","http://www.virtualflybrain.org/owl/");
-        prefixNamespaceMap.put("fbcv:","http://purl.obolibrary.org/obo/fbcv#");
-        prefixNamespaceMap.put("oio:","http://www.geneontology.org/formats/oboInOwl#");
-        prefixNamespaceMap.putAll(new DefaultPrefixManager().getPrefixName2PrefixMap());
+        prefixNamespaceMap.put("nic","http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#");
+        prefixNamespaceMap.put("obo"," http://purl.obolibrary.org/obo/");
+        prefixNamespaceMap.put("oio","http://www.geneontology.org/formats/oboInOwl#");
+        prefixNamespaceMap.put("n2oc",N2OStatic.NEO4J_UNMAPPED_PROPERTY_PREFIX_URI);
+        prefixNamespaceMap.put("n2o",N2OStatic.NEO4J_BUILTIN_PROPERTY_PREFIX_URI);
+
+        N2OConfig.getInstance().getCustomCurieMap().forEach(prefixNamespaceMap::put);
+        new DefaultPrefixManager().getPrefixName2PrefixMap().forEach((k,v)->prefixNamespaceMap.put(k.replaceAll(":",""),v));
+
         prefixNamespaceMap.forEach((k,v)->namespacePrefixMap.put(v,k));
-        //System.out.println(prefixNamespaceMap);
     }
 
 
-    private String getPrefix(IRI iri) {
-        String ns = getNamespace(iri);
-        if(!namespacePrefixMap.containsKey(ns)) {
-            if(isOBOesque(iri)) {
-                    String obo = ns.substring(0,ns.lastIndexOf("/")+1);
-                    //System.out.println(obo);
-                    String init = ns.replaceAll(obo,"");
-                    //System.out.println(init);
-                    String prefix = init.replaceAll("_","") + ":";
-                    if(prefixNamespaceMap.containsKey(prefix)) {
-                        System.err.println(prefix+" prefix for uri "+ns+" was already present for differnt uri: "+prefixNamespaceMap.get(prefix));
-                        prefix = "ns" + NAMESPACECOUNTER + ":";
-                        NAMESPACECOUNTER++;
+    // The namespace is the first part of the url like http://purl.obolibrary.org/obo/RO_
+    private String getUrlNamespace(IRI iri) {
+        String iris = iri.toString();
 
-                    }
-                   // System.out.println(prefix);
-                    namespacePrefixMap.put(ns, prefix);
-                    prefixNamespaceMap.put(prefix, ns);
+        if(isOBOesque(iris)) {
+            String obopre = iris.split("_")[0];
+            String obons = obopre+"_";
+            if(namespacePrefixMap.containsKey(obons)) {
+                return obons;
+            }
+            String prefix = obopre.replaceAll(N2OStatic.OBONS,"");
+            addPrefixNamespacePair(obons,prefix);
+            return obons;
+        }
 
-            } else {
-                String prefix = "ns" + NAMESPACECOUNTER + ":";
-                NAMESPACECOUNTER++;
-                namespacePrefixMap.put(ns, prefix);
-                prefixNamespaceMap.put(prefix, ns);
+        String ns = iri.getNamespace();
+
+        if(namespacePrefixMap.containsKey(ns)) {
+            return ns;
+        }
+
+
+
+        for(String urlNamespace:namespacePrefixMap.keySet()) {
+            if(iris.startsWith(urlNamespace)) {
+                return urlNamespace;
             }
         }
-        return namespacePrefixMap.get(ns);
+        createNewPrefixForNamespace(ns);
+        return ns;
     }
 
-    String getCurie(OWLEntity e) {
-        String shortform = getShortForm(e.getIRI());
-        if(isOBOesque(e.getIRI())) {
-            return shortform.replaceAll("_",":");
-        } else {
-            String prefix = getPrefix(e.getIRI());
-            return prefix + shortform;
+    private void createNewPrefixForNamespace(String ns) {
+        String prefix = "ns" + NAMESPACECOUNTER;
+        NAMESPACECOUNTER++;
+        addPrefixNamespacePair(ns, prefix);
+    }
+
+    private void addPrefixNamespacePair(String ns, String prefix) {
+        N2OLog.getInstance().info("Adding NS: "+ns+" to "+prefix);
+        namespacePrefixMap.put(ns, prefix);
+        prefixNamespaceMap.put(prefix, ns);
+    }
+
+    private boolean isOBOesque(String iri) {
+        if(iri.startsWith(N2OStatic.OBONS)) {
+            String remain = iri.replaceAll(N2OStatic.OBONS,"");
+            return p.matcher(remain).matches();
         }
+        return false;
     }
 
-
-    String getSafeLabel(OWLEntity e, OWLOntology o) {
-        String label = getLabel(e,o).trim();
-        return label.chars().collect(StringBuilder::new, (sb, c) -> sb.append(encode(c)), StringBuilder::append).toString();
+    private String getPrefix(IRI iri) {
+        return namespacePrefixMap.get(getUrlNamespace(iri));
     }
 
     private char encode(int c) {
@@ -89,14 +103,12 @@ class IRIManager {
         }
     }
 
-    String getQualifiedSafeLabel(OWLEntity e, OWLOntology o) {
-        return getSafeLabel(e,o)+"_"+getPrefix(e.getIRI()).replaceAll(":","");
+    String getCurie(OWLEntity e) {
+        String iri = e.getIRI().toString();
+        String namespace = getUrlNamespace(e.getIRI());
+        String prefix = namespacePrefixMap.get(namespace);
+        return iri.replaceAll(namespace,prefix+":");
     }
-
-    String getShortForm(IRI e) {
-       return e.getShortForm();
-    }
-
 
     String getLabel(OWLEntity e, OWLOntology o) {
         Set<String> labels = N2OUtils.getLabels(e,o);
@@ -114,33 +126,24 @@ class IRIManager {
         }
     }
 
-    String getNamespace(IRI e) {
-        if(isOBOesque(e)) {
-            String remain = getShortForm(e);
-            String id = remain.substring(remain.indexOf("_") + 1);
-            return e.toString().replaceAll(id+"$","");
-        } else {
-            /*
-            String short_form = e.getShortForm();
-            String namespace = e.getNamespace();
-            try {
-                namespace = e.toString().replaceAll(getShortForm(e), "");
-            } catch (Exception ex) {
-                new IllegalArgumentException(e+" ("+short_form+") does not have a legal short form!",ex);
-            }*/
-            return e.getNamespace();
-        }
+    String getSafeLabel(OWLEntity e, OWLOntology o) {
+        String label = getLabel(e,o).trim();
+        return label.chars().collect(StringBuilder::new, (sb, c) -> sb.append(encode(c)), StringBuilder::append).toString();
+    }
+
+    String getQualifiedSafeLabel(OWLEntity e, OWLOntology o) {
+        return getSafeLabel(e,o)+"_"+ getPrefix(e.getIRI());
+    }
+
+    String getShortForm(IRI e) {
+       return e.getShortForm();
     }
 
 
-    private boolean isOBOesque(IRI e) {
-        String s = e.toString();
-        if(s.startsWith(N2OStatic.OBONS)) {
-            String remain = s.replaceAll(N2OStatic.OBONS,"");
-            return p.matcher(remain).matches();
-        }
-        return false;
-    }
+
+
+
+
 
 
 }
