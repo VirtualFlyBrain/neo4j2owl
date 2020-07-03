@@ -25,6 +25,7 @@ class N2OConfig {
     private int batch_size = 999000000;
     private double relationTypeThreshold = 0.95;
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
+    private Map<String, String> customCurieMap = new HashMap<>();
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
     private Set<IRI> oboProperties = new HashSet<>();
     private Set<String> preprocessingCypherQueries = new HashSet<>();
@@ -301,6 +302,23 @@ class N2OConfig {
             N2OConfig.getInstance().setSafeLabelMode(configs.get("safe_label").toString());
         }
 
+        if (configs.containsKey("curie_map")) {
+            if (configs.get("curie_map") instanceof HashMap) {
+                HashMap<String, String> map = (HashMap<String, String>) configs.get("curie_map");
+                for(String k:map.keySet()) {
+                    N2OConfig.getInstance().addCustomPrefix(k,map.get(k));
+                }
+            }
+        }
+
+    }
+
+    private void addCustomPrefix(String k, String s) {
+        this.customCurieMap.put(k,s);
+    }
+
+    Map<String,String> getCustomCurieMap() {
+        return this.customCurieMap;
     }
 
     private void setRelationTypeThreshold(double relationTypeThreshold) {
