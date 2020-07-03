@@ -91,17 +91,22 @@ class N2OOntologyImporter {
         for (String ces : classExpressionLabelMap.keySet()) {
             String label = classExpressionLabelMap.get(ces);
             log.info("Adding label " + label + " to " + ces + ".");
-            OWLClassExpression ce = manager.parseExpression(ces);
-            if (label.isEmpty()) {
-                if (ce.isClassExpressionLiteral()) {
-                    label = formatAsNeoNodeLabel(ce.asOWLClass());
-                } else {
-                    log.warning("During adding of dynamic neo labels, an empty label was encountered in conjunction with a complex class expression (" + N2OUtils.render(ce) + "). The label was not added.");
+            try {
+                OWLClassExpression ce = manager.parseExpression(ces);
+                if (label.isEmpty()) {
+                    if (ce.isClassExpressionLiteral()) {
+                        label = formatAsNeoNodeLabel(ce.asOWLClass());
+                    } else {
+                        log.warning("During adding of dynamic neo labels, an empty label was encountered in conjunction with a complex class expression (" + N2OUtils.render(ce) + "). The label was not added.");
+                    }
                 }
-            }
-            if (!label.isEmpty()) {
-                for (OWLClass sc : getSubClasses(r, ce, false)) manager.addNodeLabel(sc, label);
-                for (OWLNamedIndividual sc : getInstances(r, ce)) manager.addNodeLabel(sc, label);
+                if (!label.isEmpty()) {
+                    for (OWLClass sc : getSubClasses(r, ce, false)) manager.addNodeLabel(sc, label);
+                    for (OWLNamedIndividual sc : getInstances(r, ce)) manager.addNodeLabel(sc, label);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.warning("FAILED adding label " + label + " to " + ces + ", see logs.");
             }
         }
 
