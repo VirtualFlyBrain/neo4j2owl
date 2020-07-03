@@ -81,6 +81,32 @@
     
 
 
+    <!-- http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_TEST2 -->
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_TEST2">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:intersectionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#B"/>
+                    <owl:Restriction>
+                        <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
+                        <owl:someValuesFrom>
+                            <owl:Class>
+                                <owl:unionOf rdf:parseType="Collection">
+                                    <rdf:Description rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
+                                    <rdf:Description rdf:about="http://www.w3.org/2002/07/owl#Thing"/>
+                                </owl:unionOf>
+                            </owl:Class>
+                        </owl:someValuesFrom>
+                    </owl:Restriction>
+                </owl:intersectionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <untitled-ontology-731:testAnnoP2 rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.22</untitled-ontology-731:testAnnoP2>
+    </owl:Class>
+    
+
+
     <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A">
@@ -169,15 +195,6 @@
     </owl:Class>
     <owl:Axiom>
         <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
-        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
-        <owl:annotatedTarget>yaiusy08u s8ua 9 . (**T %&amp;^%</owl:annotatedTarget>
-        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seeAlso value 1</rdfs:seeAlso>
-        <rdfs:seeAlso>seeAlso value 2</rdfs:seeAlso>
-        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</owl:incompatibleWith>
-        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:incompatibleWith>
-    </owl:Axiom>
-    <owl:Axiom>
-        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
         <owl:annotatedProperty rdf:resource="http://www.w3.org/2002/07/owl#equivalentClass"/>
         <owl:annotatedTarget>
             <owl:Restriction>
@@ -200,6 +217,15 @@
         <rdfs:comment>rc comment 1</rdfs:comment>
         <rdfs:comment>rc comment 2</rdfs:comment>
     </owl:Axiom>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
+        <owl:annotatedTarget>yaiusy08u s8ua 9 . (**T %&amp;^%</owl:annotatedTarget>
+        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seeAlso value 1</rdfs:seeAlso>
+        <rdfs:seeAlso>seeAlso value 2</rdfs:seeAlso>
+        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</owl:incompatibleWith>
+        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:incompatibleWith>
+    </owl:Axiom>
     
 
 
@@ -217,32 +243,6 @@
                 </owl:intersectionOf>
             </owl:Class>
         </owl:equivalentClass>
-    </owl:Class>
-    
-
-
-    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TEST2 -->
-
-    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TEST2">
-        <owl:equivalentClass>
-            <owl:Class>
-                <owl:intersectionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#B"/>
-                    <owl:Restriction>
-                        <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
-                        <owl:someValuesFrom>
-                            <owl:Class>
-                                <owl:unionOf rdf:parseType="Collection">
-                                    <rdf:Description rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
-                                    <rdf:Description rdf:about="http://www.w3.org/2002/07/owl#Thing"/>
-                                </owl:unionOf>
-                            </owl:Class>
-                        </owl:someValuesFrom>
-                    </owl:Restriction>
-                </owl:intersectionOf>
-            </owl:Class>
-        </owl:equivalentClass>
-        <untitled-ontology-731:testAnnoP2 rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.22</untitled-ontology-731:testAnnoP2>
     </owl:Class>
     
 

@@ -28,4 +28,10 @@ neo_node_labelling:
   - label:  Neuron_adult
     classes:
       - nic:A
+      - VFBext:TEST2
       - BFO:0000051 some owl:Thing
+curie_map:
+  VFB: http://purl.obolibrary.org/obo/fbbt/vfb/VFB_
+  VFBext: http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_
+  vfbp: http://purl.obolibrary.org/obo/fbbt/vfb#
+  vfb: http://www.virtualflybrain.org/owl/
