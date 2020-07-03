@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class N2OEntity {
-    private final String ns;
     private final String iri;
     private final String safe_label;
     private final String qualified_safe_label;
@@ -29,7 +28,6 @@ public class N2OEntity {
         label = curies.getLabel(e,o);
         types = new HashSet<>();
         types.add(N2OStatic.getNeoType(e));
-        ns = curies.getNamespace(e.getIRI());
         qualified_safe_label = curies.getQualifiedSafeLabel(e,o);
         short_form = curies.getShortForm(e.getIRI());
         curie = curies.getCurie(e);
@@ -78,8 +76,7 @@ public class N2OEntity {
     @Override
     public String toString() {
         return "N2OEntity{" +
-                "ns='" + ns + '\'' +
-                ", iri='" + iri + '\'' +
+                "  iri='" + iri + '\'' +
                 ", safe_label='" + safe_label + '\'' +
                 ", qualified_safe_label='" + qualified_safe_label + '\'' +
                 ", label='" + label + '\'' +

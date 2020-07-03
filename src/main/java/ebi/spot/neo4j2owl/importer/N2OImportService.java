@@ -65,7 +65,7 @@ public class N2OImportService {
             logger.error("An error has occurred..");
             e.printStackTrace();
             logger.error(e.getMessage());
-            importResults.setTerminationKO(e.getMessage());
+            importResults.setTerminationKO("ERROR: "+e.getMessage());
         } finally {
             logger.log("done");
             N2OConfig.resetConfig();

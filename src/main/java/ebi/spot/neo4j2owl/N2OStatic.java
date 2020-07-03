@@ -14,8 +14,9 @@ public class N2OStatic {
     private static final String NODETYPE_OWLENTITY = "Entity";
     public static final String RELTYPE_SUBCLASSOF = "SUBCLASSOF";
     public static final String RELTYPE_INSTANCEOF = "INSTANCEOF";
-    private static final String NEO4J_LABEL = "http://neo4j.com#nodeLabel";
-    public static final String NEO4J_UNMAPPED_PROPERTY_PREFIX_URI = "http://neo4j.com/property#";
+    private static final String NEO4J_LABEL = "http://n2o.neo/property/nodeLabel";
+    public static final String NEO4J_UNMAPPED_PROPERTY_PREFIX_URI = "http://n2o.neo/custom/";
+    public static final String NEO4J_BUILTIN_PROPERTY_PREFIX_URI = "http://n2o.neo/property/";
 
     public static final String ATT_LABEL = "label";
     public static final String ATT_SAFE_LABEL = "sl";
@@ -54,7 +55,7 @@ public class N2OStatic {
     }
 
     private static OWLEntity abp(String s) {
-        return df.getOWLAnnotationProperty(IRI.create(NEO4J_UNMAPPED_PROPERTY_PREFIX_URI+s));
+        return df.getOWLAnnotationProperty(IRI.create(NEO4J_BUILTIN_PROPERTY_PREFIX_URI+s));
     }
 
     public static boolean isOWLPropertyTypeLabel(String label) {

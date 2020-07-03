@@ -62,7 +62,6 @@ public class N2OUtils {
             } else if (literal.isDouble()) {
                 Double d = literal.parseDouble();
                 //because neo does not have a double datatype, lets cast this to float:
-                System.out.println(d);
                 return d.floatValue();
             } else if (literal.isFloat()) {
                 return literal.parseFloat();

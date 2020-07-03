@@ -9,7 +9,6 @@ import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 import java.util.*;
 
 class N2OImportManager {
-    private final OWLDataFactory df = OWLManager.getOWLDataFactory();
     private final ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
     private final Map<String, Set<String>> prop_columns = new HashMap<>();
     private final Map<String, Set<String>> node_columns = new HashMap<>();

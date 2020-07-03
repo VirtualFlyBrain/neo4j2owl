@@ -105,8 +105,8 @@ public class N2OExportService {
         Set<OWLAnnotation> axiomAnnotations = new HashSet<>();
         Map<String, Object> rpros = rp.getAllProperties();
         for (String propertykey : rpros.keySet()) {
-            OWLAnnotationProperty ap = getAnnotationProperty(propertykey);
-            if (!N2OStatic.isN2OBuiltInProperty(ap)) {
+            if (!N2OStatic.isN2OBuiltInProperty(propertykey)) {
+                OWLAnnotationProperty ap = getAnnotationProperty(propertykey);
                 Object v = rpros.get(propertykey);
                 if (v.getClass().isArray()) {
                     for (Object val : toObjectArray(v)) {
@@ -177,9 +177,9 @@ public class N2OExportService {
     }
 
     private void addEntityForEntityAndAnnotationProperty(OWLOntology o, List<OWLOntologyChange> changes, OWLEntity e, String qsl_anno) {
-        Object annos = n2OEntityManager.annotationValues(e, qsl_anno);
-        OWLAnnotationProperty annoP = getAnnotationProperty(qsl_anno);
-        if (!N2OStatic.isN2OBuiltInProperty(annoP)) {
+        if (!N2OStatic.isN2OBuiltInProperty(qsl_anno)) {
+            Object annos = n2OEntityManager.annotationValues(e, qsl_anno);
+            OWLAnnotationProperty annoP = getAnnotationProperty(qsl_anno);
             if (annos instanceof Collection) {
                 for (Object aa : (Collection) annos) {
                     if (annoP == null) {
@@ -221,8 +221,9 @@ public class N2OExportService {
                     if (c.containsKey("annotations")) {
                         Object pm = c.get("annotations");
                         for (Object anno_sl : ((Map) pm).keySet()) {
-                            OWLAnnotationProperty annoP = getAnnotationProperty(anno_sl.toString());
-                            if (!N2OStatic.isN2OBuiltInProperty(annoP)) {
+
+                            if (!N2OStatic.isN2OBuiltInProperty(anno_sl.toString())) {
+                                OWLAnnotationProperty annoP = getAnnotationProperty(anno_sl.toString());
                                 ArrayList annoSetValues = (ArrayList) ((Map) pm).get(anno_sl);
                                 for (Object s : annoSetValues) {
                                     annotations.add(df.getOWLAnnotation(annoP,getLiteral(s)));
@@ -258,6 +259,8 @@ public class N2OExportService {
     private OWLAnnotationValue getLiteral(Object value) {
         if (value instanceof Boolean) {
             return df.getOWLLiteral((Boolean) value);
+        } else if (value instanceof Long) {
+            return df.getOWLLiteral((Long) value);
         } else if (value instanceof Integer) {
             return df.getOWLLiteral((Integer) value);
         } else if (value instanceof Float) {
