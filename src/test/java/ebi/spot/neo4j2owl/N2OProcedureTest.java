@@ -116,9 +116,13 @@ public class N2OProcedureTest {
         assertFalse(o_orginal.isEmpty());
         //assertEquals(o_orginal.getSignature(Imports.INCLUDED), o_neoexport.getSignature(Imports.INCLUDED));
         Set<OWLAxiom> axioms_original = new HashSet<>(o_orginal.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).filter(ax2 -> !(ax2 instanceof OWLEquivalentClassesAxiom)).collect(Collectors.toSet()));
-        //Set<OWLAxiom> axioms_export = new HashSet<>(o_neoexport.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).filter(ax2 -> !(ax2 instanceof OWLEquivalentClassesAxiom)).collect(Collectors.toSet()));
+        Set<OWLAxiom> axioms_export = new HashSet<>(o_neoexport.getAxioms().stream().filter(ax -> !(ax instanceof OWLDeclarationAxiom)).filter(ax2 -> !(ax2 instanceof OWLEquivalentClassesAxiom)).collect(Collectors.toSet()));
         axioms_original.removeAll(o_neoexport.getAxioms());
+        System.out.println("------------");
         axioms_original.forEach(System.out::println);
+        System.out.println("------------");
+        axioms_export.removeAll(o_orginal.getAxioms());
+        //axioms_export.forEach(System.out::println);
         assertTrue(axioms_original.isEmpty());
         //assertTrue(axioms_export.isEmpty());
         //assertEquals(o_orginal.getAxiomCount(), o_neoexport.getAxiomCount());
