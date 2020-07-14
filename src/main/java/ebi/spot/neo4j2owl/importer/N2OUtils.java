@@ -27,25 +27,14 @@ public class N2OUtils {
     private static  final OWLDataFactory df = OWLManager.getOWLDataFactory();
     private static final DLSyntaxObjectRenderer ren = new DLSyntaxObjectRenderer();
 
-    public static <T> T inTx(GraphDatabaseService db, Callable<T> callable) {
-        try {
-            return inTxFuture(DEFAULT, db, callable).get();
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error executing in separate transaction: "+e.getMessage(), e);
-        }
-    }
 
-    public static Set<String> getLabels(OWLEntity c, OWLOntology o) {
-        Set<String> labels = new HashSet();
-        Iterator var3 = EntitySearcher.getAnnotations(c, o, df.getRDFSLabel()).iterator();
+    static Set<String> getLabels(OWLEntity c, OWLOntology o) {
+        Set<String> labels = new HashSet<>();
 
-        while(var3.hasNext()) {
-            OWLAnnotation a = (OWLAnnotation)var3.next();
+        for (OWLAnnotation a : EntitySearcher.getAnnotations(c, o, df.getRDFSLabel())) {
             OWLAnnotationValue value = a.getValue();
             if (value instanceof OWLLiteral) {
-                String val = ((OWLLiteral)value).getLiteral();
+                String val = ((OWLLiteral) value).getLiteral();
                 labels.add(val);
             }
         }
@@ -70,6 +59,7 @@ public class N2OUtils {
             } else {
                 return literal.getLiteral();
             }
+            // "xsd:long", literal.getDatatypePrefixedName()
         }
         return "neo4j2owl_UnknownValue";
     }
@@ -82,21 +72,6 @@ public class N2OUtils {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-
-    public static <T> Future<T> inTxFuture(ExecutorService pool, GraphDatabaseService db, Callable<T> callable) {
-        try {
-            return pool.submit(() -> {
-                try (Transaction tx = db.beginTx()) {
-                    T result = callable.call();
-                    tx.success();
-                    return result;
-                }
-            });
-        } catch (Exception e) {
-            throw new RuntimeException("Error executing in separate transaction", e);
         }
     }
 

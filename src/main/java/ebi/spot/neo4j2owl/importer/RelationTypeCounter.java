@@ -49,10 +49,13 @@ class RelationTypeCounter {
             Map<String, Integer> ctm = mapCounter.get(rel);
             int sum = ctm.values().stream().mapToInt(Integer::intValue).sum();
             if(sum>0) {
+                if(ctm.keySet().size()!=1) {
+                    s.append("STRONG WARNING: More than one type recorded, ambiguous typing! ");
+                }
                 for (String type : ctm.keySet()) {
                     Integer ct = ctm.get(type);
                     double d = ((double) ct) / sum;
-                    s.append(type).append(": ").append(ctm.get(type)).append(" (").append(String.format("%.2f", d)).append(");");
+                    s.append(type).append(": ").append(ctm.get(type)).append(" (").append(String.format("%.2f", d)).append("); ");
                 }
             } else {
                 s.append("No typing information recorded.");

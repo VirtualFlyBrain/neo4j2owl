@@ -52,10 +52,10 @@ public class N2OProcedureTest {
 
         Result importResult = db.execute(call);
         Map<String, Object> resMap = importResult.next();
-        assertEquals(28L, resMap.get("elementsLoaded"));
-        assertEquals(9L, resMap.get("classesLoaded"));
+        assertEquals(32L, resMap.get("elementsLoaded"));
+        assertEquals(12L, resMap.get("classesLoaded"));
         assertEquals("", resMap.get("extraInfo"));
-        assertEquals(9L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
+        assertEquals(12L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
         db.shutdown();
     }
 
@@ -93,10 +93,10 @@ public class N2OProcedureTest {
         Result exportResult = db.execute("CALL ebi.spot.neo4j2owl.exportOWL()");
         Map<String,Object> resMapExport = exportResult.next();
 
-        assertEquals(28L, resMap.get("elementsLoaded"));
-        assertEquals(9L, resMap.get("classesLoaded"));
+        assertEquals(32L, resMap.get("elementsLoaded"));
+        assertEquals(12L, resMap.get("classesLoaded"));
         assertEquals("", resMap.get("extraInfo"));
-        assertEquals(9L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
+        assertEquals(12L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
 
         String ontologyString = (String)resMapExport.get("o");
         OWLOntologyManager man1 = OWLManager.createOWLOntologyManager();

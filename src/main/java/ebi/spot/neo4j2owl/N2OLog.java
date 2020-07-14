@@ -33,6 +33,13 @@ public class N2OLog {
     public void error(Object msg) {
         //log.error(msg.toString());
         System.err.println("ERROR: "+msg + " " + getTimePassed());
+        errorInterpreter(msg.toString());
+    }
+
+    private void errorInterpreter(String msg) {
+        if(msg.contains("Property values can only be of primitive types or arrays thereof")) {
+            System.err.println("Debugging assistant: This error often (not always!) occurs in conjunction with the dynamic type coercing function (example: properties with more than 1 datatype associated with it in the ontology, say 200 Boolean values and 10 String values, get coerced to Boolean). Search the log the the 'Typing report for' the property for more information.");
+        }
     }
 
     public void info(Object msg) {

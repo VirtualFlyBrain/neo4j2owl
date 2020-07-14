@@ -109,10 +109,13 @@ class N2ONeoCSVLoader {
             return dt_config.get();
         } else {
             Optional<String> dt_counter = this.relationTypeCounter.computeTypeForRelation(h);
+            String explanation = this.relationTypeCounter.getExplanationForTyping(h);
             if(dt_counter.isPresent()) {
-                return dt_counter.get();
+                String dt = dt_counter.get();
+                log.info(h+ " relation was assigned to the '"+dt+"' datatype." );
+                log.info(explanation);
+                return dt;
             } else {
-                String explanation = this.relationTypeCounter.getExplanationForTyping(h);
                 log.warning("Cant decide datatype of annotation property. Ambiguous typing for "+h+": "+explanation);
             }
         }
