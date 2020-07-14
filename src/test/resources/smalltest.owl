@@ -35,6 +35,12 @@
     
 
 
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/testBooleanVoteCoerce -->
+
+    <owl:AnnotationProperty rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/testBooleanVoteCoerce"/>
+    
+
+
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
     //
@@ -286,6 +292,33 @@
                 </owl:intersectionOf>
             </owl:Class>
         </owl:equivalentClass>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TESTBOOL1 -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TESTBOOL1">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
+        <untitled-ontology-731:testBooleanVoteCoerce rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testBooleanVoteCoerce>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TESTBOOL2 -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TESTBOOL2">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
+        <untitled-ontology-731:testBooleanVoteCoerce rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testBooleanVoteCoerce>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TESTBOOL3 -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TESTBOOL3">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
+        <untitled-ontology-731:testBooleanVoteCoerce>treu</untitled-ontology-731:testBooleanVoteCoerce>
     </owl:Class>
     
 
