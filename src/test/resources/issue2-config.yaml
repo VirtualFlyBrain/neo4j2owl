@@ -1,10 +1,9 @@
 allow_entities_without_labels: true
 testmode: true
-represent_values_and_annotations_as_json: true
 batch: true
 safe_label: loose
 batch_size: 100000000
-represent_values_and_annotations_as_json_overwrite_defaults:
+represent_values_and_annotations_as_json:
   iris:
     - "http://purl.obolibrary.org/obo/IAO_0000115"
     - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"

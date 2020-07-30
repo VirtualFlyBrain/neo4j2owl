@@ -19,7 +19,6 @@ class N2OConfig {
     private boolean allow_entities_without_labels = true;
     private boolean batch = true;
     private boolean testmode = false;
-    private boolean oboassumption = false;
     private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
     private long timeoutinminutes = 180;
     private int batch_size = 999000000;
@@ -137,11 +136,7 @@ class N2OConfig {
     }
 
     boolean isOBOAssumption() {
-        return this.oboassumption;
-    }
-
-    private void setOBOAssumption(boolean oboassumption) {
-        this.oboassumption = oboassumption;
+        return !this.oboProperties.isEmpty();
     }
 
     boolean isAllowEntitiesWithoutLabels() {
@@ -245,12 +240,6 @@ class N2OConfig {
             }
         }
 
-        if (configs.containsKey("obo_assumption")) {
-            if (configs.get("obo_assumption") instanceof Boolean) {
-                N2OConfig.getInstance().setOBOAssumption((Boolean) configs.get("obo_assumption"));
-            }
-        }
-
         if (configs.containsKey("timeout")) {
             if (configs.get("timeout") instanceof Long) {
                 N2OConfig.getInstance().setTimeoutInMinutes((Long) configs.get("timeout"));
@@ -265,16 +254,15 @@ class N2OConfig {
             }
         }
 
-        if (configs.containsKey("obo_assumption_overwrite_defaults")) {
-            if (configs.get("obo_assumption_overwrite_defaults") instanceof HashMap) {
-                HashMap<String, Object> pmmhm = (HashMap<String, Object>) configs.get("obo_assumption_overwrite_defaults");
+        if (configs.containsKey("represent_values_and_annotations_as_json")) {
+            if (configs.get("represent_values_and_annotations_as_json") instanceof HashMap) {
+                HashMap<String, Object> pmmhm = (HashMap<String, Object>) configs.get("represent_values_and_annotations_as_json");
                 if (pmmhm.containsKey("iris")) {
                     ArrayList iris = (ArrayList) pmmhm.get("iris");
                     for (Object iri : iris) {
                         N2OConfig.getInstance().addPropertyForOBOAssumption(IRI.create(iri.toString()));
                     }
                 }
-                N2OConfig.getInstance().setOBOAssumption((Boolean) configs.get("obo_assumption"));
             }
         }
 
