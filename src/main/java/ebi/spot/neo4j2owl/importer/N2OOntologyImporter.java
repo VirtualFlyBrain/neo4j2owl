@@ -190,9 +190,7 @@ class N2OOntologyImporter {
                     } else {
                         value = removeAnnotationDelimitersFromAnnotationValue(value);
                         Set<OWLAnnotation> axiomAnnotations = ax.getAnnotations();
-                        if (!axiomAnnotations.isEmpty()
-                                && N2OConfig.getInstance().isOBOAssumption()
-                                && N2OConfig.getInstance().isPropertyInOBOAssumption(a.getProperty())) {
+                        if (N2OConfig.getInstance().isShouldPropertyBeRolledAsJSON(a.getProperty())) {
                             Map<String, Set<Object>> axAnnos = manager.extractAxiomAnnotationsIntoValueMap(axiomAnnotations,true);
                             axAnnos.forEach((k,v)->v.forEach(obj->relationTypeCounter.increment(k,obj)));
                             if (!axAnnos.isEmpty()) {

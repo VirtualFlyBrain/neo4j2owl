@@ -135,15 +135,11 @@ class N2OConfig {
         return this.classExpressionNeoLabelMap;
     }
 
-    boolean isOBOAssumption() {
-        return !this.oboProperties.isEmpty();
-    }
-
     boolean isAllowEntitiesWithoutLabels() {
         return this.allow_entities_without_labels;
     }
 
-    boolean isPropertyInOBOAssumption(OWLAnnotationProperty ap) {
+    boolean isShouldPropertyBeRolledAsJSON(OWLAnnotationProperty ap) {
         return this.getOboAssumptionProperties().contains(ap.getIRI());
     }
 
