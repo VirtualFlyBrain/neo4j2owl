@@ -28,6 +28,9 @@ public class N2OEntity {
         label = curies.getLabel(e,o);
         types = new HashSet<>();
         types.add(N2OStatic.getNeoType(e));
+        if(N2OConfig.getInstance().isAddPropertyLabel() && N2OStatic.isPropertyType(e)) {
+            types.add(N2OStatic.NODETYPE_PROPERTY);
+        }
         qualified_safe_label = curies.getQualifiedSafeLabel(e,o);
         short_form = curies.getShortForm(e.getIRI());
         curie = curies.getCurie(e);

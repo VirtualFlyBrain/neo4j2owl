@@ -18,6 +18,7 @@ class N2OConfig {
     private N2OLog log = N2OLog.getInstance();
     private boolean allow_entities_without_labels = true;
     private boolean batch = true;
+    private boolean addPropertyLabel = true;
     private boolean testmode = false;
     private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
     private long timeoutinminutes = 180;
@@ -236,6 +237,12 @@ class N2OConfig {
             }
         }
 
+        if (configs.containsKey("add_property_label")) {
+            if (configs.get("add_property_label") instanceof Boolean) {
+                N2OConfig.getInstance().setIsPropertyLabel((Boolean) configs.get("add_property_label"));
+            }
+        }
+
         if (configs.containsKey("timeout")) {
             if (configs.get("timeout") instanceof Long) {
                 N2OConfig.getInstance().setTimeoutInMinutes((Long) configs.get("timeout"));
@@ -297,6 +304,10 @@ class N2OConfig {
 
     }
 
+    private void setIsPropertyLabel(boolean addPropertyLabel) {
+        this.addPropertyLabel = addPropertyLabel;
+    }
+
     private void addCustomPrefix(String k, String s) {
         this.customCurieMap.put(k,s);
     }
@@ -311,5 +322,9 @@ class N2OConfig {
 
     double getRelationTypeThreshold() {
         return this.relationTypeThreshold;
+    }
+
+    boolean isAddPropertyLabel() {
+        return this.addPropertyLabel;
     }
 }

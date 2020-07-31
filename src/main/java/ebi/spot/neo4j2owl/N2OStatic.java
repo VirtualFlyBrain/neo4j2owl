@@ -11,6 +11,7 @@ public class N2OStatic {
     private static final String NODETYPE_OWLOBJECTPROPERTY = "ObjectProperty";
     private static final String NODETYPE_OWLANNOTATIONPROPERTY = "AnnotationProperty";
     private static final String NODETYPE_OWLDATAPROPERTY = "DataProperty";
+    public static final String NODETYPE_PROPERTY = "Property";
     private static final String NODETYPE_OWLENTITY = "Entity";
     public static final String RELTYPE_SUBCLASSOF = "SUBCLASSOF";
     public static final String RELTYPE_INSTANCEOF = "INSTANCEOF";
@@ -44,6 +45,17 @@ public class N2OStatic {
             return N2OStatic.NODETYPE_OWLDATAPROPERTY;
         }
         return "UnknownType";
+    }
+
+    public static boolean isPropertyType(OWLEntity e) {
+        if(e instanceof OWLObjectProperty) {
+            return true;
+        } else if(e instanceof OWLAnnotationProperty) {
+            return true;
+        } else if(e instanceof OWLDataProperty) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean isN2OBuiltInProperty(String property) {
