@@ -52,10 +52,10 @@ public class N2OProcedureTest {
 
         Result importResult = db.execute(call);
         Map<String, Object> resMap = importResult.next();
-        assertEquals(32L, resMap.get("elementsLoaded"));
-        assertEquals(12L, resMap.get("classesLoaded"));
+        assertEquals(34L, resMap.get("elementsLoaded"));
+        assertEquals(14L, resMap.get("classesLoaded"));
         assertEquals("", resMap.get("extraInfo"));
-        assertEquals(12L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
+        assertEquals(14L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
         db.shutdown();
     }
 
