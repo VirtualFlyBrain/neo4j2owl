@@ -193,12 +193,8 @@ class N2OOntologyImporter {
                         if (N2OConfig.getInstance().isShouldPropertyBeRolledAsJSON(a.getProperty())) {
                             Map<String, Set<Object>> axAnnos = manager.extractAxiomAnnotationsIntoValueMap(axiomAnnotations,true);
                             axAnnos.forEach((k,v)->v.forEach(obj->relationTypeCounter.increment(k,obj)));
-                            if (!axAnnos.isEmpty()) {
-                                String valueAnnotated = createAxiomAnnotationJSONString(value, axAnnos);
-                                addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, valueAnnotated);
-                            } else {
-                                addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, value);
-                            }
+                            String valueAnnotated = createAxiomAnnotationJSONString(value, axAnnos);
+                            addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, valueAnnotated);
                         } else {
                             addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, value);
                         }
