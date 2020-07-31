@@ -233,6 +233,8 @@ public class N2OExportService {
                         }
                         if(!annotations.isEmpty()) {
                             return new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), val, annotations));
+                        } else {
+                            return new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), val));
                         }
                     }
 
