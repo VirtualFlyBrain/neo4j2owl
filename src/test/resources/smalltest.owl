@@ -323,6 +323,28 @@
     
 
 
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TestJSON -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TestJSON">
+        <rdfs:isDefinedBy>Nothing</rdfs:isDefinedBy>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TestJSON2 -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TestJSON2">
+        <rdfs:isDefinedBy>Something</rdfs:isDefinedBy>
+    </owl:Class>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TestJSON2"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
+        <owl:annotatedTarget>Something</owl:annotatedTarget>
+        <rdfs:seeAlso>Something else</rdfs:seeAlso>
+    </owl:Axiom>
+    
+
+
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
     //
