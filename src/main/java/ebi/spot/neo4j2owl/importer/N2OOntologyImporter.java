@@ -406,12 +406,14 @@ class N2OOntologyImporter {
         props_rel.remove(N2OStatic.ATT_IRI);
         props_rel.remove(N2OStatic.ATT_LABEL);
         props_rel.remove(N2OStatic.ATT_NODE_TYPE);
+        props_rel.remove(N2OStatic.ATT_SHORT_FORM);
         props.put("id", rel);
         convertPropertyAnnotationValueMapToEntityPropertyMap(props, props_rel);
         if (relEntity.isPresent()) {
             props.put(N2OStatic.ATT_IRI, relEntity.get().getIri());
             props.put(N2OStatic.ATT_NODE_TYPE, relEntity.get().getEntityType());
             props.put(N2OStatic.ATT_LABEL, relEntity.get().getLabel());
+            props.put(N2OStatic.ATT_SHORT_FORM, relEntity.get().getShort_form());
         }
         return props;
     }

@@ -60,7 +60,7 @@ public class N2OEntity {
         return qualified_safe_label;
     }
 
-    private String getShort_form() {
+    String getShort_form() {
         return short_form;
     }
 
