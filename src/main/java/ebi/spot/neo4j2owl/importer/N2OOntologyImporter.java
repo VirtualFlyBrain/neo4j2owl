@@ -196,7 +196,7 @@ class N2OOntologyImporter {
                             Map<String, Set<Object>> axAnnos = manager.extractAxiomAnnotationsIntoValueMap(axiomAnnotations,true);
                             axAnnos.forEach((k,v)->v.forEach(obj->relationTypeCounter.increment(k,obj)));
                             String valueAnnotated = createAxiomAnnotationJSONString(value, axAnnos);
-                            log.info(valueAnnotated);
+                            //log.info(valueAnnotated);
                             addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, valueAnnotated);
                         } else {
                             addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, value);
