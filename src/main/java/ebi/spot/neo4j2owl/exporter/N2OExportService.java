@@ -2,6 +2,9 @@ package ebi.spot.neo4j2owl.exporter;
 
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.impl.core.NodeProxy;
@@ -208,28 +211,37 @@ public class N2OExportService {
         }
     }
 
+    public boolean isValidJSONObject(String test) {
+        try {
+            JSONObject o = new JSONObject(test);
+            return (o.has("value") && o.has("annotations"));
+        } catch (JSONException ex) {
+            return false;
+        }
+    }
+
     private AddAxiom createAnnotationAxiom(OWLOntology o, OWLEntity e, OWLAnnotationProperty annop, OWLAnnotationValue literal) {
         Set<OWLAnnotation> annotations = new HashSet<>();
         if (literal.isLiteral()) {
             String lit = literal.asLiteral().or(df.getOWLLiteral("UNKNOWN")).getLiteral();
-            if (lit.startsWith("{ \"value\":") && lit.contains(", \"annotations\": {")) {
-                Yaml yaml = new Yaml();
-                InputStream inputStream = new ByteArrayInputStream(lit.getBytes());
-                Map<String, Object> c = yaml.load(inputStream);
-                if (c.containsKey("value")) {
+            if (isValidJSONObject(lit)) {
+                JSONObject c = new JSONObject(lit);
+                if (c.has("value")) {
                     OWLAnnotationValue val = getLiteral(c.get("value"));
-                    if (c.containsKey("annotations")) {
+                    if (c.has("annotations")) {
                         Object pm = c.get("annotations");
-                        for (Object anno_sl : ((Map) pm).keySet()) {
-
-                            if (!N2OStatic.isN2OBuiltInProperty(anno_sl.toString())) {
-                                OWLAnnotationProperty annoP = getAnnotationProperty(anno_sl.toString());
-                                ArrayList annoSetValues = (ArrayList) ((Map) pm).get(anno_sl);
-                                for (Object s : annoSetValues) {
-                                    annotations.add(df.getOWLAnnotation(annoP,getLiteral(s)));
+                        if (pm instanceof JSONObject) {
+                            for (String anno_sl : ((JSONObject) pm).keySet()) {
+                                if (!N2OStatic.isN2OBuiltInProperty(anno_sl)) {
+                                    OWLAnnotationProperty annoP = getAnnotationProperty(anno_sl);
+                                    Object annoSetValues = ((JSONObject) pm).get(anno_sl);
+                                    if(annoSetValues instanceof JSONArray) {
+                                        for (Object s : ((JSONArray)annoSetValues)) {
+                                            annotations.add(df.getOWLAnnotation(annoP, getLiteral(s)));
+                                        }
+                                    }
                                 }
                             }
-
                         }
                         if(!annotations.isEmpty()) {
                             return new AddAxiom(o, df.getOWLAnnotationAssertionAxiom(annop, e.getIRI(), val, annotations));

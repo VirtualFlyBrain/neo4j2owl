@@ -3,6 +3,8 @@ package ebi.spot.neo4j2owl.importer;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
@@ -194,6 +196,7 @@ class N2OOntologyImporter {
                             Map<String, Set<Object>> axAnnos = manager.extractAxiomAnnotationsIntoValueMap(axiomAnnotations,true);
                             axAnnos.forEach((k,v)->v.forEach(obj->relationTypeCounter.increment(k,obj)));
                             String valueAnnotated = createAxiomAnnotationJSONString(value, axAnnos);
+                            log.info(valueAnnotated);
                             addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, valueAnnotated);
                         } else {
                             addAnnotationValueToValueMap(propertyAnnotationValueMap, sl_annop, value);
@@ -229,25 +232,28 @@ class N2OOntologyImporter {
 
 
     private String createAxiomAnnotationJSONString(Object value, Map<String, Set<Object>> axAnnos) {
-        String valueAnnotated = String.format("{ \"value\": \"%s\", \"annotations\": {", value);
-        Set<String> annoSet = new HashSet<>();
+        JSONObject json = new JSONObject();
+        JSONObject annotations = new JSONObject();
+
+        //{ "value": "def...", "annotations": {"database_cross_reference": [ "FlyBase:FBrf0052913","FlyBase:FBrf0064800" ]}}
+
+        json.put("value", value);
+        json.put("annotations", annotations);
+
         for (String axAnnosRel : axAnnos.keySet()) {
-            Set<String> values = new HashSet<>();
+
+            Set<Object> values = new HashSet<>();
             for (Object ov : axAnnos.get(axAnnosRel)) {
                 if (ov instanceof String) {
                     ov = ov.toString().replaceAll(N2OStatic.ANNOTATION_DELIMITER_ESCAPED,
                             "|Content removed during Neo4J Import|");
-                    ov = String.format("\"%s\"", ov);
                 }
-                values.add(ov.toString());
+                values.add(ov);
             }
-            String va = String.join(",", values);
-
-            annoSet.add(String.format("\"%s\": [ %s ]", axAnnosRel, va));
+            annotations.put(axAnnosRel,new ArrayList<>(values));
         }
-        valueAnnotated += String.join(",", annoSet);
-        valueAnnotated += "}}";
-        return valueAnnotated;
+
+        return json.toString();
     }
 
     private void addAnnotationValueToValueMap(Map<String, Set<Object>> propertyAnnotationValueMap, String sl_annop, Object value) {
