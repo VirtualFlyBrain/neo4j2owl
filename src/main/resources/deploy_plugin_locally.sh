@@ -1,9 +1,11 @@
 #!/bin/bash
 
-KB="/Users/matentzn/ws/kb2_data/data/databases/graph.db"
-NEODIR="/Users/matentzn/Library/Application Support/Neo4j Desktop/Application/neo4jDatabases/database-f7c0d058-01bd-491e-ae1b-11c580bbe29d/installation-3.4.0/"
+set -e
 
-NEO4J2OWLDIR="/Users/matentzn/ws/neo4j2owl"
+KB="/Users/matentzn/ws/kb2_data/data/databases/graph.db"
+NEODIR="/Users/matentzn/Library/Application Support/Neo4j Desktop/Application/neo4jDatabases/database-39750b4c-6559-4706-af7f-0ca1c118fcb7/installation-3.4.16/"
+
+NEO4J2OWLDIR="/Users/matentzn/vfb/neo4j2owl"
 PLUGIN="$NEO4J2OWLDIR/target/neo4j2owl-1.0.jar"
 
 

@@ -94,6 +94,14 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.json/json -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20200518</version>
+        </dependency>
+
+
         <!-- https://mvnrepository.com/artifact/org.semanticweb.elk/elk-reasoner -->
         <dependency>
             <groupId>org.semanticweb.elk</groupId>
@@ -124,6 +132,20 @@
 
 
     </dependencies>
+
+    <repositories>
+        <repository>
+            <!-- the repository for snapshot dependencies -->
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
 
     <build>
         <testSourceDirectory>src/test/java</testSourceDirectory>
