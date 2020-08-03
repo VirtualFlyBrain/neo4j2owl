@@ -186,6 +186,7 @@ class N2OConfig {
             if (pm instanceof ArrayList) {
                 for (Object pmm : ((ArrayList) pm)) {
                     if (pmm instanceof HashMap) {
+                        @SuppressWarnings("unchecked")
                         HashMap<String, Object> pmmhm = (HashMap<String, Object>) pmm;
                         if (pmmhm.containsKey("iris")) {
                             ArrayList iris = (ArrayList) pmmhm.get("iris");
@@ -214,6 +215,7 @@ class N2OConfig {
             if (pm instanceof ArrayList) {
                 for (Object pmm : ((ArrayList) pm)) {
                     if (pmm instanceof HashMap) {
+                        @SuppressWarnings("unchecked")
                         HashMap<String, Object> pmmhm = (HashMap<String, Object>) pmm;
                         if (pmmhm.containsKey("classes")) {
                             ArrayList expressions = (ArrayList) pmmhm.get("classes");
