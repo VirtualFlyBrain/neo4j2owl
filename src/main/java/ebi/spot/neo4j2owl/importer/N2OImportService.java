@@ -112,9 +112,7 @@ public class N2OImportService {
         } else {
             logger.warning("Import directory path (or base neo4j directory) not in neo4j config. Trying to find manually.");
         }
-        if (!importdir.getAbsoluteFile().exists()) {
-            logger.error(importdir.getAbsolutePath() + " does not exist! Select valid import dir.");
-        } else {
+        if (importdir.getAbsoluteFile().exists()) {
             deleteCSVFilesInImportsDir(importdir);
         }
         return importdir;
