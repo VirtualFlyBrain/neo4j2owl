@@ -54,9 +54,6 @@ public class N2OExportService {
             for (String rel_qsl : getRelations(OWLObjectProperty.class)) {
                 addRelation(o, rel_qsl);
             }
-            for (String rel_qsl : getRelations(OWLDataProperty.class)) {
-                addRelation(o, rel_qsl);
-            }
             ByteArrayOutputStream os = new ByteArrayOutputStream(); //new FileOutputStream(new File(fileName))
             man.saveOntology(o, new RDFXMLDocumentFormat(), os);
             qsls_with_no_matching_properties.forEach(logger::log);
