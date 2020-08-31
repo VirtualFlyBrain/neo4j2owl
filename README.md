@@ -147,18 +147,75 @@ I should be able to use lexical identifiers (a readable neo4j:label or node attr
 * As a Geppetto developer, I should be able to find the display names to use for edges and property keys without having to mung text or run secondary lookups.
 Edges should store rdfs:label; property keys should not be Qualified ?
 
+# Implementation
 
-## Future work
-* Provenance should be added on edges only
-* Add superproperties as additional edge types?
-* Axiom annotation with an Individual as a value can not be directly supported as edges to edges, but we can (and should) model these by using an identifier for the Individual (iri or short_form).  The join required to pull axioms associated with the referenced individual can be easily performed in Cypher.
-* Constraint: Edge types should correspond to some allowable set of object property and annotation property types. All of these are defined in source ontologies. This makes querying efficient and easy, and allows for queries specify disjunctive sets of edge type.
+* The neo4j2owl plugin for neo4j implements two procedures: `exportOWL()` and `owl2Import()`. The procedures are registered in [N2OProcedure](https://github.com/VirtualFlyBrain/neo4j2owl/blob/master/src/main/java/ebi/spot/neo4j2owl/N2OProcedure.java). The source code was losely based on [neosemantics](https://github.com/neo4j-labs/neosemantics) once, but has evolved in a completely different direction. Also, `neosemantics` has matured a ton since `neo4j2owl` was first developed and serves a much larger number of use cases than `neo4j2owl` does. The main rationale for `neo4j2owl` is its handling of OWL existential restrictions (see above) as a primary source for relationships and its ability to roundtrip a subset of OWL2EL (import-export-import without loss of information). Furthermore, it was important for our use case to handle human readable labels (relation types) on edges in a standardised way, as well as using OWL2 EL reasoning to automatically infer node labels. It is implemented using the [OWLAPI](https://github.com/owlcs/owlapi).
+   * The functionality for `exportOWL()` is implemented in the [exporter](https://github.com/VirtualFlyBrain/neo4j2owl/tree/master/src/main/java/ebi/spot/neo4j2owl/exporter) java package.
+   * The functionality for `owl2Import()` is implemented in the [importer](https://github.com/VirtualFlyBrain/neo4j2owl/tree/master/src/main/java/ebi/spot/neo4j2owl/importer) java package.
+* Overview of the `exportOWL()` process ([src](https://github.com/VirtualFlyBrain/neo4j2owl/blob/8052f9c4d210ff5797c4090c029d19e8a8bed3eb/src/main/java/ebi/spot/neo4j2owl/exporter/N2OExportService.java#L37)): 
+  1. Translate all nodes into OWL Entities. This requires OWL entity information (Class, AnnotationProperty, ObjectProperty etc) to be present on the nodes as neo4j labels.
+  1. Translate all annotations on nodes into OWL2 AnnotationAssertion axioms. 
+  1. Translate all SUBLCASSOF, INSTANCEOF relations into respective OWL Axioms.
+  1. Translate all neo relations which correspond to AnnotationAssertion axioms between entities
+  1. Translate all neo relations that correspond to Existential restrictions or ObjectPropertyAssertions
+  1. Translate all neo relations that correspond to DataProperty assertions axioms between entities (e.g. C sub )
+  1. Render the ontology as RDFXML and return to user.
+* Overview of the `owl2Import()` process ([src](https://github.com/VirtualFlyBrain/neo4j2owl/blob/8052f9c4d210ff5797c4090c029d19e8a8bed3eb/src/main/java/ebi/spot/neo4j2owl/exporter/N2OExportService.java#L37)): 
+  1. Load the ontology using the OWLAPI ([src](https://github.com/VirtualFlyBrain/neo4j2owl/blob/master/src/main/java/ebi/spot/neo4j2owl/importer/N2OImportService.java))
+  1. Importing the ontology ([src](https://github.com/VirtualFlyBrain/neo4j2owl/blob/master/src/main/java/ebi/spot/neo4j2owl/importer/N2OOntologyImporter.java))
+     1. Create a reasoner (ELK)  - the reasoner is used mainly to materialise the class hierarchy and individual types, as well as asserting dynamically configured labels (more about that later). Note that unsatisfiable classes are entirely _ignored_, due to the heavy reliance on reasoning during the process of importing!
+     1. The ontology signature (OWLEntities like classes, individuals and object, data and annotation properties) is scanned and all entities imported into an internal structure (the actually import into neo4j is managed through CSV files).
+     1. All all entities annotations are scanned and imported into an internal structure.
+     1. All SubClassOf relations are imported into an internal structure with the help of a reasoner (this ensures that only the transitive reduct is imported).
+     1. All ClassAssertion axioms are imported in the same way.
+     1. All existential relations are imported into an external structure. Note that _currently no reasoning is performed to look to compute the transtive reduct of the existential graph_. This has to be done, if at all desired, directly on the ontology using a tool like [ROBOT](http://robot.obolibrary.org/).
+     1. Adding dynamic node labels. Based on an external configuration, labels can be defined as OWL class expression, which are now applied. For example, we can specify that all instances and subclasses of `'part of' some Body` are labelled as `Body part` in neo4j.
+  1. Export all imported data from the internal structures to CSV and write into the neo4j `import` directory. ([src](https://github.com/VirtualFlyBrain/neo4j2owl/blob/master/src/main/java/ebi/spot/neo4j2owl/importer/N2ONeoCSVLoader.java))
+  1. Load all CSVs previously exported to the neo4j `import` directory into neo4j using `LOAD CSV WITH HEADERS FROM` ([src](https://github.com/VirtualFlyBrain/neo4j2owl/blob/master/src/main/java/ebi/spot/neo4j2owl/importer/N2OOntologyImporter.java)).
 
-## References
+# Configuration of neo4j2owl
+
+| Configuration | Description | Example | Default |
+| ------------- | ----------- | ------- | ------- |
+| allow_entities_without_labels | | | `true` |
+| index | | `index: false` | `true` |
+| testmode | | `testmode: false` | `true` |
+| batch | | `batch: true` | `true` |
+| safe_label | `batch_size: 100000000` | `safe_label: loose` | `true` |
+| batch_size | | | `true` |
+| relation_type_threshold | | `relation_type_threshold: 0.95` | `true` |
+| represent_values_and_annotations_as_json | | represent_values_and_annotations_as_json:<br>iris:<br> - "http://purl.obolibrary.org/obo/IAO_0000115"<br> - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym" | `true` |
+| neo_node_labelling | | <pre>property_mapping:<br>      - iris:<br>          - "http://purl.obolibrary.org/obo/so#part_of"<br>          - "http://purl.obolibrary.org/obo/BFO_0000050"<br>        id: part_of<br>      - iris:<br>          - "http://www.w3.org/2002/07/owl#deprecated"<br>        id: deprecated<br>        datatype: "Boolean" <br>}</pre> | `true` |
+| curie_map | | | `true` |
+| represent_values_and_annotations_as_json | | | `true` |
+
+
+
+
+
+
+
+
+
+
+neo_node_labelling:
+  - label: Nervous_system
+    classes:
+      - RO:0002131 some FBbt:00005093
+      - FBbt:00005155
+curie_map:
+  VFBfbbt: http://purl.obolibrary.org/obo/fbbt/vfb/VFB_
+
+
+The VFB configuration file, as an example, can be found [here](https://github.com/VirtualFlyBrain/vfb-prod/blob/master/neo4j2owl-config.yaml).
+
+
+# References
 
 | Reference | Explanation |
 | ---------------|----------------|
 | [And Now for Something Completely Different: Using OWL with Neo4j](https://neo4j.com/blog/using-owl-with-neo4j/) | 2013 Blogpost on how OWL could be loaded into Neo. It provides a motivation for the conversion, and some code snippets to get started. |
+| [owl2lpg](https://protegeproject.github.io/owl2lpg/) | Working Draft of a "Mapping of OWL 2 Web Ontology Language to Labeled Property Graphs". |
 | [SciGraph OWL2Neo](https://github.com/SciGraph/SciGraph/wiki/Neo4jMapping) | Preliminary mapping |
 | [SciGraph Neo2OWL](https://github.com/SciGraph/SciGraph/wiki/MappingToOWL) | Preliminary mapping |
 | [Convert OWL to labeled property graph and import into Neo4J](https://github.com/flekschas/owl2neo4j) | Covers only [class hierarchy/and annotations](https://github.com/flekschas/owl2neo4j/wiki/How-is-OWL-translated-into-a-labeled-property-graph%3F).   |
@@ -171,7 +228,6 @@ Edges should store rdfs:label; property keys should not be Qualified ?
 | [Storing and querying RDF in Neo4j](http://www.snee.com/bobdc.blog/2014/01/storing-and-querying-rdf-in-ne.html) | Description of a SPARQL plugin to query Neo4J based on Sail Ouplementation. |
 | [Importing ttl (Turtle) ontologies in Neo4j](http://michaelbloggs.blogspot.co.uk/2013/05/importing-ttl-turtle-ontologies-in-neo4j.html) | 2013 blogpost with code on how to import ttl into neo using Sesame API |
 | [OLS: OWL to Neo4j schema](https://www.slideshare.net/thesimonjupp/ontologies-neo4jgraphworkshopberlin) | Largely undocumented, but see slide 16 following of Berlin workshop. Implementing our mapping partially. |
-
 
 Editors notes:
 - Some notes on testing can be found [here](https://github.com/VirtualFlyBrain/vfb-neo2owl-test)
