@@ -181,17 +181,16 @@ Edges should store rdfs:label; property keys should not be Qualified ?
 | `index`:<br><i>Dont use.</i> | OBSOLETE | OBSOLETE |
 | `testmode`:<br><i>To run unit tests during development (in IDE), this needs to be set to `testmode: true`, to enable working with an embedded neo4j.</i> | `testmode: false` | `true` |
 | `batch`:<br><i>This setting was originally designed to allow importing an ontology using inline cypher queries, but turned out not to be feasible (using CSV bulk import now).</i> | OBSOLETE | OBSOLETE |
-| `safe_label`:<br><i>The three central labelling strategies for edges. Three options: `strict`, `qsl` and `loose`.</i> | `safe_label: loose` | `loose` |
+| `safe_label`:<br><i>The three central labelling strategies for edges. Three options: `strict` (use label, but if there are clashes, i.e two or more properties with the same label, fail.), `qsl` (use qualified safe labels with namespaces) and `loose` (same as strict, just not failing (only reporting clashes)).</i> | `safe_label: loose` | `loose` |
 | `batch_size`:<br><i>Experimental feature that allows to chunk an input ontology (chunk size is number of axioms) and import the pieces one by one. Now measurable positive effect on performance.</i> | `batch_size: 999000000` | `999000000` |
-| `relation_type_threshold`:<br><i></i> | `relation_type_threshold: 0.95` | `0.95` |
+| `relation_type_threshold`:<br><i>Experimental feature that assigns a datatype based on majority voting. For example, if 95% of all values of a properties are integers, cast all values to integer.</i> | `relation_type_threshold: 0.95` | `0.95` |
 | `property_mapping`:<br><i>This setting does two things: Grouping different properties under the same label (edge type) and fixing the properties intended datatype. </i> | <pre>property_mapping:<br>  - iris:<br>    - "http://purl.obolibrary.org/obo/so#part_of"<br>    - "http://purl.obolibrary.org/obo/BFO_0000050"<br>    id: part_of<br>  - iris:<br>    - "http://www.w3.org/2002/07/owl#deprecated"<br>    id: deprecated<br>    datatype: "Boolean" <br>}</pre> | `{}` |
-| `represent_values_and_annotations_as_json`:<br><i></i> | <pre>represent_values_and_annotations_as_json:<br>  iris:<br>    - "http://purl.obolibrary.org/obo/IAO_0000115"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"</pre> | `true` |
+| `represent_values_and_annotations_as_json`:<br><i>All properties listed under iris: are converted to JSON, which allows axiom annotations to be serialised.</i> | <pre>represent_values_and_annotations_as_json:<br>  iris:<br>    - "http://purl.obolibrary.org/obo/IAO_0000115"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"</pre> | `{}` |
 | `neo_node_labelling`:<br><i></i> |  <pre>neo_node_labelling:<br>  - label: Nervous_system<br>    classes:<br>      - RO:0002131 some FBbt:00005093<br>      - FBbt:00005155</pre> | `true` |
-| `curie_map`:<br><i></i> | <pre>curie_map:<br>  VFBfbbt: http://purl.obolibrary.org/obo/fbbt/vfb/VFB_</pre> | `{}` |
-| `represent_values_and_annotations_as_json`:<br><i></i> | | `true` |
-| `add_property_label`<br><i>If true, all property types (annotation, object and data properties) get </i> | `add_property_label: true` | `true` |
-| `timeout`:<br>Timeout in minutes<i></i> | `timeout: 180` | `180` |
-| preprocessing | <pre>preprocessing:<br>  -"CREATE INDEX ON :pub(short_form)"<br>  -"CREATE INDEX ON :pub(short_form)"</pre> | `[]` |
+| `curie_map`:<br><i>Allows embedding curie maps to assign namespace prefixes to IRI prefixes.</i> | <pre>curie_map:<br>  VFBfbbt: http://purl.obolibrary.org/obo/fbbt/vfb/VFB_</pre> | `{}` |
+| `add_property_label`:<br><i>If true, all property types (annotation, object and data properties) get </i> | `add_property_label: true` | `true` |
+| `timeout`:<br><i>Overall timeout in minutes after which the import will be killed.</i> | `timeout: 180` | `180` |
+| `preprocessing`:<br><i>Allows injecting arbitrary Cypher queries that should be executed just before the import.</i> | <pre>preprocessing:<br>  -"CREATE INDEX ON :pub(short_form)"<br>  -"CREATE INDEX ON :pub(short_form)"</pre> | `[]` |
 
 The VFB configuration file, as an example, can be found [here](https://github.com/VirtualFlyBrain/vfb-prod/blob/master/neo4j2owl-config.yaml).
 
