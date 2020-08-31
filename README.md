@@ -184,7 +184,7 @@ Edges should store rdfs:label; property keys should not be Qualified ?
 | safe_label | `batch_size: 100000000` | `safe_label: loose` | `true` |
 | batch_size | | | `true` |
 | relation_type_threshold | | `relation_type_threshold: 0.95` | `true` |
-| represent_values_and_annotations_as_json | | represent_values_and_annotations_as_json:<br>iris:<br> - "http://purl.obolibrary.org/obo/IAO_0000115"<br> - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym" | `true` |
+| represent_values_and_annotations_as_json | | <pre>represent_values_and_annotations_as_json:<br>  iris:<br>    - "http://purl.obolibrary.org/obo/IAO_0000115"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"</pre> | `true` |
 | neo_node_labelling | | <pre>property_mapping:<br>      - iris:<br>          - "http://purl.obolibrary.org/obo/so#part_of"<br>          - "http://purl.obolibrary.org/obo/BFO_0000050"<br>        id: part_of<br>      - iris:<br>          - "http://www.w3.org/2002/07/owl#deprecated"<br>        id: deprecated<br>        datatype: "Boolean" <br>}</pre> | `true` |
 | curie_map | | | `true` |
 | represent_values_and_annotations_as_json | | | `true` |
