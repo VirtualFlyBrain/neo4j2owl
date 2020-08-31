@@ -175,37 +175,23 @@ Edges should store rdfs:label; property keys should not be Qualified ?
 
 # Configuration of neo4j2owl
 
-| Configuration | Description | Example | Default |
-| ------------- | ----------- | ------- | ------- |
-| allow_entities_without_labels | | | `true` |
-| index | | `index: false` | `true` |
-| testmode | | `testmode: false` | `true` |
-| batch | | `batch: true` | `true` |
-| safe_label | `batch_size: 100000000` | `safe_label: loose` | `true` |
-| batch_size | | | `true` |
-| relation_type_threshold | | `relation_type_threshold: 0.95` | `true` |
-| represent_values_and_annotations_as_json | | <pre>represent_values_and_annotations_as_json:<br>  iris:<br>    - "http://purl.obolibrary.org/obo/IAO_0000115"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"<br>- "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"</pre> | `true` |
-| neo_node_labelling | | <pre>property_mapping:<br>      - iris:<br>          - "http://purl.obolibrary.org/obo/so#part_of"<br>          - "http://purl.obolibrary.org/obo/BFO_0000050"<br>        id: part_of<br>      - iris:<br>          - "http://www.w3.org/2002/07/owl#deprecated"<br>        id: deprecated<br>        datatype: "Boolean" <br>}</pre> | `true` |
-| curie_map | | | `true` |
-| represent_values_and_annotations_as_json | | | `true` |
-
-
-
-
-
-
-
-
-
-
-neo_node_labelling:
-  - label: Nervous_system
-    classes:
-      - RO:0002131 some FBbt:00005093
-      - FBbt:00005155
-curie_map:
-  VFBfbbt: http://purl.obolibrary.org/obo/fbbt/vfb/VFB_
-
+| Configuration | Example | Default |
+| -------------  | ------- | ------- |
+| `allow_entities_without_labels`:<br><i>If false and we are in strict mode (see `safe_label`), the ontology import fails hard. Else, it will make use of short form.</i> | `allow_entities_without_labels: true`| `true` |
+| `index`:<br><i>Dont use.</i> | OBSOLETE | OBSOLETE |
+| `testmode`:<br><i>To run unit tests during development (in IDE), this needs to be set to `testmode: true`, to enable working with an embedded neo4j.</i> | `testmode: false` | `true` |
+| `batch`:<br><i>This setting was originally designed to allow importing an ontology using inline cypher queries, but turned out not to be feasible (using CSV bulk import now).</i> | OBSOLETE | OBSOLETE |
+| `safe_label`:<br><i>The three central labelling strategies for edges. Three options: `strict`, `qsl` and `loose`.</i> | `safe_label: loose` | `loose` |
+| `batch_size`:<br><i>Experimental feature that allows to chunk an input ontology (chunk size is number of axioms) and import the pieces one by one. Now measurable positive effect on performance.</i> | `batch_size: 999000000` | `999000000` |
+| `relation_type_threshold`:<br><i></i> | | `relation_type_threshold: 0.95` | `0.95` |
+| `property_mapping`:<br><i>This setting does two things: Grouping different properties under the same label (edge type) and fixing the properties intended datatype. </i> | <pre>represent_values_and_annotations_as_json:<br>  iris:<br>    - "http://purl.obolibrary.org/obo/IAO_0000115"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"<br>    - "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"</pre> | `{}` |
+| `represent_values_and_annotations_as_json`:<br><i></i> | <pre>property_mapping:<br>  - iris:<br>    - "http://purl.obolibrary.org/obo/so#part_of"<br>    - "http://purl.obolibrary.org/obo/BFO_0000050"<br>    id: part_of<br>  - iris:<br>    - "http://www.w3.org/2002/07/owl#deprecated"<br>    id: deprecated<br>        datatype: "Boolean" <br>}</pre> | `true` |
+| `neo_node_labelling`:<br><i></i> |  <pre>neo_node_labelling:<br>  - label: Nervous_system<br>    classes:<br>      - RO:0002131 some FBbt:00005093<br>      - FBbt:00005155</pre> | `true` |
+| `curie_map`:<br><i></i> | <pre>curie_map:<br>  VFBfbbt: http://purl.obolibrary.org/obo/fbbt/vfb/VFB_</pre> | `{}` |
+| `represent_values_and_annotations_as_json`:<br><i></i> | | `true` |
+| `add_property_label`<br><i>If true, all property types (annotation, object and data properties) get </i> | `add_property_label: true` | `true` |
+| `timeout`:<br>Timeout in minutes<i></i> | `timeout: 180` | `180` |
+| preprocessing | <pre>preprocessing:<br>  -"CREATE INDEX ON :pub(short_form)"<br>  -"CREATE INDEX ON :pub(short_form)"</pre> | `[]` |
 
 The VFB configuration file, as an example, can be found [here](https://github.com/VirtualFlyBrain/vfb-prod/blob/master/neo4j2owl-config.yaml).
 

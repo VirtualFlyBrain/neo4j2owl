@@ -115,7 +115,7 @@ class IRIManager {
         if(!labels.isEmpty()) {
             return labels.iterator().next();
         }
-        if(!N2OConfig.getInstance().isAllowEntitiesWithoutLabels()) {
+        if(!N2OConfig.getInstance().isAllowEntitiesWithoutLabels() && N2OConfig.getInstance().safeLabelMode().equals(LABELLING_MODE.SL_STRICT)) {
             throw new RuntimeException("No label for entity "+e.getIRI()+", which is not allowed in 'strict' mode!");
         }
         String shortform = getShortForm(e.getIRI());

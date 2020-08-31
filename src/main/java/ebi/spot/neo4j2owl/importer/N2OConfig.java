@@ -279,11 +279,11 @@ class N2OConfig {
             }
         }
 
-        if (configs.containsKey("batch")) {
+        /*if (configs.containsKey("batch")) {
             if (configs.get("batch") instanceof Boolean) {
                 N2OConfig.getInstance().setBatch((Boolean) configs.get("batch"));
             }
-        }
+        }*/
 
         if (configs.containsKey("relation_type_threshold")) {
             if (configs.get("relation_type_threshold") instanceof Double) {
