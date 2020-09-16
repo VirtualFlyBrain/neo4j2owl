@@ -2,10 +2,12 @@ package ebi.spot.neo4j2owl.importer;
 
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
+import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.model.*;
@@ -44,7 +46,7 @@ class N2OOntologyImporter {
      * @throws InterruptedException thrown when import takes too long
      * @throws java.util.concurrent.ExecutionException thrown when individual CSV load failed for some reason
      */
-    void importOntology(ExecutorService exService, File importdir, OWLOntology o, N2OImportResult result) throws IOException, InterruptedException, ExecutionException {
+    void importOntology(ExecutorService exService, File importdir, OWLOntology o, N2OImportResult result) throws IOException, InterruptedException, ExecutionException, N2OException {
         IRIManager iriManager = new IRIManager();
         manager = new N2OImportManager(o, iriManager);
         this.relationTypeCounter = new RelationTypeCounter(N2OConfig.getInstance().getRelationTypeThreshold());
@@ -74,8 +76,13 @@ class N2OOntologyImporter {
             csvWriter.exportOntologyToCSV();
 
             exService.submit(() -> {
-                dbapi.execute("CREATE INDEX ON :Entity(iri)");
-                return "done";
+                String cypher = "CREATE INDEX ON :Entity(iri)";
+                try {
+                    dbapi.execute(cypher);
+                } catch (QueryExecutionException e) {
+                    throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+cypher, e);
+                }
+                return N2OStatic.CYPHER_EXECUTED_SUCCESSFULLY+cypher;
             });
 
             log.log("Loading nodes to neo from CSV.");

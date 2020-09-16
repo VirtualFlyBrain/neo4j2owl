@@ -6,6 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.graphdb.Result;
 import org.neo4j.kernel.impl.core.NodeProxy;
 import org.neo4j.kernel.impl.core.RelationshipProxy;
@@ -75,7 +76,13 @@ public class N2OExportService {
         //log("addRelation():"+RELTYPE);
         //log(mapIdEntity);
         String cypher = String.format("MATCH (n:Entity)-[r:" + RELTYPE + "]->(x:Entity) Return n,r,x");
-        Result s = db.execute(cypher);
+        Result s;
+        try {
+            s = db.execute(cypher);
+            Objects.requireNonNull(s);
+        } catch (QueryExecutionException e) {
+            throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+cypher, e);
+        }
         List<OWLOntologyChange> changes = new ArrayList<>();
         while (s.hasNext()) {
             Map<String, Object> r = s.next();
@@ -299,10 +306,17 @@ public class N2OExportService {
     Nothing else is added at this step - just declarations. The main purpose is to index all entities for the next
     Steps in the pipeline
      */
-    private void addEntities(OWLOntology o) {
+    private void addEntities(OWLOntology o) throws N2OException {
         String cypher = "MATCH (n:Entity) Return n";
-        db.execute(cypher).stream().forEach(r -> createEntityForEachLabel((NodeProxy) r.get("n")));
-        n2OEntityManager.entities().stream().filter(e -> !e.isBuiltIn()).forEach((e -> addDeclaration(e, o)));
+        Result s;
+        try {
+            s = db.execute(cypher);
+            Objects.requireNonNull(s);
+            s.stream().forEach(r -> createEntityForEachLabel((NodeProxy) r.get("n")));
+            n2OEntityManager.entities().stream().filter(e -> !e.isBuiltIn()).forEach((e -> addDeclaration(e, o)));
+        } catch (QueryExecutionException e) {
+            throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+cypher, e);
+        }
     }
 
     private void addDeclaration(OWLEntity e, OWLOntology o) {

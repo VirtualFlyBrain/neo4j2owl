@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.codehaus.jackson.io.JsonStringEncoder;
 import org.semanticweb.owlapi.model.OWLEntity;
 
@@ -16,18 +17,18 @@ class N2OCSVWriter {
         this.dir = dir;
     }
 
-    void exportOntologyToCSV() {
+    void exportOntologyToCSV() throws N2OException {
         processExportForNodes();
         processExportForRelationships();
     }
 
-    private void processExportForRelationships() {
+    private void processExportForRelationships() throws N2OException {
         Map<String, List<N2OOWLRelationship>> relationships = indexRelationshipsByType();
         Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(relationships);
         N2OUtils.writeToFile(getImportDir(), dataout_rel, "relationship");
     }
 
-    private void processExportForNodes() {
+    private void processExportForNodes() throws N2OException {
         Map<String, List<OWLEntity>> entities = indexEntitiesByType();
         Map<String, List<String>> dataout = prepareNodeCSVsForExport(entities);
         N2OUtils.writeToFile(dir, dataout, "nodes");
@@ -156,7 +157,22 @@ class N2OCSVWriter {
     }
 
     private String csvCellValue(Object o) {
-        String val = new String(JsonStringEncoder.getInstance().quoteAsString(o.toString()));
+        // {\"X\":660,\"Y\":1290,\"Z\":382}
+        //System.out.println("csvCellValue()");
+        String raw_value = o.toString();
+        //System.out.println(raw_value);
+       /*
+        String json = new String(JsonStringEncoder.getInstance().quoteAsString(raw_value));
+
+        if(!raw_value.equals(json)) {
+            System.out.println("JSON DIFFERENT: " + json);
+        }
+        String val = json;
+        */
+        // see https://neo4j.com/developer/kb/space-in-import-filename-for-load-csv/
+        String val = raw_value.replaceAll("\"","\"\"");
+        //
+        //System.out.println(val);
         return "\"" + val + "\"";
     }
 

@@ -2,6 +2,7 @@ package ebi.spot.neo4j2owl.importer;
 
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
+import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.io.FileUtils;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
@@ -27,7 +28,7 @@ class N2OConfig {
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
     private Map<String, String> customCurieMap = new HashMap<>();
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
-    private Set<IRI> oboProperties = new HashSet<>();
+    private Set<IRI> propertiesForJSONrepresentation = new HashSet<>();
     private Set<String> preprocessingCypherQueries = new HashSet<>();
     private Map<String,String> classExpressionNeoLabelMap = new HashMap<>(); //this is for the dynamic neo typing feature: an OWLClassExpression string that maps to a a neo node label
 
@@ -35,7 +36,6 @@ class N2OConfig {
     private static N2OConfig config = null;
 
     private N2OConfig() {
-        addPropertyForOBOAssumption(IRI.create("http://purl.obolibrary.org/obo/IAO_0000115"));
     }
 
     static void resetConfig() {
@@ -120,12 +120,12 @@ class N2OConfig {
         }
     }
 
-    private void addPropertyForOBOAssumption(IRI prop) {
-        this.oboProperties.add(prop);
+    private void addPropertyForJSONRepresentation(IRI prop) {
+        this.propertiesForJSONrepresentation.add(prop);
     }
 
-    private Set<IRI> getOboAssumptionProperties() {
-        return new HashSet<>(this.oboProperties);
+    private Set<IRI> getPropertiesForJSONRepresentation() {
+        return new HashSet<>(this.propertiesForJSONrepresentation);
     }
 
     Set<String> getPreprocessingCypherQueries() {
@@ -141,7 +141,7 @@ class N2OConfig {
     }
 
     boolean isShouldPropertyBeRolledAsJSON(OWLAnnotationProperty ap) {
-        return this.getOboAssumptionProperties().contains(ap.getIRI());
+        return this.getPropertiesForJSONRepresentation().contains(ap.getIRI());
     }
 
     private void setBatchSize(int batch_size) {
@@ -152,7 +152,7 @@ class N2OConfig {
         return this.batch_size;
     }
 
-    void prepareConfig(String url, String config, File importdir) throws IOException {
+    void prepareConfig(String url, String config, File importdir) throws IOException, N2OException {
         File configfile = new File(importdir, "config.yaml");
         N2OConfig n2o_config = N2OConfig.getInstance();
         if (config.startsWith("file://")) {
@@ -166,8 +166,7 @@ class N2OConfig {
                         configfile);
             }
             catch(Exception e) {
-                log.warning("No valid config provided: "+config);
-                return;
+                throw new N2OException("No valid config provided: "+config,e);
             }
         }
 
@@ -265,7 +264,7 @@ class N2OConfig {
                 if (pmmhm.containsKey("iris")) {
                     ArrayList iris = (ArrayList) pmmhm.get("iris");
                     for (Object iri : iris) {
-                        N2OConfig.getInstance().addPropertyForOBOAssumption(IRI.create(iri.toString()));
+                        N2OConfig.getInstance().addPropertyForJSONRepresentation(IRI.create(iri.toString()));
                     }
                 }
             }

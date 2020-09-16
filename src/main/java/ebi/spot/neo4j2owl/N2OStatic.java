@@ -32,6 +32,9 @@ public class N2OStatic {
 
     public static OWLAnnotationProperty ap_neo4jLabel = OWLManager.getOWLDataFactory().getOWLAnnotationProperty(IRI.create(N2OStatic.NEO4J_LABEL));
 
+    public static final String CYPHER_FAILED_TO_EXECUTE = "Cypher query did NOT complete successfully (ERROR): ";
+    public static final String CYPHER_EXECUTED_SUCCESSFULLY = "Cypher finished successfully: ";
+
     public static String getNeoType(OWLEntity e) {
         if(e instanceof OWLClass) {
             return N2OStatic.NODETYPE_OWLCLASS;

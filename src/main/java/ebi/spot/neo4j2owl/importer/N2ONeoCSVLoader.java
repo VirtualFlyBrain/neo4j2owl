@@ -2,7 +2,9 @@ package ebi.spot.neo4j2owl.importer;
 
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
+import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.io.FileUtils;
+import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
 import java.io.File;
@@ -44,8 +46,12 @@ class N2ONeoCSVLoader {
                 log.log(f);
                 log.log(cypher);
                 final Future<String> cf = exService.submit(() -> {
-                    dbapi.execute(cypher);
-                    return "Finished: " + filename;
+                    try {
+                        dbapi.execute(cypher);
+                    } catch (QueryExecutionException e) {
+                        throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+cypher, e);
+                    }
+                    return N2OStatic.CYPHER_EXECUTED_SUCCESSFULLY + cypher;
                 });
                 log.log(cf.get());
                 /*if(fn.contains("Individual")) {
@@ -73,8 +79,12 @@ class N2ONeoCSVLoader {
                         "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses("cl", "n", manager.getHeadersForNodes(type)) + " SET n :" + type;
                 log.log(cypher);
                 final Future<String> cf = exService.submit(() -> {
-                    dbapi.execute(cypher);
-                    return "Finished: " + filename;
+                    try {
+                        dbapi.execute(cypher);
+                    } catch (QueryExecutionException e) {
+                        throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+cypher, e);
+                    }
+                    return N2OStatic.CYPHER_EXECUTED_SUCCESSFULLY + cypher;
                 });
                 log.log(cf.get());
                 /*if(fn.contains("Class")) {
