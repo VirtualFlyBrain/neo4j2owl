@@ -87,6 +87,15 @@
     
 
 
+    <!-- http://purl.obolibrary.org/obo/CL_0017502 -->
+
+    <owl:Class rdf:about="http://purl.obolibrary.org/obo/CL_0017502">
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">{"X":660,"Y":1290,"Z":382}</rdfs:comment>
+        <rdfs:label>TestQuotes</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_TEST2 -->
 
     <owl:Class rdf:about="http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_TEST2">
@@ -326,7 +335,7 @@
     <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TestJSON -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/TestJSON">
-        <rdfs:isDefinedBy>Nothing</rdfs:isDefinedBy>
+        <rdfs:isDefinedBy>TestJSON</rdfs:isDefinedBy>
     </owl:Class>
     
 
