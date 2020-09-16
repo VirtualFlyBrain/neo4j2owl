@@ -221,3 +221,11 @@ Editors notes:
 Generation of safe labels:
 - alphanumeric and underscore allowed
 - other characters are encoded (for example, `has part':@"` results in `has_part3563`.
+
+## Understanding the log file
+
+- All cypher queries throughout the process will produce the same error messages when they fail: `"Cypher query did NOT complete successfully (ERROR): "`, followed by the cypher query that generated the error.
+- Most non-trivial cypher queries (especially the CSV imports) will generate a success message when they executed correctly: `"Cypher finished successfully: "`, followed by the cypher query.
+- Most errors thrown throughout the import process will result in the whole pipeline to fail, except:
+  - If a dynamic label is not successfully added for whatever reason, the stack trace is printed along with a warning: `"FAILED adding label " + label + " to " + ces + ", see logs."`
+

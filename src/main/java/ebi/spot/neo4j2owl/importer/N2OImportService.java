@@ -2,8 +2,11 @@ package ebi.spot.neo4j2owl.importer;
 
 import com.google.common.collect.Iterables;
 import ebi.spot.neo4j2owl.N2OLog;
+import ebi.spot.neo4j2owl.N2OStatic;
+import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.procedure.Name;
@@ -19,8 +22,11 @@ import java.util.concurrent.TimeUnit;
 
 public class N2OImportService {
 
+    @SuppressWarnings("FieldMayBeFinal")
     private GraphDatabaseService db;
+    @SuppressWarnings("FieldMayBeFinal")
     private GraphDatabaseAPI dbapi;
+    @SuppressWarnings("FieldMayBeFinal")
     private static N2OLog logger = N2OLog.getInstance();
 
     public N2OImportService(GraphDatabaseService db, GraphDatabaseAPI dbapi) {
@@ -41,7 +47,13 @@ public class N2OImportService {
             }
 
             logger.log("Preprocessing...");
-            N2OConfig.getInstance().getPreprocessingCypherQueries().forEach(db::execute);
+            for(String cypher:N2OConfig.getInstance().getPreprocessingCypherQueries()) {
+                try {
+                    db.execute(cypher);
+                } catch (QueryExecutionException e) {
+                    throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE + cypher, e);
+                }
+            }
 
             //inserter = BatchInserters.inserter( inserttmp);
             logger.log("Loading Ontology");
@@ -58,7 +70,7 @@ public class N2OImportService {
                 exService.awaitTermination(N2OConfig.getInstance().getTimeoutInMinutes(), TimeUnit.MINUTES);
                 logger.log("All done..");
             } catch (InterruptedException e) {
-                logger.error("Query interrupted");
+                throw new N2OException("Query interrupted for some reason..",e);
             }
 
         } catch (Exception e) {
@@ -75,7 +87,7 @@ public class N2OImportService {
         return importResults;
     }
 
-    private List<OWLOntology> chunk(OWLOntology o, int chunksize) {
+    private List<OWLOntology> chunk(OWLOntology o, int chunksize) throws N2OException {
         List<OWLOntology> chunks = new ArrayList<>();
         if (o.getAxioms(Imports.INCLUDED).size() < chunksize) {
             chunks.add(o);
@@ -87,7 +99,7 @@ public class N2OImportService {
                 try {
                     chunks.add(OWLManager.createOWLOntologyManager().createOntology(new HashSet<>(partition)));
                 } catch (OWLOntologyCreationException e) {
-                    e.printStackTrace();
+                    throw new N2OException("Ontology chunk could not be created for some unknown reason..",e);
                 }
             }
         }

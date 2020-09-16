@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
@@ -65,12 +66,13 @@ public class N2OUtils {
     }
 
 
-    public static void writeToFile(File dir, Map<String, List<String>> dataout, String nodeclass) {
+    public static void writeToFile(File dir, Map<String, List<String>> dataout, String nodeclass) throws N2OException {
         for (String type : dataout.keySet()) {
+            File f = new File(dir, nodeclass + "_" + type + ".txt");
             try {
-                FileUtils.writeLines(new File(dir, nodeclass + "_" + type + ".txt"), dataout.get(type));
+                FileUtils.writeLines(f, dataout.get(type));
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new N2OException("Writing to file "+f+" failed..",e);
             }
         }
     }
