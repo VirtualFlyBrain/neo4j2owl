@@ -95,7 +95,7 @@ class N2OOntologyImporter {
         }
     }
 
-    private void addDynamicNodeLabels(OWLReasoner r) {
+    private void addDynamicNodeLabels(OWLReasoner r) throws N2OException {
         Map<String, String> classExpressionLabelMap = N2OConfig.getInstance().getClassExpressionNeoLabelMap();
         for (String ces : classExpressionLabelMap.keySet()) {
             String label = classExpressionLabelMap.get(ces);
@@ -114,11 +114,9 @@ class N2OOntologyImporter {
                     for (OWLNamedIndividual sc : getInstances(r, ce)) manager.addNodeLabel(sc, label);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                log.warning("FAILED adding label " + label + " to " + ces + ", see logs.");
+                throw new N2OException("FAILED adding label " + label + " to " + ces ,e);
             }
         }
-
 
     }
 
