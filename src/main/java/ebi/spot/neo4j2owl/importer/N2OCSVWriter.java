@@ -1,6 +1,7 @@
 package ebi.spot.neo4j2owl.importer;
 
 import ebi.spot.neo4j2owl.exporter.N2OException;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.codehaus.jackson.io.JsonStringEncoder;
 import org.semanticweb.owlapi.model.OWLEntity;
 
@@ -159,7 +160,7 @@ class N2OCSVWriter {
     private String csvCellValue(Object o) {
         // {\"X\":660,\"Y\":1290,\"Z\":382}
         //System.out.println("csvCellValue()");
-        String raw_value = o.toString();
+        String val = o.toString();
         //System.out.println(raw_value);
        /*
         String json = new String(JsonStringEncoder.getInstance().quoteAsString(raw_value));
@@ -170,9 +171,22 @@ class N2OCSVWriter {
         String val = json;
         */
         // see https://neo4j.com/developer/kb/space-in-import-filename-for-load-csv/
-        String val = raw_value.replaceAll("\"","\"\"");
+
         //
-        //System.out.println(val);
+            if (val.contains("\"")) {
+                //String orig = val;
+                val = val.replaceAll("(?<![\\\\])[\"]","\"\"");
+                val = val.replaceAll("[\\\\]+[\"]","\\\\\\\\\"\"");
+                /*
+                if(!orig.equals(val)) {
+                    System.out.println("**************");
+                    System.out.println(orig);
+                    System.out.println(val);
+                }
+                */
+        }
+
+
         return "\"" + val + "\"";
     }
 
