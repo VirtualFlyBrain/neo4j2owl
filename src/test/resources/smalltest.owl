@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <rdf:RDF xmlns="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#"
      xml:base="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73"
+     xmlns:obo="http://purl.obolibrary.org/obo/"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-     xmlns:obo="http://purl.obolibrary.org/obo/"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:untitled-ontology-73="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#"
      xmlns:untitled-ontology-731="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73/">
@@ -21,6 +21,12 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
+    
+
+
+    <!-- http://purl.obolibrary.org/obo/IAO_0000115 -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.obolibrary.org/obo/IAO_0000115"/>
     
 
 
@@ -64,7 +70,7 @@
     <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#P -->
 
     <owl:ObjectProperty rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#P">
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has""" part"""&apos;:@\\\&quot;</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has&quot;&quot;&quot; part&quot;&quot;&quot;&apos;:@\\\&quot;</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -91,7 +97,7 @@
     <!-- http://purl.obolibrary.org/obo/CL_0017502 -->
 
     <owl:Class rdf:about="http://purl.obolibrary.org/obo/CL_0017502">
-        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">{"X":660,"Y":1290,"Z":382}</rdfs:comment>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">{&quot;X&quot;:660,&quot;Y&quot;:1290,&quot;Z&quot;:382}</rdfs:comment>
         <rdfs:label>TestQuotes</rdfs:label>
     </owl:Class>
     
@@ -109,8 +115,8 @@
                         <owl:someValuesFrom>
                             <owl:Class>
                                 <owl:unionOf rdf:parseType="Collection">
-                                    <rdf:Description rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
                                     <rdf:Description rdf:about="http://www.w3.org/2002/07/owl#Thing"/>
+                                    <rdf:Description rdf:about="https://doi.org/10.1101/198648"/>
                                 </owl:unionOf>
                             </owl:Class>
                         </owl:someValuesFrom>
@@ -141,14 +147,8 @@
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
         <owl:deprecated rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:deprecated>
     </owl:Class>
-
-
-    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TestQuotesEscaped -->
-
-    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TestQuotesEscaped">
-        <obo:IAO_0000115 rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lateral zone of proliferating neuroblasts """arising""" from the central part of the inner optic anlage near the Bolwig&apos;s nerve. Neuroblasts segregate from the anlage at the beginning of the third larval instar, and are displaced towards the point of entry of the Bolwig&apos;s nerve and then separate from each other by newly formed fiber bundles (&quot;Zellenstrange&quot;). One group will form the central plug, and the distal group are pushed up against the posterior face of the lamina surrounding the Bolwig&apos;s nerve.</obo:IAO_0000115>
-    </owl:Class>
     
+
 
     <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#C -->
 
@@ -156,13 +156,13 @@
         <owl:equivalentClass>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
+                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
             </owl:Restriction>
         </owl:equivalentClass>
         <owl:equivalentClass>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#P"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
+                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
             </owl:Restriction>
         </owl:equivalentClass>
         <owl:equivalentClass>
@@ -180,73 +180,12 @@
         <owl:annotatedTarget>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
+                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
             </owl:Restriction>
         </owl:annotatedTarget>
         <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">test 1 ano</rdfs:comment>
         <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#int">1</rdfs:seeAlso>
         <owl:priorVersion rdf:datatype="http://www.w3.org/2001/XMLSchema#string">test 2 version</owl:priorVersion>
-    </owl:Axiom>
-    
-
-
-    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D -->
-
-    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D">
-        <owl:equivalentClass>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
-            </owl:Restriction>
-        </owl:equivalentClass>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#B"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
-                <owl:hasValue rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#i"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testAnnoProp>
-        <rdfs:isDefinedBy>yaiusy08u s8ua 9 . (**T %&amp;^%</rdfs:isDefinedBy>
-        <rdfs:seeAlso rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#i"/>
-    </owl:Class>
-    <owl:Axiom>
-        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
-        <owl:annotatedProperty rdf:resource="http://www.w3.org/2002/07/owl#equivalentClass"/>
-        <owl:annotatedTarget>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
-            </owl:Restriction>
-        </owl:annotatedTarget>
-        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">axiom comment 1</rdfs:comment>
-        <rdfs:comment>axiom comment 2</rdfs:comment>
-    </owl:Axiom>
-    <owl:Axiom>
-        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
-        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#subClassOf"/>
-        <owl:annotatedTarget>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#B"/>
-            </owl:Restriction>
-        </owl:annotatedTarget>
-        <rdfs:comment>rc comment 1</rdfs:comment>
-        <rdfs:comment>rc comment 2</rdfs:comment>
-    </owl:Axiom>
-    <owl:Axiom>
-        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
-        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
-        <owl:annotatedTarget>yaiusy08u s8ua 9 . (**T %&amp;^%</owl:annotatedTarget>
-        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seeAlso value 1</rdfs:seeAlso>
-        <rdfs:seeAlso>seeAlso value 2</rdfs:seeAlso>
-        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</owl:incompatibleWith>
-        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:incompatibleWith>
     </owl:Axiom>
     
 
@@ -299,8 +238,8 @@
                         <owl:someValuesFrom>
                             <owl:Class>
                                 <owl:intersectionOf rdf:parseType="Collection">
-                                    <rdf:Description rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#D"/>
                                     <rdf:Description rdf:about="http://www.w3.org/2002/07/owl#Thing"/>
+                                    <rdf:Description rdf:about="https://doi.org/10.1101/198648"/>
                                 </owl:intersectionOf>
                             </owl:Class>
                         </owl:someValuesFrom>
@@ -308,6 +247,14 @@
                 </owl:intersectionOf>
             </owl:Class>
         </owl:equivalentClass>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TestQuotesEscaped -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TestQuotesEscaped">
+        <obo:IAO_0000115 rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lateral zone of proliferating neuroblasts &quot;&quot;&quot;arising&quot;&quot;&quot; from the central part of the inner optic anlage near the Bolwig&apos;s nerve. Neuroblasts segregate from the anlage at the beginning of the third larval instar, and are displaced towards the point of entry of the Bolwig&apos;s nerve and then separate from each other by newly formed fiber bundles (&quot;Zellenstrange&quot;). One group will form the central plug, and the distal group are pushed up against the posterior face of the lamina surrounding the Bolwig&apos;s nerve.</obo:IAO_0000115>
     </owl:Class>
     
 
@@ -357,6 +304,67 @@
         <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
         <owl:annotatedTarget>Something</owl:annotatedTarget>
         <rdfs:seeAlso>Something else</rdfs:seeAlso>
+    </owl:Axiom>
+    
+
+
+    <!-- https://doi.org/10.1101/198648 -->
+
+    <owl:Class rdf:about="https://doi.org/10.1101/198648">
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#B"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
+                <owl:hasValue rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#i"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testAnnoProp>
+        <rdfs:isDefinedBy>yaiusy08u s8ua 9 . (**T %&amp;^%</rdfs:isDefinedBy>
+        <rdfs:seeAlso rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#i"/>
+    </owl:Class>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="https://doi.org/10.1101/198648"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2002/07/owl#equivalentClass"/>
+        <owl:annotatedTarget>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
+            </owl:Restriction>
+        </owl:annotatedTarget>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">axiom comment 1</rdfs:comment>
+        <rdfs:comment>axiom comment 2</rdfs:comment>
+    </owl:Axiom>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="https://doi.org/10.1101/198648"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#subClassOf"/>
+        <owl:annotatedTarget>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#B"/>
+            </owl:Restriction>
+        </owl:annotatedTarget>
+        <rdfs:comment>rc comment 1</rdfs:comment>
+        <rdfs:comment>rc comment 2</rdfs:comment>
+    </owl:Axiom>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="https://doi.org/10.1101/198648"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2000/01/rdf-schema#isDefinedBy"/>
+        <owl:annotatedTarget>yaiusy08u s8ua 9 . (**T %&amp;^%</owl:annotatedTarget>
+        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#string">seeAlso value 1</rdfs:seeAlso>
+        <rdfs:seeAlso>seeAlso value 2</rdfs:seeAlso>
+        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</owl:incompatibleWith>
+        <owl:incompatibleWith rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:incompatibleWith>
     </owl:Axiom>
     
 
