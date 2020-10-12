@@ -64,7 +64,7 @@
     <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#P -->
 
     <owl:ObjectProperty rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#P">
-        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has part&apos;:@&quot;</rdfs:label>
+        <rdfs:label rdf:datatype="http://www.w3.org/2001/XMLSchema#string">has""" part"""&apos;:@\\\&quot;</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -146,7 +146,7 @@
     <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TestQuotesEscaped -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#TestQuotesEscaped">
-        <obo:IAO_0000115 rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lateral zone of proliferating neuroblasts arising from the central part of the inner optic anlage near the Bolwig&apos;s nerve. Neuroblasts segregate from the anlage at the beginning of the third larval instar, and are displaced towards the point of entry of the Bolwig&apos;s nerve and then separate from each other by newly formed fiber bundles (&quot;Zellenstrange&quot;). One group will form the central plug, and the distal group are pushed up against the posterior face of the lamina surrounding the Bolwig&apos;s nerve.</obo:IAO_0000115>
+        <obo:IAO_0000115 rdf:datatype="http://www.w3.org/2001/XMLSchema#string">A lateral zone of proliferating neuroblasts """arising""" from the central part of the inner optic anlage near the Bolwig&apos;s nerve. Neuroblasts segregate from the anlage at the beginning of the third larval instar, and are displaced towards the point of entry of the Bolwig&apos;s nerve and then separate from each other by newly formed fiber bundles (&quot;Zellenstrange&quot;). One group will form the central plug, and the distal group are pushed up against the posterior face of the lamina surrounding the Bolwig&apos;s nerve.</obo:IAO_0000115>
     </owl:Class>
     
 

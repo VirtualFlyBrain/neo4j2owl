@@ -175,8 +175,11 @@ class N2OCSVWriter {
         //
             if (val.contains("\"")) {
                 //String orig = val;
-                val = val.replaceAll("(?<![\\\\])[\"]","\"\"");
-                val = val.replaceAll("[\\\\]+[\"]","\\\\\\\\\"\"");
+                //val = val.replaceAll("(?<![\\\\])[\"]","\"\"");
+                //val = val.replaceAll("[\\\\]+[\"]","\\\\\\\\\"\"");
+
+                val = val.replaceAll("[\"]","\"\"");
+                val = val.replaceAll("[\\\\]","\\\\\\\\");
                 /*
                 if(!orig.equals(val)) {
                     System.out.println("**************");
