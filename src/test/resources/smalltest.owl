@@ -94,6 +94,46 @@
     
 
 
+    <!-- http://ontologydesignpatterns.org/wiki/Submissions:N-Ary_Relation_Pattern_%28OWL_2%29 -->
+
+    <owl:Class rdf:about="http://ontologydesignpatterns.org/wiki/Submissions:N-Ary_Relation_Pattern_%28OWL_2%29">
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
+                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#P"/>
+                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <owl:equivalentClass>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
+                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
+            </owl:Restriction>
+        </owl:equivalentClass>
+        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</untitled-ontology-731:testAnnoProp>
+        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testAnnoProp>
+    </owl:Class>
+    <owl:Axiom>
+        <owl:annotatedSource rdf:resource="http://ontologydesignpatterns.org/wiki/Submissions:N-Ary_Relation_Pattern_%28OWL_2%29"/>
+        <owl:annotatedProperty rdf:resource="http://www.w3.org/2002/07/owl#equivalentClass"/>
+        <owl:annotatedTarget>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
+                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
+            </owl:Restriction>
+        </owl:annotatedTarget>
+        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">test 1 ano</rdfs:comment>
+        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#int">1</rdfs:seeAlso>
+        <owl:priorVersion rdf:datatype="http://www.w3.org/2001/XMLSchema#string">test 2 version</owl:priorVersion>
+    </owl:Axiom>
+    
+
+
     <!-- http://purl.obolibrary.org/obo/CL_0017502 -->
 
     <owl:Class rdf:about="http://purl.obolibrary.org/obo/CL_0017502">
@@ -147,46 +187,6 @@
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
         <owl:deprecated rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</owl:deprecated>
     </owl:Class>
-    
-
-
-    <!-- http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#C -->
-
-    <owl:Class rdf:about="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#C">
-        <owl:equivalentClass>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
-                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
-            </owl:Restriction>
-        </owl:equivalentClass>
-        <owl:equivalentClass>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#P"/>
-                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
-            </owl:Restriction>
-        </owl:equivalentClass>
-        <owl:equivalentClass>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#A"/>
-            </owl:Restriction>
-        </owl:equivalentClass>
-        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</untitled-ontology-731:testAnnoProp>
-        <untitled-ontology-731:testAnnoProp rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</untitled-ontology-731:testAnnoProp>
-    </owl:Class>
-    <owl:Axiom>
-        <owl:annotatedSource rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#C"/>
-        <owl:annotatedProperty rdf:resource="http://www.w3.org/2002/07/owl#equivalentClass"/>
-        <owl:annotatedTarget>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.obolibrary.org/obo/BFO_0000051"/>
-                <owl:someValuesFrom rdf:resource="https://doi.org/10.1101/198648"/>
-            </owl:Restriction>
-        </owl:annotatedTarget>
-        <rdfs:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">test 1 ano</rdfs:comment>
-        <rdfs:seeAlso rdf:datatype="http://www.w3.org/2001/XMLSchema#int">1</rdfs:seeAlso>
-        <owl:priorVersion rdf:datatype="http://www.w3.org/2001/XMLSchema#string">test 2 version</owl:priorVersion>
-    </owl:Axiom>
     
 
 
@@ -386,7 +386,7 @@
         <rdf:type>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#R"/>
-                <owl:someValuesFrom rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#C"/>
+                <owl:someValuesFrom rdf:resource="http://ontologydesignpatterns.org/wiki/Submissions:N-Ary_Relation_Pattern_%28OWL_2%29"/>
             </owl:Restriction>
         </rdf:type>
         <R rdf:resource="http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#j"/>
