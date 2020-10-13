@@ -17,6 +17,7 @@ class IRIManager {
     private final Map<String,String> namespacePrefixMap = new HashMap<>();
     private final List<String> sortedUrlNamespaces = new ArrayList<>();
     private int NAMESPACECOUNTER = 0;
+    private static N2OLog logger = N2OLog.getInstance();
 
     IRIManager() {
         addPrefixNamespacePair(N2OStatic.NEO4J_UNMAPPED_PROPERTY_PREFIX_URI, "n2oc");
@@ -49,13 +50,23 @@ class IRIManager {
         }
 
         String ns = iri.getNamespace();
+
+        // If the getNamespace() method returns the whole IRI, this mains a suitable remainder could not be identified.
+        // In this case we go the other way, extract a shortform (which will look for the suffix after the last /), and
+        // determine a "namespace" by saying: the namespace is whatever is left when you remove the shortform.
         if(ns.equals(iris)) {
-            throw new IllegalStateException("A namespace could not be correctly extracted for "+ns+", please provide a curie map!");
+            logger.info("A namespace does not have a legal namespace; we will attempt to extract one by looking at the remainder after the last slash: "+ns);
+            String short_form = iri.getShortForm();
+
+            if(short_form.isEmpty()) {
+                throw new IllegalStateException("A namespace could not be correctly extracted for " + ns + ", please provide a curie map!");
+            }
+            ns = iris.replace(short_form,"");
         }
+
         if(namespacePrefixMap.containsKey(ns)) {
             return ns;
         }
-
 
         createNewPrefixForNamespace(ns);
         return ns;
