@@ -33,8 +33,10 @@ class IRIManager {
         String iris = iri.toString();
 
         for(String urlNamespace:sortedUrlNamespaces) {
-            if(iris.startsWith(urlNamespace)) {
-                return urlNamespace;
+            if(!urlNamespace.isEmpty()) {
+                if (iris.startsWith(urlNamespace)) {
+                    return urlNamespace;
+                }
             }
         }
 
@@ -55,16 +57,10 @@ class IRIManager {
         // In this case we go the other way, extract a shortform (which will look for the suffix after the last /), and
         // determine a "namespace" by saying: the namespace is whatever is left when you remove the shortform.
         if(ns.equals(iris)) {
-            logger.info("A namespace does not have a legal namespace; we will attempt to extract one by looking at the remainder after the last slash: "+ns);
-            String short_form = iri.getShortForm();
-
-            if(short_form.isEmpty()) {
-                throw new IllegalStateException("A namespace could not be correctly extracted for " + ns + ", please provide a curie map!");
-            }
-            ns = iris.replace(short_form,"");
+            logger.info("A namespace does not have a legal namespace (which has implications for the shape of the short form): "+ns+ ". You could provide an entry in the curie map to help decide the proper namespace.");
         }
 
-        if(namespacePrefixMap.containsKey(ns)) {
+        if (namespacePrefixMap.containsKey(ns)) {
             return ns;
         }
 
@@ -73,9 +69,13 @@ class IRIManager {
     }
 
     private void createNewPrefixForNamespace(String ns) {
-        String prefix = "ns" + NAMESPACECOUNTER;
-        NAMESPACECOUNTER++;
-        addPrefixNamespacePair(ns, prefix);
+        if(ns.isEmpty()) {
+            addPrefixNamespacePair(ns, "NONAMESPACE");
+        } else {
+            String prefix = "ns" + NAMESPACECOUNTER;
+            NAMESPACECOUNTER++;
+            addPrefixNamespacePair(ns, prefix);
+        }
     }
 
     private void addPrefixNamespacePair(String ns, String prefix) {
@@ -117,7 +117,10 @@ class IRIManager {
         String iri = e.getIRI().toString();
         String namespace = getUrlNamespace(e.getIRI());
         String prefix = namespacePrefixMap.get(namespace);
-        String short_form = iri.replaceAll(namespace,"").replaceAll("[^0-9a-zA-Z_]+", "_");
+        String short_form = iri.replaceAll(namespace,"").replaceAll("[^0-9a-zA-Z_]", "_");
+        if(short_form.isEmpty()) {
+            short_form = iri.replaceAll("[^0-9a-zA-Z_]", "_");
+        }
         return prefix+":" +short_form;
     }
 
@@ -150,15 +153,15 @@ class IRIManager {
         String iri = e.toString();
         String namespace = getUrlNamespace(e);
         String prefix = namespacePrefixMap.get(namespace);
-        String short_form = "";
-        if (namespace.length() < iri.length()){
-            short_form = iri.replaceAll(namespace,"").replaceAll("[^0-9a-zA-Z_]+", "_");
-        }else{
-            short_form = iri.replaceAll("[^0-9a-zA-Z_]+", "_");
+        String short_form = iri.replaceAll(namespace,"").replaceAll("[^0-9a-zA-Z_]", "_");
+        if (short_form.isEmpty()){
+            short_form = iri.replaceAll("[^0-9a-zA-Z_]", "_");
         }
-        if(short_form.endsWith(prefix+"_") || Character.isDigit(short_form.charAt(0))) {
+        if(namespace.endsWith(prefix+"_")) {
             short_form = prefix+"_"+short_form;
-            logger.info("A namespace (" + namespace + ") does not have a legal short_form; we will convert the complete IRI into one: " + short_form);
+        } else if(Character.isDigit(short_form.charAt(0))) {
+            short_form = prefix+"_"+short_form;
+            logger.info("A short_form (" + namespace + ") starts with a digit: " + short_form);
         }
         return short_form;
     }
