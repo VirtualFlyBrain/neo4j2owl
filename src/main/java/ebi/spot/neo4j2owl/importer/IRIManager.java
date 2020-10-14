@@ -150,9 +150,15 @@ class IRIManager {
         String iri = e.toString();
         String namespace = getUrlNamespace(e);
         String prefix = namespacePrefixMap.get(namespace);
-        String short_form = iri.replaceAll(namespace,"").replaceAll("[^0-9a-zA-Z_]+", "_");
+        String short_form = "";
+        if (namespace.length() < iri.length()){
+            short_form = iri.replaceAll(namespace,"").replaceAll("[^0-9a-zA-Z_]+", "_");
+        }else{
+            short_form = iri.replaceAll("[^0-9a-zA-Z_]+", "_");
+        }
         if(short_form.endsWith(prefix+"_") || Character.isDigit(short_form.charAt(0))) {
             short_form = prefix+"_"+short_form;
+            logger.info("A namespace (" + namespace + ") does not have a legal short_form; we will convert the complete IRI into one: " + short_form);
         }
         return short_form;
     }
