@@ -30,7 +30,7 @@ class N2OConfig {
     private Map<IRI, String> mapIRIToSL = new HashMap<>();
     private Set<IRI> propertiesForJSONrepresentation = new HashSet<>();
     private Set<String> preprocessingCypherQueries = new HashSet<>();
-    private Map<String,String> classExpressionNeoLabelMap = new HashMap<>(); //this is for the dynamic neo typing feature: an OWLClassExpression string that maps to a a neo node label
+    private Map<String,Set<String>> classExpressionNeoLabelMap = new HashMap<>(); //this is for the dynamic neo typing feature: an OWLClassExpression string that maps to a a neo node label
 
 
     private static N2OConfig config = null;
@@ -132,7 +132,7 @@ class N2OConfig {
         return new HashSet<>(this.preprocessingCypherQueries);
     }
 
-    Map<String,String> getClassExpressionNeoLabelMap() {
+    Map<String,Set<String>> getClassExpressionNeoLabelMap() {
         return this.classExpressionNeoLabelMap;
     }
 
@@ -224,7 +224,10 @@ class N2OConfig {
                             }
                             for(Object o:expressions) {
                                 String s = o.toString();
-                                classExpressionNeoLabelMap.put(s,label);
+                                if(!classExpressionNeoLabelMap.containsKey(s)) {
+                                    classExpressionNeoLabelMap.put(s,new HashSet<>());
+                                }
+                                classExpressionNeoLabelMap.get(s).add(label);
                             }
                         }
                     }

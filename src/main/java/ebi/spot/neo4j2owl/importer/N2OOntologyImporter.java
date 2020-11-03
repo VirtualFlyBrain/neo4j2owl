@@ -96,25 +96,27 @@ class N2OOntologyImporter {
     }
 
     private void addDynamicNodeLabels(OWLReasoner r) throws N2OException {
-        Map<String, String> classExpressionLabelMap = N2OConfig.getInstance().getClassExpressionNeoLabelMap();
+        Map<String, Set<String>> classExpressionLabelMap = N2OConfig.getInstance().getClassExpressionNeoLabelMap();
         for (String ces : classExpressionLabelMap.keySet()) {
-            String label = classExpressionLabelMap.get(ces);
-            log.info("Adding label " + label + " to " + ces + ".");
-            try {
-                OWLClassExpression ce = manager.parseExpression(ces);
-                if (label.isEmpty()) {
-                    if (ce.isClassExpressionLiteral()) {
-                        label = formatAsNeoNodeLabel(ce.asOWLClass());
-                    } else {
-                        log.warning("During adding of dynamic neo labels, an empty label was encountered in conjunction with a complex class expression (" + N2OUtils.render(ce) + "). The label was not added.");
+            Set<String> labels = classExpressionLabelMap.get(ces);
+            for (String label:labels) {
+                log.info("Adding label " + label + " to " + ces + ".");
+                try {
+                    OWLClassExpression ce = manager.parseExpression(ces);
+                    if (label.isEmpty()) {
+                        if (ce.isClassExpressionLiteral()) {
+                            label = formatAsNeoNodeLabel(ce.asOWLClass());
+                        } else {
+                            log.warning("During adding of dynamic neo labels, an empty label was encountered in conjunction with a complex class expression (" + N2OUtils.render(ce) + "). The label was not added.");
+                        }
                     }
+                    if (!label.isEmpty()) {
+                        for (OWLClass sc : getSubClasses(r, ce, false)) manager.addNodeLabel(sc, label);
+                        for (OWLNamedIndividual sc : getInstances(r, ce)) manager.addNodeLabel(sc, label);
+                    }
+                } catch (Exception e) {
+                    throw new N2OException("FAILED adding label " + label + " to " + ces, e);
                 }
-                if (!label.isEmpty()) {
-                    for (OWLClass sc : getSubClasses(r, ce, false)) manager.addNodeLabel(sc, label);
-                    for (OWLNamedIndividual sc : getInstances(r, ce)) manager.addNodeLabel(sc, label);
-                }
-            } catch (Exception e) {
-                throw new N2OException("FAILED adding label " + label + " to " + ces ,e);
             }
         }
 
