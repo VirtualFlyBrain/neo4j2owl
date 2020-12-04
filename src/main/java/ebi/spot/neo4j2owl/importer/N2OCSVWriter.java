@@ -1,21 +1,34 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OLog;
+import ebi.spot.neo4j2owl.N2OStatic;
 import ebi.spot.neo4j2owl.exporter.N2OException;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.codehaus.jackson.io.JsonStringEncoder;
 import org.semanticweb.owlapi.model.OWLEntity;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
-class N2OCSVWriter {
+public class N2OCSVWriter {
 
     private final N2OImportManager manager;
     private final File dir;
+    private final RelationTypeCounter relationTypeCounter;
+    private final N2OLog log = N2OLog.getInstance();
+    private final N2OImportCSVConfig n2OImportCSVConfig = new N2OImportCSVConfig();
+    enum CSV_TYPE
+    {
+        NODES("nodes"), RELATIONSHIPS("relationship");
+        String name;
+        CSV_TYPE(String name) {
+            this.name = name;
+        }
+    }
 
-    N2OCSVWriter(N2OImportManager manager, File dir) {
+    N2OCSVWriter(N2OImportManager manager, RelationTypeCounter relationTypeCounter, File dir) {
         this.manager = manager;
         this.dir = dir;
+        this.relationTypeCounter = relationTypeCounter;
     }
 
     void exportOntologyToCSV() throws N2OException {
@@ -23,16 +36,89 @@ class N2OCSVWriter {
         processExportForRelationships();
     }
 
+    public void exportN2OImportConfig(File fileOut) throws IOException {
+        n2OImportCSVConfig.saveConfig(fileOut);
+    }
+
+    N2OImportCSVConfig getCSVImportConfig() {
+        return n2OImportCSVConfig.clone();
+    }
+
     private void processExportForRelationships() throws N2OException {
         Map<String, List<N2OOWLRelationship>> relationships = indexRelationshipsByType();
         Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(relationships);
-        N2OUtils.writeToFile(getImportDir(), dataout_rel, "relationship");
+        prepareCyperQueries(dataout_rel, CSV_TYPE.RELATIONSHIPS);
+        N2OUtils.writeToFile(getImportDir(), dataout_rel, CSV_TYPE.RELATIONSHIPS);
     }
 
     private void processExportForNodes() throws N2OException {
         Map<String, List<OWLEntity>> entities = indexEntitiesByType();
         Map<String, List<String>> dataout = prepareNodeCSVsForExport(entities);
-        N2OUtils.writeToFile(dir, dataout, "nodes");
+        prepareCyperQueries(dataout, CSV_TYPE.NODES);
+        N2OUtils.writeToFile(dir, dataout, CSV_TYPE.NODES);
+
+    }
+
+    private void prepareCyperQueries(Map<String, List<String>> dataout, CSV_TYPE csv_type) {
+        for(String type: dataout.keySet()) {
+            File f = N2OUtils.constructFileHandle(dir, csv_type.name, type);
+            String cypher = constructCypherQuery(csv_type, f);
+            this.n2OImportCSVConfig.putImport(cypher, f.getName());
+        }
+    }
+
+    private String constructCypherQuery(CSV_TYPE csv_type, File f) {
+        String filename = f.getName();
+
+        String type = filename.substring(filename.indexOf("_") + 1).replaceAll(".txt", "");
+        Integer periodic_commit = N2OConfig.getInstance().getPeriodicCommit();
+        String cypher = "USING PERIODIC COMMIT "+periodic_commit+"\n" +
+                "LOAD CSV WITH HEADERS FROM \"file:/$FILENAME$\" AS cl\n";
+        switch(csv_type) {
+            case RELATIONSHIPS:
+                cypher+="MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
+                        "MERGE (s)-[r:" + type + "]->(e) " + uncomposedSetClauses("cl", "r", manager.getHeadersForRelationships(type));
+                break;
+            case NODES:
+                cypher+= "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses("cl", "n", manager.getHeadersForNodes(type)) + " SET n :" + type;
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + csv_type);
+        }
+        return cypher;
+    }
+
+    private String computeDatatype(String h) {
+        Optional<String> dt_config = N2OConfig.getInstance().slToDatatype(h);
+        if(dt_config.isPresent()) {
+            return dt_config.get();
+        } else {
+            Optional<String> dt_counter = this.relationTypeCounter.computeTypeForRelation(h);
+            String explanation = this.relationTypeCounter.getExplanationForTyping(h);
+            if(dt_counter.isPresent()) {
+                String dt = dt_counter.get();
+                log.info(h+ " relation was assigned to the '"+dt+"' datatype." );
+                log.info(explanation);
+                return dt;
+            } else {
+                log.warning("Cant decide datatype of annotation property. Ambiguous typing for "+h+": "+explanation);
+            }
+        }
+        return "String";
+    }
+
+    private String uncomposedSetClauses(String csvalias, String neovar, Set<String> headers) {
+        StringBuilder sb = new StringBuilder();
+        for (String h : headers) {
+            if (N2OStatic.isN2OBuiltInProperty(h)) {
+                sb.append("SET ").append(neovar).append(".").append(h).append(" = ").append(csvalias).append(".").append(h).append(" ");
+            } else {
+                String function = "to" + computeDatatype(h);
+                //TODO somevalue = [ x in split(cl.somevalue) | colaesce(apoc.util.toBoolean(x), apoc.util.toInteger(x), apoc.util.toFloat(x), x) ]
+                sb.append("SET ").append(neovar).append(".").append(h).append(" = [value IN split(").append(csvalias).append(".").append(h).append(",\"").append(N2OStatic.ANNOTATION_DELIMITER).append("\") | ").append(function).append("(trim(value))] ");
+            }
+        }
+        return sb.toString().trim().replaceAll(",$", "");
     }
 
     private File getImportDir() {
@@ -234,5 +320,7 @@ class N2OCSVWriter {
         //sb.append("type");
         return sb.toString();
     }
+
+
 
 }

@@ -1,69 +1,62 @@
 package ebi.spot.neo4j2owl.importer;
 
-import com.google.common.collect.Iterables;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
 import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.io.FileUtils;
-import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.kernel.configuration.Config;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.procedure.Name;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.model.parameters.Imports;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class N2OImportService {
 
-    @SuppressWarnings("FieldMayBeFinal")
-    private GraphDatabaseService db;
-    @SuppressWarnings("FieldMayBeFinal")
-    private GraphDatabaseAPI dbapi;
-    @SuppressWarnings("FieldMayBeFinal")
-    private static N2OLog logger = N2OLog.getInstance();
+    private final static N2OLog logger = N2OLog.getInstance();
 
-    public N2OImportService(GraphDatabaseService db, GraphDatabaseAPI dbapi) {
-        this.db = db;
-        this.dbapi = dbapi;
-
+    public N2OImportService() {
     }
 
-    public N2OImportResult owl2Import(String url, String config) {
-        final ExecutorService exService = Executors.newSingleThreadExecutor();
-
-        File importdir = prepareImportDirectory();
+    public N2OImportResult owl2Import(String url, String config, GraphDatabaseAPI dbapi) {
+        File importdir = prepareImportDirectory(dbapi);
         N2OImportResult importResults = new N2OImportResult();
         try {
-            if(config!=null) {
-                logger.log("Loading config: " + config);
-                N2OConfig.getInstance().prepareConfig(url, config, importdir);
-            }
+            prepareConfig(config, importdir);
 
             logger.log("Preprocessing...");
+            final ExecutorService exService = Executors.newSingleThreadExecutor();
             for(String cypher:N2OConfig.getInstance().getPreprocessingCypherQueries()) {
                 try {
-                    db.execute(cypher);
+                    runQuery(dbapi, exService, cypher);
                 } catch (QueryExecutionException e) {
                     throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE + cypher, e);
                 }
             }
 
             //inserter = BatchInserters.inserter( inserttmp);
-            logger.log("Loading Ontology");
-            OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(getOntologyIRI(url, importdir));
-            logger.log("Size ontology: " + o.getAxiomCount());
-            List<OWLOntology> chunks = chunk(o, N2OConfig.getInstance().getBatch_size());
-            for (OWLOntology c : chunks) {
-                N2OOntologyImporter ontologyImporter = new N2OOntologyImporter(dbapi,db);
-                ontologyImporter.importOntology(exService, importdir, c, importResults);
-            }
+            logger.log("Converting OWL ontology to CSV..");
+            N2OCSVWriter csvWriter = prepareCSVFilesForImport(url, importdir, importResults);
+
+            logger.log("Create necessary indices..");
+            runQuery(dbapi, exService,"CREATE INDEX ON :Entity(iri)");
+
+            logger.log("Loading nodes to neo from CSV.");
+            N2ONeoCSVLoader csvLoader = new N2ONeoCSVLoader(dbapi);
+            csvLoader.loadNodesToNeoFromCSV(exService, csvWriter.getCSVImportConfig(), importdir);
+
+            logger.log("Loading relationships to neo from CSV.");
+            csvLoader.loadRelationshipsToNeoFromCSV(exService, csvWriter.getCSVImportConfig(), importdir);
+
+            logger.log("Loading done..");
             exService.shutdown();
             try {
                 logger.log("Stopping executor..");
@@ -87,26 +80,40 @@ public class N2OImportService {
         return importResults;
     }
 
-    private List<OWLOntology> chunk(OWLOntology o, int chunksize) throws N2OException {
-        List<OWLOntology> chunks = new ArrayList<>();
-        if (o.getAxioms(Imports.INCLUDED).size() < chunksize) {
-            chunks.add(o);
-        } else {
-            Set<OWLAxiom> declarations = new HashSet<>(o.getAxioms(AxiomType.DECLARATION));
-            Set<OWLAxiom> axioms = o.getAxioms(Imports.INCLUDED);
-            axioms.removeAll(declarations);
-            for (List<OWLAxiom> partition : Iterables.partition(axioms, chunksize)) {
-                try {
-                    chunks.add(OWLManager.createOWLOntologyManager().createOntology(new HashSet<>(partition)));
-                } catch (OWLOntologyCreationException e) {
-                    throw new N2OException("Ontology chunk could not be created for some unknown reason..",e);
-                }
-            }
+    public void prepareConfig(String config, File importdir) throws IOException, N2OException {
+        if(config !=null) {
+            logger.log("Loading config: " + config);
+            N2OConfig.getInstance().prepareConfig(config, importdir);
         }
-        return chunks;
     }
 
-    private File prepareImportDirectory() {
+    private void runQuery(GraphDatabaseAPI dbapi, ExecutorService exService, String cypher) {
+        exService.submit(() -> {
+            try {
+                dbapi.execute(cypher);
+            } catch (QueryExecutionException e) {
+                throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+cypher, e);
+            }
+            return N2OStatic.CYPHER_EXECUTED_SUCCESSFULLY+cypher;
+        });
+    }
+
+    public N2OCSVWriter prepareCSVFilesForImport(String url, File importdir, N2OImportResult importResults) throws OWLOntologyCreationException, IOException, InterruptedException, ExecutionException, N2OException {
+        logger.log("Loading Ontology");
+        OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(getOntologyIRI(url, importdir));
+        logger.log("Size ontology: " + o.getAxiomCount());
+
+        N2OOntologyLoader ontologyImporter = new N2OOntologyLoader();
+        ontologyImporter.importOntology(o, importResults);
+
+        logger.log("Loading in Database: " + importdir.getAbsolutePath());
+
+        N2OCSVWriter csvWriter = new N2OCSVWriter(ontologyImporter.getImportManager(), ontologyImporter.getRelationTypeCounter(), importdir);
+        csvWriter.exportOntologyToCSV();
+        return csvWriter;
+    }
+
+    private File prepareImportDirectory(GraphDatabaseAPI dbapi) {
         Map<String, String> params = dbapi.getDependencyResolver().resolveDependency(Config.class).getRaw();
         String par_neo4jhome = "unsupported.dbms.directories.neo4j_home";
         String par_importdirpath = "dbms.directories.import";
@@ -149,5 +156,26 @@ public class N2OImportService {
                 }
             }
         }
+    }
+
+
+    public static void main(String[] args) {
+        String url = args[0];
+        String config = args[1];
+        File importdir = new File(args[2]);
+
+        N2OImportService importService = new N2OImportService();
+        N2OImportResult importResults = new N2OImportResult();
+        try {
+            importService.prepareConfig(config, importdir);
+            logger.log("Converting OWL ontology to CSV..");
+            N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(url, importdir, importResults);
+            csvWriter.exportN2OImportConfig(new File(importdir,"csv_imports_config.yaml"));
+
+        } catch (IOException | N2OException | InterruptedException | ExecutionException | OWLOntologyCreationException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
     }
 }

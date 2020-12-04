@@ -17,13 +17,12 @@ import java.util.*;
 
 class N2OConfig {
     private N2OLog log = N2OLog.getInstance();
+    private int periodicCommit = 5000;
     private boolean allow_entities_without_labels = true;
-    private boolean batch = true;
     private boolean addPropertyLabel = true;
     private boolean testmode = false;
     private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
     private long timeoutinminutes = 180;
-    private int batch_size = 999000000;
     private double relationTypeThreshold = 0.95;
     private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
     private Map<String, String> customCurieMap = new HashMap<>();
@@ -83,10 +82,6 @@ class N2OConfig {
         this.timeoutinminutes = timeout;
     }
 
-    boolean isBatch() {
-        return batch;
-    }
-
     boolean isTestmode() {
         return testmode;
     }
@@ -97,10 +92,6 @@ class N2OConfig {
 
     private void setTestmode(boolean testmode) {
         this.testmode = testmode;
-    }
-
-    private void setBatch(boolean batch) {
-        this.batch = batch;
     }
 
     private void setSafeLabelMode(String sl_mode) {
@@ -144,20 +135,14 @@ class N2OConfig {
         return this.getPropertiesForJSONRepresentation().contains(ap.getIRI());
     }
 
-    private void setBatchSize(int batch_size) {
-        this.batch_size = batch_size;
-    }
-
-    int getBatch_size() {
-        return this.batch_size;
-    }
-
-    void prepareConfig(String url, String config, File importdir) throws IOException, N2OException {
+    void prepareConfig(String config, File importdir) throws IOException, N2OException {
         File configfile = new File(importdir, "config.yaml");
         N2OConfig n2o_config = N2OConfig.getInstance();
         if (config.startsWith("file://")) {
-            File config_ = new File(importdir, url.replaceAll("file://", ""));
-            FileUtils.copyFile(config_, configfile);
+            File config_ = new File(importdir, config.replaceAll("file://", ""));
+            if(!config_.equals(configfile)) {
+                FileUtils.copyFile(config_, configfile);
+            }
         } else {
             try {
                 URL url_ = new URL(config);
@@ -178,6 +163,13 @@ class N2OConfig {
                 n2o_config.setAllowEntitiesWithoutLabels((Boolean) configs.get("allow_entities_without_labels"));
             } else {
                 log.warning("CONFIG: allow_entities_without_labels value is not boolean");
+            }
+        }
+        if (configs.containsKey("periodic_commit")) {
+            if (configs.get("periodic_commit") instanceof Integer) {
+                n2o_config.setPeriodicCommit((Integer) configs.get("periodic_commit"));
+            } else {
+                log.warning("CONFIG: periodic_commit value is not integer, skipping.");
             }
         }
         if (configs.containsKey("property_mapping")) {
@@ -253,14 +245,6 @@ class N2OConfig {
             }
         }
 
-        if (configs.containsKey("batch_size")) {
-            if (configs.get("batch_size") instanceof Integer) {
-                N2OConfig.getInstance().setBatchSize((Integer) configs.get("batch_size"));
-            } else if (configs.get("batch_size") instanceof Long) {
-                N2OConfig.getInstance().setBatchSize((Integer) configs.get("batch_size"));
-            }
-        }
-
         if (configs.containsKey("represent_values_and_annotations_as_json")) {
             if (configs.get("represent_values_and_annotations_as_json") instanceof HashMap) {
                 HashMap<String, Object> pmmhm = (HashMap<String, Object>) configs.get("represent_values_and_annotations_as_json");
@@ -308,6 +292,10 @@ class N2OConfig {
 
     }
 
+    private void setPeriodicCommit(Integer periodicCommit) {
+        this.periodicCommit = periodicCommit;
+    }
+
     private void setIsPropertyLabel(boolean addPropertyLabel) {
         this.addPropertyLabel = addPropertyLabel;
     }
@@ -330,5 +318,9 @@ class N2OConfig {
 
     boolean isAddPropertyLabel() {
         return this.addPropertyLabel;
+    }
+
+    public Integer getPeriodicCommit() {
+        return this.periodicCommit;
     }
 }

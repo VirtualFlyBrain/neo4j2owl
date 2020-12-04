@@ -2,21 +2,17 @@ package ebi.spot.neo4j2owl.importer;
 
 import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.io.FileUtils;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.Transaction;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.dlsyntax.renderer.DLSyntaxObjectRenderer;
-import org.semanticweb.owlapi.expression.OWLEntityChecker;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.search.EntitySearcher;
-import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.LockSupport;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author mh
@@ -24,7 +20,6 @@ import java.util.concurrent.locks.LockSupport;
  */
 public class N2OUtils {
 
-    private static final Label[] NO_LABELS = new Label[0];
     private static  final OWLDataFactory df = OWLManager.getOWLDataFactory();
     private static final DLSyntaxObjectRenderer ren = new DLSyntaxObjectRenderer();
 
@@ -50,6 +45,7 @@ public class N2OUtils {
             if (literal.isBoolean()) {
                 return literal.parseBoolean();
             } else if (literal.isDouble()) {
+                @SuppressWarnings("WrapperTypeMayBePrimitive")
                 Double d = literal.parseDouble();
                 //because neo does not have a double datatype, lets cast this to float:
                 return d.floatValue();
@@ -66,9 +62,9 @@ public class N2OUtils {
     }
 
 
-    public static void writeToFile(File dir, Map<String, List<String>> dataout, String nodeclass) throws N2OException {
+    public static void writeToFile(File dir, Map<String, List<String>> dataout, N2OCSVWriter.CSV_TYPE nodeclass) throws N2OException {
         for (String type : dataout.keySet()) {
-            File f = new File(dir, nodeclass + "_" + type + ".txt");
+            File f = constructFileHandle(dir, nodeclass.name, type);
             try {
                 FileUtils.writeLines(f, dataout.get(type));
             } catch (IOException e) {
@@ -77,65 +73,12 @@ public class N2OUtils {
         }
     }
 
-    public final static ExecutorService DEFAULT = createDefaultPool();
-
-    public static ExecutorService createDefaultPool() {
-        int threads = Runtime.getRuntime().availableProcessors()*2;
-        int queueSize = threads * 25;
-        return new ThreadPoolExecutor(threads / 2, threads, 30L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(queueSize),
-                new CallerBlocksPolicy());
-//                new ThreadPoolExecutor.CallerRunsPolicy());
-    }
-
-    public static String neo4jAttributeString(String s) {
-        return s.replace("'", "\'");
-    }
-
-    public static void p(Object r) {
-        System.out.println(r);
-    }
-
-    public static String concat(Set<String> strings, String delim) {
-        String out = "";
-        for(String s:strings) {
-            out+=(s+":");
-        }
-        return out.replaceAll("[:]$","");
+    static File constructFileHandle(File dir, String nodeclass, String type) {
+        return new File(dir, nodeclass + "_" + type + ".txt");
     }
 
     public static String render(OWLClassExpression ce) {
         return ren.render(ce);
     }
 
-
-    static class CallerBlocksPolicy implements RejectedExecutionHandler {
-        @Override
-        public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-            if (!executor.isShutdown()) {
-                // block caller for 100ns
-                LockSupport.parkNanos(100);
-                try {
-                    // submit again
-                    executor.submit(r).get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    }
-    public static Label[] labels(Object labelNames) {
-        if (labelNames==null) return NO_LABELS;
-        if (labelNames instanceof List) {
-            List names = (List) labelNames;
-            Label[] labels = new Label[names.size()];
-            int i = 0;
-            for (Object l : names) {
-                if (l==null) continue;
-                labels[i++] = Label.label(l.toString());
-            }
-            if (i <= labels.length) return Arrays.copyOf(labels,i);
-            return labels;
-        }
-        return new Label[]{Label.label(labelNames.toString())};
-    }
 }

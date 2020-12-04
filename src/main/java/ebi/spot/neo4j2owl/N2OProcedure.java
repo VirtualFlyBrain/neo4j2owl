@@ -22,19 +22,27 @@ public class N2OProcedure {
     @Context
     public GraphDatabaseAPI dbapi;
 
-    private static N2OLog logger = N2OLog.getInstance();
+    private static final N2OLog logger = N2OLog.getInstance();
 
 
     @Procedure(mode = Mode.DBMS)
     public Stream<N2OImportResult> owl2Import(@Name("url") String url, @Name("config") String config) {
         logger.resetTimer();
-        N2OImportService importService = new N2OImportService(db, dbapi);
-        N2OImportResult result = importService.owl2Import(url, config);
+        N2OImportService importService = new N2OImportService();
+        N2OImportResult result = importService.owl2Import(url, config, dbapi);
+        return Stream.of(result);
+    }
+
+    @Procedure(mode = Mode.DBMS)
+    public Stream<N2OImportResult> importOntology(@Name("url") String url) {
+        logger.resetTimer();
+        N2OImportService importService = new N2OImportService();
+        N2OImportResult result = importService.owl2Import(url, null, dbapi);
         return Stream.of(result);
     }
 
     @Procedure(mode = Mode.WRITE)
-    public Stream<N2OReturnValue> exportOWL() throws Exception { //@Name("file") String fileName
+    public Stream<N2OReturnValue> exportOWL() {
         logger.resetTimer();
         N2OExportService importService = new N2OExportService(db);
         N2OReturnValue result = importService.owl2Export();
