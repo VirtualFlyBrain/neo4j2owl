@@ -1,6 +1,5 @@
 package ebi.spot.neo4j2owl;
 
-import ebi.spot.neo4j2owl.exporter.N2OException;
 import ebi.spot.neo4j2owl.importer.N2OCSVWriter;
 import ebi.spot.neo4j2owl.importer.N2OImportResult;
 import ebi.spot.neo4j2owl.importer.N2OImportService;
@@ -16,14 +15,12 @@ import org.semanticweb.owlapi.model.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -31,6 +28,7 @@ import static org.junit.Assert.*;
 public class N2OProcedureTest {
 
     private static final String test_resources_web = "https://raw.githubusercontent.com/VirtualFlyBrain/neo4j2owl/master/src/test/resources/";
+
 
     private GraphDatabaseService setUpDB() throws KernelException {
         GraphDatabaseService db = new TestGraphDatabaseFactory().newImpermanentDatabase();
@@ -75,7 +73,11 @@ public class N2OProcedureTest {
         N2OImportResult importResults = new N2OImportResult();
         importService.prepareConfig(configUrl, importdir);
         N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(ontologyUrl, importdir, importResults);
-        csvWriter.exportN2OImportConfig(new File(importdir,"csv_imports_config.yaml"));
+        File cypherDir = new File(importdir,"transactions");
+        if(!cypherDir.isDirectory()) {
+            cypherDir.mkdir();
+        }
+        csvWriter.exportN2OImportConfig(cypherDir);
     }
 
     @Test

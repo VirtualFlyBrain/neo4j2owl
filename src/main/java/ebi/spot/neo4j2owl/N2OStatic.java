@@ -34,6 +34,7 @@ public class N2OStatic {
 
     public static final String CYPHER_FAILED_TO_EXECUTE = "Cypher query did NOT complete successfully (ERROR): ";
     public static final String CYPHER_EXECUTED_SUCCESSFULLY = "Cypher finished successfully: ";
+    public static final String CSV_EXTENSION = ".csv";
 
     public static String getNeoType(OWLEntity e) {
         if(e instanceof OWLClass) {

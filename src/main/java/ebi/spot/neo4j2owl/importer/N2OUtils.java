@@ -1,6 +1,8 @@
 package ebi.spot.neo4j2owl.importer;
 
-import ebi.spot.neo4j2owl.exporter.N2OException;
+import ebi.spot.neo4j2owl.N2OConfig;
+import ebi.spot.neo4j2owl.N2OException;
+import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.io.FileUtils;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.dlsyntax.renderer.DLSyntaxObjectRenderer;
@@ -74,7 +76,7 @@ public class N2OUtils {
     }
 
     static File constructFileHandle(File dir, String nodeclass, String type) {
-        return new File(dir, nodeclass + "_" + type + ".txt");
+        return new File(dir, nodeclass + "_" + type + N2OStatic.CSV_EXTENSION);
     }
 
     public static String render(OWLClassExpression ce) {

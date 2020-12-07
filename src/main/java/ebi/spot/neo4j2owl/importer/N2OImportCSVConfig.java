@@ -1,5 +1,9 @@
 package ebi.spot.neo4j2owl.importer;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FileUtils;
+import org.json.JSONObject;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -12,7 +16,7 @@ import java.util.Map;
 public class N2OImportCSVConfig {
     private List<N2OCSVImport> importList = new ArrayList<>();
 
-    private static final String CSV_CONFIG_ELEMENT_ROOT="import_batches";
+    private static final String CSV_CONFIG_ELEMENT_ROOT="statements";
     private static final String CSV_CONFIG_ELEMENT_CYPHER_QUERY="cql";
     private static final String CSV_CONFIG_ELEMENT_CSV_FILENAME="csv_file";
 
@@ -70,22 +74,18 @@ public class N2OImportCSVConfig {
         }
     }
 
-    void saveConfig(File configFile) throws IOException {
-        DumperOptions options = new DumperOptions();
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        options.setDefaultScalarStyle(DumperOptions.ScalarStyle.DOUBLE_QUOTED);
-        Yaml yaml = new Yaml(options);
-        List<Object> queries = new ArrayList<>();
+    void saveConfig(File configDir) throws IOException {
         for(N2OCSVImport n2OCSVImport: getImportList()) {
+            Map<String, Object> data = new HashMap<>();
+            List<Object> queries = new ArrayList<>();
             Map<String, Object> import_ = new HashMap<>();
-            import_.put(CSV_CONFIG_ELEMENT_CYPHER_QUERY,n2OCSVImport.getCypherQuery());
-            import_.put(CSV_CONFIG_ELEMENT_CSV_FILENAME,n2OCSVImport.getCsvFilename());
+            String cypher = n2OCSVImport.getCypherQuery();
+            import_.put("statement", cypher);
             queries.add(import_);
+            data.put(CSV_CONFIG_ELEMENT_ROOT,queries);
+            File transaction = new File(configDir, n2OCSVImport.csvFilename+".neo4j");
+            FileUtils.write(transaction, new JSONObject(data).toString(2),"utf-8");
         }
-        Map<String, Object> data = new HashMap<>();
-        data.put(CSV_CONFIG_ELEMENT_ROOT,queries);
-        FileWriter writer = new FileWriter(configFile);
-        yaml.dump(data, writer);
     }
 
     public List<N2OCSVImport> getImportList() {

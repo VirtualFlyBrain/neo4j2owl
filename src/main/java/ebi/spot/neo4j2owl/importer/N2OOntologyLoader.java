@@ -1,5 +1,7 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OConfig;
+import ebi.spot.neo4j2owl.N2OException;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +27,7 @@ class N2OOntologyLoader {
      *
      * @param o         ontology object that contains the axioms to be processed
      */
-    void importOntology(OWLOntology o, N2OImportResult result) {
+    void importOntology(OWLOntology o, N2OImportResult result) throws N2OException {
         IRIManager iriManager = new IRIManager();
         manager = new N2OImportManager(o, iriManager);
         this.relationTypeCounter = new RelationTypeCounter(N2OConfig.getInstance().getRelationTypeThreshold());

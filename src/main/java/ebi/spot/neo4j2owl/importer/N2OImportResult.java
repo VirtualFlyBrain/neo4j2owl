@@ -28,7 +28,7 @@ public class N2OImportResult {
         elementsLoaded++;
     }
 
-    void setTerminationKO(String message) {
+    public void setTerminationKO(String message) {
         this.terminationStatus = "KO";
         this.extraInfo = message;
     }

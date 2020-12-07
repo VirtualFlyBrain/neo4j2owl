@@ -1,8 +1,9 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OConfig;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
-import ebi.spot.neo4j2owl.exporter.N2OException;
+import ebi.spot.neo4j2owl.N2OException;
 import org.semanticweb.owlapi.model.OWLEntity;
 
 import java.io.File;
@@ -16,7 +17,7 @@ public class N2OCSVWriter {
     private final RelationTypeCounter relationTypeCounter;
     private final N2OLog log = N2OLog.getInstance();
     private final N2OImportCSVConfig n2OImportCSVConfig = new N2OImportCSVConfig();
-    enum CSV_TYPE
+    public enum CSV_TYPE
     {
         NODES("nodes"), RELATIONSHIPS("relationship");
         String name;
@@ -40,7 +41,7 @@ public class N2OCSVWriter {
         n2OImportCSVConfig.saveConfig(fileOut);
     }
 
-    N2OImportCSVConfig getCSVImportConfig() {
+    public N2OImportCSVConfig getCSVImportConfig() {
         return n2OImportCSVConfig.clone();
     }
 
@@ -70,10 +71,10 @@ public class N2OCSVWriter {
     private String constructCypherQuery(CSV_TYPE csv_type, File f) {
         String filename = f.getName();
 
-        String type = filename.substring(filename.indexOf("_") + 1).replaceAll(".txt", "");
+        String type = filename.substring(filename.indexOf("_") + 1).replaceAll(N2OStatic.CSV_EXTENSION, "");
         Integer periodic_commit = N2OConfig.getInstance().getPeriodicCommit();
         String cypher = "USING PERIODIC COMMIT "+periodic_commit+"\n" +
-                "LOAD CSV WITH HEADERS FROM \"file:/$FILENAME$\" AS cl\n";
+                "LOAD CSV WITH HEADERS FROM \"file:/"+filename+"\" AS cl\n";
         switch(csv_type) {
             case RELATIONSHIPS:
                 cypher+="MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
@@ -107,7 +108,7 @@ public class N2OCSVWriter {
         return "String";
     }
 
-    private String uncomposedSetClauses(String csvalias, String neovar, Set<String> headers) {
+    private String uncomposedSetClauses(@SuppressWarnings("SameParameterValue") String csvalias, String neovar, Set<String> headers) {
         StringBuilder sb = new StringBuilder();
         for (String h : headers) {
             if (N2OStatic.isN2OBuiltInProperty(h)) {

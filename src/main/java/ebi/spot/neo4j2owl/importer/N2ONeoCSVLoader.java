@@ -1,34 +1,33 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OConfig;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
-import ebi.spot.neo4j2owl.exporter.N2OException;
+import ebi.spot.neo4j2owl.N2OException;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.graphdb.QueryExecutionException;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-class N2ONeoCSVLoader {
+public class N2ONeoCSVLoader {
 
     private final N2OLog log = N2OLog.getInstance();
     private final GraphDatabaseAPI dbapi;
 
 
-    N2ONeoCSVLoader(GraphDatabaseAPI dbapi) {
+    public N2ONeoCSVLoader(GraphDatabaseAPI dbapi) {
         this.dbapi = dbapi;
     }
 
-    void loadRelationshipsToNeoFromCSV(ExecutorService exService, N2OImportCSVConfig config, File importdir) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
+    public void loadRelationshipsToNeoFromCSV(ExecutorService exService, N2OImportCSVConfig config, File importdir) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
         runQueriesForQueryType(exService, importdir, config, "relationship_");
     }
 
-    void loadNodesToNeoFromCSV(ExecutorService exService, N2OImportCSVConfig config , File importdir) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
+    public void loadNodesToNeoFromCSV(ExecutorService exService, N2OImportCSVConfig config, File importdir) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
         runQueriesForQueryType(exService, importdir, config, "nodes_");
     }
 
@@ -41,9 +40,9 @@ class N2ONeoCSVLoader {
         }
     }
 
-    private void runQuery(ExecutorService exService, File importdir, N2OImportCSVConfig.N2OCSVImport importQuery, String filename) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
-        filename = handleTestMode(importdir, filename);
-        String finalCypher = importQuery.getCypherQuery().replaceAll("[$]FILENAME[$]", filename);
+    private void runQuery(ExecutorService exService, File importdir, N2OImportCSVConfig.N2OCSVImport importQuery, String fn) throws IOException, InterruptedException, java.util.concurrent.ExecutionException {
+        String filename = handleTestMode(importdir, fn);
+        String finalCypher = importQuery.getCypherQuery().replaceAll(fn, filename);
         log.log(finalCypher);
         final Future<String> cf = exService.submit(() -> {
             try {
@@ -62,9 +61,10 @@ class N2ONeoCSVLoader {
 
     private String handleTestMode(File importdir, String filename) throws IOException {
         if (N2OConfig.getInstance().isTestmode()) {
-            String fn = "/" + new File(importdir, filename).getAbsolutePath();
+            File csv_file = new File(importdir, filename);
+            String fn = "/" + csv_file.getAbsolutePath();
             log.warning("CURRENTLY RUNNING IN TESTMODE, should set to testmode: false.");
-            FileUtils.readLines(new File(importdir, filename), "utf-8").forEach(System.out::println);
+            FileUtils.readLines(csv_file, "utf-8").forEach(System.out::println);
             return fn;
         }
         return filename;

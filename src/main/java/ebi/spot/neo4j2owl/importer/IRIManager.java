@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OConfig;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.semanticweb.owlapi.model.IRI;
@@ -23,7 +24,7 @@ class IRIManager {
         addPrefixNamespacePair(N2OStatic.NEO4J_UNMAPPED_PROPERTY_PREFIX_URI, "n2oc");
         addPrefixNamespacePair(N2OStatic.NEO4J_BUILTIN_PROPERTY_PREFIX_URI, "n2o");
 
-        N2OConfig.getInstance().getCustomCurieMap().forEach((k,v)->addPrefixNamespacePair(v,k));
+        N2OConfig.getInstance().getCustomCurieMap().forEach((k, v)->addPrefixNamespacePair(v,k));
         new DefaultPrefixManager().getPrefixName2PrefixMap().forEach((k,v)->addPrefixNamespacePair(v, k.replaceAll(":","")));
     }
 

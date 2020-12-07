@@ -1,8 +1,6 @@
-package ebi.spot.neo4j2owl.importer;
+package ebi.spot.neo4j2owl;
 
-import ebi.spot.neo4j2owl.N2OLog;
-import ebi.spot.neo4j2owl.N2OStatic;
-import ebi.spot.neo4j2owl.exporter.N2OException;
+import ebi.spot.neo4j2owl.importer.LABELLING_MODE;
 import org.apache.commons.io.FileUtils;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAnnotationProperty;
@@ -15,8 +13,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 
-class N2OConfig {
-    private N2OLog log = N2OLog.getInstance();
+public class N2OConfig {
+    private final N2OLog log = N2OLog.getInstance();
     private int periodicCommit = 5000;
     private boolean allow_entities_without_labels = true;
     private boolean addPropertyLabel = true;
@@ -24,12 +22,12 @@ class N2OConfig {
     private LABELLING_MODE LABELLINGMODE = LABELLING_MODE.SL_LOSE;
     private long timeoutinminutes = 180;
     private double relationTypeThreshold = 0.95;
-    private Map<String, String> mapRelationshipToDatatype = new HashMap<>();
-    private Map<String, String> customCurieMap = new HashMap<>();
-    private Map<IRI, String> mapIRIToSL = new HashMap<>();
-    private Set<IRI> propertiesForJSONrepresentation = new HashSet<>();
-    private Set<String> preprocessingCypherQueries = new HashSet<>();
-    private Map<String,Set<String>> classExpressionNeoLabelMap = new HashMap<>(); //this is for the dynamic neo typing feature: an OWLClassExpression string that maps to a a neo node label
+    private final Map<String, String> mapRelationshipToDatatype = new HashMap<>();
+    private final Map<String, String> customCurieMap = new HashMap<>();
+    private final Map<IRI, String> mapIRIToSL = new HashMap<>();
+    private final Set<IRI> propertiesForJSONrepresentation = new HashSet<>();
+    private final Set<String> preprocessingCypherQueries = new HashSet<>();
+    private final Map<String,Set<String>> classExpressionNeoLabelMap = new HashMap<>(); //this is for the dynamic neo typing feature: an OWLClassExpression string that maps to a a neo node label
 
 
     private static N2OConfig config = null;
@@ -41,7 +39,7 @@ class N2OConfig {
         config = null;
     }
 
-    static N2OConfig getInstance() {
+    public static N2OConfig getInstance() {
         if (config == null) {
             config = new N2OConfig();
         }
@@ -56,7 +54,7 @@ class N2OConfig {
         this.mapRelationshipToDatatype.put(iri, datatype);
     }
 
-    Optional<String> slToDatatype(String sl) {
+    public Optional<String> slToDatatype(String sl) {
         if (this.mapRelationshipToDatatype.containsKey(sl)) {
             return Optional.of(this.mapRelationshipToDatatype.get(sl));
         }
@@ -67,7 +65,7 @@ class N2OConfig {
         this.mapIRIToSL.put(e, relationship);
     }
 
-    Optional<String> iriToSl(IRI iri) {
+    public Optional<String> iriToSl(IRI iri) {
         if (this.mapIRIToSL.containsKey(iri)) {
             return Optional.of(mapIRIToSL.get(iri));
         }
@@ -82,11 +80,11 @@ class N2OConfig {
         this.timeoutinminutes = timeout;
     }
 
-    boolean isTestmode() {
+    public boolean isTestmode() {
         return testmode;
     }
 
-    LABELLING_MODE safeLabelMode() {
+    public LABELLING_MODE safeLabelMode() {
         return LABELLINGMODE;
     }
 
@@ -123,19 +121,20 @@ class N2OConfig {
         return new HashSet<>(this.preprocessingCypherQueries);
     }
 
-    Map<String,Set<String>> getClassExpressionNeoLabelMap() {
+    public Map<String,Set<String>> getClassExpressionNeoLabelMap() {
         return this.classExpressionNeoLabelMap;
     }
 
-    boolean isAllowEntitiesWithoutLabels() {
+    public boolean isAllowEntitiesWithoutLabels() {
         return this.allow_entities_without_labels;
     }
 
-    boolean isShouldPropertyBeRolledAsJSON(OWLAnnotationProperty ap) {
+    public boolean isShouldPropertyBeRolledAsJSON(OWLAnnotationProperty ap) {
         return this.getPropertiesForJSONRepresentation().contains(ap.getIRI());
     }
 
-    void prepareConfig(String config, File importdir) throws IOException, N2OException {
+    @SuppressWarnings("rawtypes")
+    public void prepareConfig(String config, File importdir) throws IOException, N2OException {
         File configfile = new File(importdir, "config.yaml");
         N2OConfig n2o_config = N2OConfig.getInstance();
         if (config.startsWith("file://")) {
@@ -144,6 +143,7 @@ class N2OConfig {
                 FileUtils.copyFile(config_, configfile);
             }
         } else {
+            log.info("Copying config from URL");
             try {
                 URL url_ = new URL(config);
                 FileUtils.copyURLToFile(
@@ -229,6 +229,7 @@ class N2OConfig {
 
         if (configs.containsKey("preprocessing")) {
             if (configs.get("preprocessing") instanceof ArrayList) {
+                //noinspection unchecked
                 ((ArrayList) configs.get("preprocessing")).forEach(q->preprocessingCypherQueries.add(q.toString()));
             }
         }
@@ -247,7 +248,7 @@ class N2OConfig {
 
         if (configs.containsKey("represent_values_and_annotations_as_json")) {
             if (configs.get("represent_values_and_annotations_as_json") instanceof HashMap) {
-                HashMap<String, Object> pmmhm = (HashMap<String, Object>) configs.get("represent_values_and_annotations_as_json");
+                @SuppressWarnings("unchecked") HashMap<String, Object> pmmhm = (HashMap<String, Object>) configs.get("represent_values_and_annotations_as_json");
                 if (pmmhm.containsKey("iris")) {
                     ArrayList iris = (ArrayList) pmmhm.get("iris");
                     for (Object iri : iris) {
@@ -283,7 +284,7 @@ class N2OConfig {
 
         if (configs.containsKey("curie_map")) {
             if (configs.get("curie_map") instanceof HashMap) {
-                HashMap<String, String> map = (HashMap<String, String>) configs.get("curie_map");
+                @SuppressWarnings("unchecked") HashMap<String, String> map = (HashMap<String, String>) configs.get("curie_map");
                 for(String k:map.keySet()) {
                     N2OConfig.getInstance().addCustomPrefix(k,map.get(k));
                 }
@@ -304,7 +305,7 @@ class N2OConfig {
         this.customCurieMap.put(k,s);
     }
 
-    Map<String,String> getCustomCurieMap() {
+    public Map<String,String> getCustomCurieMap() {
         return this.customCurieMap;
     }
 
@@ -312,11 +313,11 @@ class N2OConfig {
         this.relationTypeThreshold = relationTypeThreshold;
     }
 
-    double getRelationTypeThreshold() {
+    public double getRelationTypeThreshold() {
         return this.relationTypeThreshold;
     }
 
-    boolean isAddPropertyLabel() {
+    public boolean isAddPropertyLabel() {
         return this.addPropertyLabel;
     }
 

@@ -195,7 +195,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>ebi.spot.neo4j2owl.importer.N2OImportService</mainClass>
+                                    <mainClass>ebi.spot.neo4j2owl.importer.N2OImporterRunner</mainClass>
                                 </manifest>
                             </archive>
                             <finalName>owl2neo4jcsv</finalName>
