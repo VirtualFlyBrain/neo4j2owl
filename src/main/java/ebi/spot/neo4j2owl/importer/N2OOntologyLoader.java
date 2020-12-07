@@ -1,52 +1,33 @@
 package ebi.spot.neo4j2owl.importer;
 
+import ebi.spot.neo4j2owl.N2OConfig;
+import ebi.spot.neo4j2owl.N2OException;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
-import ebi.spot.neo4j2owl.exporter.N2OException;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.QueryExecutionException;
-import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-class N2OOntologyImporter {
+class N2OOntologyLoader {
 
-    private Set<OWLEntity> filterout = new HashSet<>();
+    private final Set<OWLEntity> filterout = new HashSet<>();
     private N2OImportManager manager;
-    private N2OLog log = N2OLog.getInstance();
-    private GraphDatabaseAPI dbapi;
-    private GraphDatabaseService db;
+    private final N2OLog log = N2OLog.getInstance();
     private RelationTypeCounter relationTypeCounter;
-
-    N2OOntologyImporter(GraphDatabaseAPI dbapi, GraphDatabaseService db) {
-        this.dbapi = dbapi;
-        this.db = db;
-    }
 
     /**
      * Imports an ontology into neo4j
      *
-     * @param exService executor services for concurrent processing of batches
-     * @param importdir neo4j import dir location for storing the CSV files
      * @param o         ontology object that contains the axioms to be processed
-     * @throws IOException thrown when CSV cant be read for some reason
-     * @throws InterruptedException thrown when import takes too long
-     * @throws java.util.concurrent.ExecutionException thrown when individual CSV load failed for some reason
      */
-    void importOntology(ExecutorService exService, File importdir, OWLOntology o, N2OImportResult result) throws IOException, InterruptedException, ExecutionException, N2OException {
+    void importOntology(OWLOntology o, N2OImportResult result) throws N2OException {
         IRIManager iriManager = new IRIManager();
         manager = new N2OImportManager(o, iriManager);
         this.relationTypeCounter = new RelationTypeCounter(N2OConfig.getInstance().getRelationTypeThreshold());
@@ -69,30 +50,7 @@ class N2OOntologyImporter {
         addExistentialRelationships(o, r);
         log.log("Computing dynamic node labels..");
         addDynamicNodeLabels(r);
-        if (N2OConfig.getInstance().isBatch()) {
-            log.log("Loading in Database: " + importdir.getAbsolutePath());
 
-            N2OCSVWriter csvWriter = new N2OCSVWriter(manager,importdir);
-            csvWriter.exportOntologyToCSV();
-
-            exService.submit(() -> {
-                String cypher = "CREATE INDEX ON :Entity(iri)";
-                try {
-                    dbapi.execute(cypher);
-                } catch (QueryExecutionException e) {
-                    throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+cypher, e);
-                }
-                return N2OStatic.CYPHER_EXECUTED_SUCCESSFULLY+cypher;
-            });
-
-            log.log("Loading nodes to neo from CSV.");
-            N2ONeoCSVLoader csvLoader = new N2ONeoCSVLoader(dbapi,manager,relationTypeCounter);
-            csvLoader.loadNodesToNeoFromCSV(exService, importdir);
-
-            log.log("Loading relationships to neo from CSV.");
-            csvLoader.loadRelationshipsToNeoFromCSV(exService, importdir);
-            log.log("Loading done..");
-        }
     }
 
     private void addDynamicNodeLabels(OWLReasoner r) throws N2OException {
@@ -271,21 +229,7 @@ class N2OOntologyImporter {
 
 
     private void createNode(N2OEntity e, Map<String, Object> props) {
-        if (N2OConfig.getInstance().isBatch()) {
-            manager.updateNode(e.getEntity(), props);
-            /*
-            props.put(N2OStatic.ATT_IRI,e.getIri());
-            long id = inserter.createNode(props, ()->e.getRelationId());
-            nodeIndex.put(e.getEntity(),id);
-            */
-        } else {
-            String cypher = String.format("MERGE (p:%s { uri:'%s'}) SET p+={props}",
-                    N2OUtils.concat(e.getTypes(), ":"),
-                    e.getIri());
-            Map<String, Object> params = new HashMap<>();
-            params.put("props", props);
-            db.execute(cypher, params);
-        }
+        manager.updateNode(e.getEntity(), props);
     }
 
     /**
@@ -511,11 +455,15 @@ class N2OOntologyImporter {
     }
 
     private void updateRelationship(N2OEntity start_neo, N2OEntity end_neo, Map<String, Object> rel) {
-        if (N2OConfig.getInstance().isBatch()) {
-            manager.updateRelation(start_neo, end_neo, rel);
-        }
+        manager.updateRelation(start_neo, end_neo, rel);
     }
 
 
+    public N2OImportManager getImportManager() {
+        return this.manager;
+    }
 
+    public RelationTypeCounter getRelationTypeCounter() {
+        return this.relationTypeCounter;
+    }
 }

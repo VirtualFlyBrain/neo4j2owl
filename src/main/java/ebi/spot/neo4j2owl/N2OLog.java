@@ -1,8 +1,5 @@
 package ebi.spot.neo4j2owl;
 
-import org.neo4j.logging.Log;
-import org.neo4j.procedure.Context;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 

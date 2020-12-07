@@ -3,14 +3,14 @@
 set -e
 
 KB="/Users/matentzn/ws/kb2_data/data/databases/graph.db"
-NEODIR="/Users/matentzn/Library/Application Support/Neo4j Desktop/Application/neo4jDatabases/database-39750b4c-6559-4706-af7f-0ca1c118fcb7/installation-3.4.16/"
+NEODIR="/Users/matentzn/Library/Application Support/com.Neo4j.Relate/Data/dbmss/dbms-b824802f-99fc-48bc-af0d-34b011b9b7f7/"
 
 NEO4J2OWLDIR="/Users/matentzn/vfb/neo4j2owl"
 PLUGIN="$NEO4J2OWLDIR/target/neo4j2owl-1.0.jar"
 
 
 cd $NEO4J2OWLDIR
-mvn clean compiler:compile package
+#mvn clean compiler:compile package
 
 IMPORTS=${NEODIR}"imports"
 DATA=${NEODIR}"data/databases/graph.db"

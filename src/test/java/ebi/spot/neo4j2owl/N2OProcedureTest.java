@@ -1,5 +1,8 @@
 package ebi.spot.neo4j2owl;
 
+import ebi.spot.neo4j2owl.importer.N2OCSVWriter;
+import ebi.spot.neo4j2owl.importer.N2OImportResult;
+import ebi.spot.neo4j2owl.importer.N2OImportService;
 import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
@@ -11,10 +14,12 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,8 +27,7 @@ import static org.junit.Assert.*;
 
 public class N2OProcedureTest {
 
-
-        private static String test_resources_web = "https://raw.githubusercontent.com/VirtualFlyBrain/neo4j2owl/master/src/test/resources/";
+    private static final String test_resources_web = "https://raw.githubusercontent.com/VirtualFlyBrain/neo4j2owl/master/src/test/resources/";
 
 
     private GraphDatabaseService setUpDB() throws KernelException {
@@ -41,8 +45,8 @@ public class N2OProcedureTest {
 
     @Test
     public void owl2ImportFromLocal() throws Exception {
-        URI uriOntology = getClass().getClassLoader().getResource("smalltest.owl").toURI();
-        URI uriConfig = getClass().getClassLoader().getResource("smalltest-config.yaml").toURI();
+        URI uriOntology = Objects.requireNonNull(getClass().getClassLoader().getResource("smalltest.owl")).toURI();
+        URI uriConfig = Objects.requireNonNull(getClass().getClassLoader().getResource("smalltest-config.yaml")).toURI();
         runSmallTest(uriOntology.toURL().toString(), uriConfig.toURL().toString());
     }
 
@@ -57,6 +61,23 @@ public class N2OProcedureTest {
         assertEquals("", resMap.get("extraInfo"));
         assertEquals(16L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
         db.shutdown();
+    }
+
+    @Test
+    public void owl2ImportAPI() throws Exception {
+        File importdir = new File("results");
+        importdir.mkdir();
+        String ontologyUrl = test_resources_web + "smalltest.owl";
+        String configUrl = test_resources_web + "smalltest-config.yaml";
+        N2OImportService importService = new N2OImportService();
+        N2OImportResult importResults = new N2OImportResult();
+        importService.prepareConfig(configUrl, importdir);
+        N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(ontologyUrl, importdir, importResults);
+        File cypherDir = new File(importdir,"transactions");
+        if(!cypherDir.isDirectory()) {
+            cypherDir.mkdir();
+        }
+        csvWriter.exportN2OImportConfig(cypherDir);
     }
 
     @Test
@@ -82,30 +103,30 @@ public class N2OProcedureTest {
     public void owl2Export() throws Exception {
         //String ontologyUrl = test_resources_web + "smalltest.owl";
         //String configUrl = test_resources_web + "smalltest-config.yaml";
-        String ontologyUrl = getClass().getClassLoader().getResource("smalltest.owl").toURI().toURL().toString();
-        String configUrl = getClass().getClassLoader().getResource("smalltest-config.yaml").toURI().toURL().toString();
+        String ontologyUrl = Objects.requireNonNull(getClass().getClassLoader().getResource("smalltest.owl")).toURI().toURL().toString();
+        String configUrl = Objects.requireNonNull(getClass().getClassLoader().getResource("smalltest-config.yaml")).toURI().toURL().toString();
 
         GraphDatabaseService db = setUpDB();
         String call = String.format("CALL ebi.spot.neo4j2owl.owl2Import('%s','%s')", ontologyUrl, configUrl);
 
         Result importResult = db.execute(call);
-        Map<String,Object> resMap = importResult.next();
+        Map<String, Object> resMap = importResult.next();
         Result exportResult = db.execute("CALL ebi.spot.neo4j2owl.exportOWL()");
-        Map<String,Object> resMapExport = exportResult.next();
+        Map<String, Object> resMapExport = exportResult.next();
 
         assertEquals(37L, resMap.get("elementsLoaded"));
         assertEquals(16L, resMap.get("classesLoaded"));
         assertEquals("", resMap.get("extraInfo"));
         assertEquals(16L, db.execute("MATCH (n:Class) RETURN count(n) AS count").next().get("count"));
 
-        String ontologyString = (String)resMapExport.get("o");
+        String ontologyString = (String) resMapExport.get("o");
         OWLOntologyManager man1 = OWLManager.createOWLOntologyManager();
         OWLOntologyManager man2 = OWLManager.createOWLOntologyManager();
         OWLOntology o_orginal = man1.loadOntologyFromOntologyDocument(IRI.create(ontologyUrl));
         InputStream is = new ByteArrayInputStream(ontologyString.getBytes());
         OWLOntology o_neoexport = man2.loadOntologyFromOntologyDocument(is);
 
-        equalOntologies(o_orginal,o_neoexport);
+        equalOntologies(o_orginal, o_neoexport);
         db.shutdown();
     }
 

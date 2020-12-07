@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.exporter;
 
+import ebi.spot.neo4j2owl.N2OException;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.neo4j.graphdb.Label;
 import org.neo4j.kernel.impl.core.NodeProxy;
@@ -155,10 +156,6 @@ class N2OExportManager {
     }
 
     Set<String> nodeLabels(OWLEntity e) {
-        if(mapTypes.containsKey(e)) {
-            return mapTypes.get(e);
-        } else {
-            return Collections.emptySet();
-        }
+        return mapTypes.getOrDefault(e, Collections.emptySet());
     }
 }

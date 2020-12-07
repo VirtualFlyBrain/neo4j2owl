@@ -1,4 +1,4 @@
-package ebi.spot.neo4j2owl.exporter;
+package ebi.spot.neo4j2owl;
 
 public class N2OException extends Exception {
 

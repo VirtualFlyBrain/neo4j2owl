@@ -1,5 +1,6 @@
 package ebi.spot.neo4j2owl.exporter;
 
+import ebi.spot.neo4j2owl.N2OException;
 import ebi.spot.neo4j2owl.N2OLog;
 import ebi.spot.neo4j2owl.N2OStatic;
 import org.json.JSONArray;
@@ -13,11 +14,8 @@ import org.neo4j.kernel.impl.core.RelationshipProxy;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.RDFXMLDocumentFormat;
 import org.semanticweb.owlapi.model.*;
-import org.yaml.snakeyaml.Yaml;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,8 +23,8 @@ import java.util.stream.Collectors;
 public class N2OExportService {
 
     private GraphDatabaseService db;
-    private static N2OLog logger = N2OLog.getInstance();
-    private OWLDataFactory df = OWLManager.getOWLDataFactory();
+    private final static N2OLog logger = N2OLog.getInstance();
+    private final OWLDataFactory df = OWLManager.getOWLDataFactory();
     //static IRIManager iriManager = new IRIManager();
     private N2OExportManager n2OEntityManager;
     private Set<String> qsls_with_no_matching_properties;
