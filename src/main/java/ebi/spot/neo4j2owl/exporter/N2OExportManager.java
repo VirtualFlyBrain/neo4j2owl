@@ -1,16 +1,22 @@
 package ebi.spot.neo4j2owl.exporter;
 
-import ebi.spot.neo4j2owl.N2OException;
-import ebi.spot.neo4j2owl.N2OStatic;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.neo4j.graphdb.Label;
-import org.neo4j.kernel.impl.core.NodeProxy;
+import org.neo4j.graphdb.Node;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
 
-import java.util.*;
+import ebi.spot.neo4j2owl.N2OException;
+import ebi.spot.neo4j2owl.N2OStatic;
 
 class N2OExportManager {
 
@@ -55,7 +61,7 @@ class N2OExportManager {
         return new HashSet<>(iriEntity.values());
     }
 
-    void createEntity(NodeProxy n, String l) {
+    void createEntity(Node n, String l) {
         switch (l) {
             case "Individual":
                 createIndividual(n.getId(), n.getAllProperties(),n.getLabels());

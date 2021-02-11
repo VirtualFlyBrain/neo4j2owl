@@ -46,7 +46,7 @@ public class N2ONeoCSVLoader {
         log.log(finalCypher);
         final Future<String> cf = exService.submit(() -> {
             try {
-                dbapi.execute(finalCypher);
+                dbapi.executeTransactionally(finalCypher);
             } catch (QueryExecutionException e) {
                 throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE+ finalCypher, e);
             }
