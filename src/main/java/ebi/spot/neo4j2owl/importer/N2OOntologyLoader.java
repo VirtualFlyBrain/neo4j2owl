@@ -69,7 +69,7 @@ class N2OOntologyLoader {
                         }
                     }
                     if (!label.isEmpty()) {
-                        for (OWLClass sc : getSubClasses(r, ce, false)) manager.addNodeLabel(sc, label);
+                        for (OWLClass sc : getSubClasses(r, ce, false, false)) manager.addNodeLabel(sc, label);
                         for (OWLNamedIndividual sc : getInstances(r, ce)) manager.addNodeLabel(sc, label);
                     }
                 } catch (Exception e) {
@@ -85,13 +85,17 @@ class N2OOntologyLoader {
         instances.removeAll(filterout.stream().filter(OWLEntity::isOWLNamedIndividual).map(OWLEntity::asOWLNamedIndividual).collect(Collectors.toSet()));
         return instances;
     }
-
-
+    
     private Set<OWLClass> getSubClasses(OWLReasoner r, OWLClassExpression e, boolean direct) {
+    	return getSubClasses(r, e, direct, true);
+    }
+
+
+    private Set<OWLClass> getSubClasses(OWLReasoner r, OWLClassExpression e, boolean direct, boolean excludeEquivalentClasses) {
         Set<OWLClass> subclasses = new HashSet<>(r.getSubClasses(e, direct).getFlattened());
         subclasses.addAll(r.getEquivalentClasses(e).getEntities());
         subclasses.removeAll(filterout.stream().filter(OWLEntity::isOWLClass).map(OWLEntity::asOWLClass).collect(Collectors.toSet()));
-        if (e.isClassExpressionLiteral()) {
+        if (excludeEquivalentClasses && e.isClassExpressionLiteral()) {
             subclasses.remove(e.asOWLClass());
         }
         return subclasses;
