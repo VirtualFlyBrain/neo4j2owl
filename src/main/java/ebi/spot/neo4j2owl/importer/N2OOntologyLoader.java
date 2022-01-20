@@ -436,7 +436,7 @@ class N2OOntologyLoader {
         if (!svf.getProperty().isAnonymous()) {
             OWLObjectProperty op = svf.getProperty().asOWLObjectProperty();
             OWLClassExpression filler = svf.getFiller();
-            if (filler.isClassExpressionLiteral()) {
+            if (filler.isClassExpressionLiteral() && !filler.isAnonymous()) {
                 // ENTITY-CLASS: A SubClassOf R some B, i:R some B
                 OWLClass c = svf.getFiller().asOWLClass();
                 Optional<N2OEntity> e = manager.getNode(op);
