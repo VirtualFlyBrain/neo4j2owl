@@ -15,7 +15,7 @@ import org.semanticweb.owlapi.search.EntitySearcher;
 import java.util.*;
 import java.util.stream.Collectors;
 
-class N2OOntologyLoader {
+public class N2OOntologyLoader {
 
     private final Set<OWLEntity> filterout = new HashSet<>();
     private N2OImportManager manager;
@@ -80,7 +80,7 @@ class N2OOntologyLoader {
 
     }
 
-    private Set<OWLNamedIndividual> getInstances(OWLReasoner r, OWLClassExpression e) {
+    public Set<OWLNamedIndividual> getInstances(OWLReasoner r, OWLClassExpression e) {
         Set<OWLNamedIndividual> instances = new HashSet<>(r.getInstances(e, false).getFlattened());
         instances.removeAll(filterout.stream().filter(OWLEntity::isOWLNamedIndividual).map(OWLEntity::asOWLNamedIndividual).collect(Collectors.toSet()));
         return instances;
@@ -91,7 +91,7 @@ class N2OOntologyLoader {
     }
 
 
-    private Set<OWLClass> getSubClasses(OWLReasoner r, OWLClassExpression e, boolean direct, boolean excludeEquivalentClasses) {
+    public Set<OWLClass> getSubClasses(OWLReasoner r, OWLClassExpression e, boolean direct, boolean excludeEquivalentClasses) {
         Set<OWLClass> subclasses = new HashSet<>(r.getSubClasses(e, direct).getFlattened());
         subclasses.addAll(r.getEquivalentClasses(e).getEntities());
         subclasses.removeAll(filterout.stream().filter(OWLEntity::isOWLClass).map(OWLEntity::asOWLClass).collect(Collectors.toSet()));
