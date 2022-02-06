@@ -4,10 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -16,16 +16,14 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
-import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
-import org.semanticweb.owlapi.model.OWLIndividual;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
-import org.semanticweb.owlapi.search.EntitySearcher;
 
+import ebi.spot.neo4j2owl.importer.IRIManager;
+import ebi.spot.neo4j2owl.importer.N2OImportManager;
 import ebi.spot.neo4j2owl.importer.N2OOntologyLoader;
 
 /**
@@ -60,7 +58,7 @@ class N2ONoReasoningTest {
 		for (OWLClass e : entities) {
 			Set<OWLClass> reasonedClasses = ontologyImporter.getSubClasses(r, e, true, true);
 			reasonedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
-			Set<OWLClass> queriedClasses = querySubClasses(o, e, true, true);
+			Set<OWLClass> queriedClasses = ontologyImporter.querySubClasses(o, e, true, true);
 			queriedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
 
 			printDifference(reasonedClasses, queriedClasses);
@@ -78,7 +76,7 @@ class N2ONoReasoningTest {
 		for (OWLClass e : entities) {
 			Set<OWLClass> reasonedClasses = ontologyImporter.getSubClasses(r, e, false, false);
 			reasonedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
-			Set<OWLClass> queriedClasses = querySubClasses(o, e, false, false);
+			Set<OWLClass> queriedClasses = ontologyImporter.querySubClasses(o, e, false, false);
 			queriedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
 
 			printDifference(reasonedClasses, queriedClasses);
@@ -95,7 +93,7 @@ class N2ONoReasoningTest {
 		Set<OWLNamedIndividual> entities = new HashSet<>(o.getIndividualsInSignature(Imports.INCLUDED));
 		for (OWLNamedIndividual e : entities) {
 			Set<OWLClass> reasonedTypes = r.getTypes(e, true).getFlattened();
-			Set<OWLClass> queriedTypes = queryTypes(o, e, true);
+			Set<OWLClass> queriedTypes = ontologyImporter.queryTypes(o, e, true);
 
 			printDifference(reasonedTypes, queriedTypes);
 			assertEquals(reasonedTypes.size(), queriedTypes.size());
@@ -111,7 +109,7 @@ class N2ONoReasoningTest {
 		Set<OWLClass> entities = new HashSet<>(o.getClassesInSignature(Imports.INCLUDED));
 		for (OWLClass e : entities) {
 			Set<OWLNamedIndividual> reasonedIndvs = ontologyImporter.getInstances(r, e);
-			Set<OWLNamedIndividual> queriedIndvs = queryIndividuals(o, e);
+			Set<OWLNamedIndividual> queriedIndvs = ontologyImporter.queryInstances(o, e);
 
 			printDifference(reasonedIndvs, queriedIndvs);
 			assertEquals(reasonedIndvs.size(), queriedIndvs.size());
@@ -122,66 +120,39 @@ class N2ONoReasoningTest {
 		}
 	}
 
-	private Set<OWLClass> querySubClasses(OWLOntology o, OWLClass e, boolean direct, boolean excludeEquivalentClasses) {
-		return querySubClasses(o, e.asOWLClass(), direct, excludeEquivalentClasses, new HashSet<OWLClass>());
-	}
+	@Test
+	void testGetSubClassesOfExpression1() throws OWLOntologyCreationException {
+		IRIManager iriManager = new IRIManager();
+		N2OImportManager manager = new N2OImportManager(o, iriManager);
+		List<String> expressions = new ArrayList<>();
+		expressions.add("RO:0000053 some PATO:0070030");
+		expressions.add("RO:0015002 some UBERON:0002616");
+		expressions.add("RO:0015002 some PCL:0010001");
+		expressions.add("RO:0000053 some PATO:0070011");
+		expressions.add("RO:0015002 some CL:0011005");
+		expressions.add("RO:0015002 some CL:0000359");
+		expressions.add("RO:0000053 some PATO:0070019");
+		expressions.add("RO:0002100 some UBERON:0002771");
+		// following crashes because, naturally, query cannot handle property chains
+//		expressions.add("RO:0002162 some NCBITaxon:10090");
 
-	private Set<OWLClass> querySubClasses(OWLOntology o, OWLClass e, boolean direct, boolean excludeEquivalentClasses,
-			Set<OWLClass> scannedClasses) {
-		Set<OWLSubClassOfAxiom> subClassAxioms = o.getSubClassAxiomsForSuperClass(e);
-		Set<OWLClass> subClasses = subClassAxioms.stream().filter(scoa -> !scoa.getSubClass().isAnonymous())
-				.map(scoa -> scoa.getSubClass().asOWLClass()).collect(Collectors.toSet());
+		for (String expression : expressions) {
+			System.out.println(expression);
+			OWLClassExpression e = manager.parseExpression(expression);
 
-		subClasses.addAll(queryEquivalentClasses(o, e));
+			Set<OWLClass> reasonedClasses = ontologyImporter.getSubClasses(r, e, false, false);
+			reasonedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
+			Set<OWLClass> queriedClasses = ontologyImporter.querySubClassesOfClassExpression(o, e, false, false);
+			queriedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
 
-		if (!direct) {
-			subClasses.add(e);
-			Set<OWLClass> indepthSubClasses = new HashSet<>();
-			for (OWLClass subclass : subClasses) {
-				if (!scannedClasses.contains(subclass)) {
-					scannedClasses.add(subclass);
-					indepthSubClasses
-							.addAll(querySubClasses(o, subclass, direct, excludeEquivalentClasses, scannedClasses));
-				}
-			}
-			subClasses.addAll(indepthSubClasses);
-		}
+			printDifference(reasonedClasses, queriedClasses);
+			assertEquals(reasonedClasses.size(), queriedClasses.size());
 
-		if (excludeEquivalentClasses && e.isClassExpressionLiteral()) {
-			subClasses.remove(e.asOWLClass());
-		}
-
-		return subClasses;
-	}
-
-	private Set<OWLClass> queryEquivalentClasses(OWLOntology o, OWLClassExpression e) {
-		Set<OWLEquivalentClassesAxiom> equivalentClassesAxioms = o.getEquivalentClassesAxioms(e.asOWLClass());
-		Set<OWLClass> eqClasses = new HashSet<>();
-		for (OWLEquivalentClassesAxiom eca : equivalentClassesAxioms) {
-			eqClasses.addAll(eca.getNamedClasses());
-		}
-
-		return eqClasses;
-	}
-
-	private Set<OWLClass> queryTypes(OWLOntology o, OWLNamedIndividual e, boolean direct) {
-		Collection<OWLClassExpression> types = EntitySearcher.getTypes(e, o);
-		return types.stream().filter(type -> !type.isAnonymous()).map(type -> type.asOWLClass())
-				.collect(Collectors.toSet());
-	}
-
-	private Set<OWLNamedIndividual> queryIndividuals(OWLOntology o, OWLClass e) {
-		Set<OWLClass> subClasses = querySubClasses(o, e, false, false);
-		Set<OWLNamedIndividual> indvs = new HashSet<>();
-		for (OWLClass clazz : subClasses) {
-			Collection<OWLIndividual> individuals = EntitySearcher.getIndividuals(clazz, o);
-			for (OWLIndividual indv : individuals) {
-				if (indv instanceof OWLNamedIndividual) {
-					indvs.add((OWLNamedIndividual) indv);
-				}
+			for (OWLClass clazz : reasonedClasses) {
+				assertTrue(queriedClasses.contains(clazz));
 			}
 		}
-		return indvs;
+
 	}
 
 	private void printDifference(Set<?> reasonedResult, Set<?> queriedResult) {
@@ -193,6 +164,12 @@ class N2ONoReasoningTest {
 
 			System.out.println("Queried: ");
 			for (Object indv : queriedResult) {
+				System.out.println(indv);
+			}
+			System.out.println("Diff: ");
+			Set<?> reasonedResultCopy = new HashSet<>(reasonedResult);
+			reasonedResultCopy.removeAll(queriedResult);
+			for (Object indv : reasonedResultCopy) {
 				System.out.println(indv);
 			}
 		}
