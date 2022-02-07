@@ -25,16 +25,16 @@ public class N2OImportService {
     }
 
     public N2OCSVWriter prepareCSVFilesForImport(String url, File importdir, N2OImportResult importResults) throws OWLOntologyCreationException, IOException, InterruptedException, ExecutionException, N2OException {
-    	return prepareCSVFilesForImport(url, importdir, importResults, true);
+    	return prepareCSVFilesForImport(url, importdir, importResults, true, null);
     }
 
-    public N2OCSVWriter prepareCSVFilesForImport(String url, File importdir, N2OImportResult importResults, Boolean enableReasoning) throws OWLOntologyCreationException, IOException, InterruptedException, ExecutionException, N2OException {
+    public N2OCSVWriter prepareCSVFilesForImport(String url, File importdir, N2OImportResult importResults, Boolean enableReasoning, String annotation_iri) throws OWLOntologyCreationException, IOException, InterruptedException, ExecutionException, N2OException {
         logger.log("Loading Ontology");
         OWLOntology o = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(getOntologyIRI(url, importdir));
         logger.log("Size ontology: " + o.getAxiomCount());
 
         N2OOntologyLoader ontologyImporter = new N2OOntologyLoader();
-        ontologyImporter.importOntology(o, importResults, enableReasoning);
+        ontologyImporter.importOntology(o, importResults, enableReasoning, annotation_iri);
 
         logger.log("Loading in Database: " + importdir.getAbsolutePath());
 

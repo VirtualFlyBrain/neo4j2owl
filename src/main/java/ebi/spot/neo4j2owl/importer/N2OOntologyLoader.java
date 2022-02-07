@@ -1,19 +1,49 @@
 package ebi.spot.neo4j2owl.importer;
 
-import ebi.spot.neo4j2owl.N2OConfig;
-import ebi.spot.neo4j2owl.N2OException;
-import ebi.spot.neo4j2owl.N2OLog;
-import ebi.spot.neo4j2owl.N2OStatic;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
-import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.AxiomType;
+import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAnnotation;
+import org.semanticweb.owlapi.model.OWLAnnotationAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLAnnotationProperty;
+import org.semanticweb.owlapi.model.OWLAnnotationValue;
+import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLClassAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
+import org.semanticweb.owlapi.model.OWLIndividual;
+import org.semanticweb.owlapi.model.OWLLiteral;
+import org.semanticweb.owlapi.model.OWLNamedIndividual;
+import org.semanticweb.owlapi.model.OWLObjectHasValue;
+import org.semanticweb.owlapi.model.OWLObjectOneOf;
+import org.semanticweb.owlapi.model.OWLObjectProperty;
+import org.semanticweb.owlapi.model.OWLObjectPropertyAssertionAxiom;
+import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.search.EntitySearcher;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import ebi.spot.neo4j2owl.N2OConfig;
+import ebi.spot.neo4j2owl.N2OException;
+import ebi.spot.neo4j2owl.N2OLog;
+import ebi.spot.neo4j2owl.N2OStatic;
 
 public class N2OOntologyLoader {
 
@@ -31,8 +61,12 @@ public class N2OOntologyLoader {
 	 * @param enableReasoning if true (default value), enables reasoning. Otherwise,
 	 *                        assumes ontology is pre-reasoned and utilizes query
 	 *                        for performance.
+	 * @param annotation_iri  this parameter is used only if enableReasoning is
+	 *                        false. On pre-reasoned ontologies, it is expected that
+	 *                        ontology classes are already annotated (tagged) with this property. 
 	 */
-	void importOntology(OWLOntology o, N2OImportResult result, Boolean enableReasoning) throws N2OException {
+	public void importOntology(OWLOntology o, N2OImportResult result, Boolean enableReasoning, String annotation_iri)
+			throws N2OException {
 		IRIManager iriManager = new IRIManager();
 		manager = new N2OImportManager(o, iriManager);
 		this.enableReasoning = enableReasoning;
@@ -61,11 +95,36 @@ public class N2OOntologyLoader {
 		log.log("Extracting existential relations");
 		addExistentialRelationships(o);
 		log.log("Computing dynamic node labels..");
-		addDynamicNodeLabels(o, r);
+		addDynamicNodeLabels(o, r, annotation_iri);
 
 	}
 
-	private void addDynamicNodeLabels(OWLOntology o, OWLReasoner r) throws N2OException {
+	public void addDynamicNodeLabels(OWLOntology o, OWLReasoner r, String annotation_iri) throws N2OException {
+		if (this.enableReasoning) {
+			addDynamicNodeLabels(r);
+		} else {
+			addDynamicNodeLabels(o, annotation_iri);
+		}
+	}
+
+	private void addDynamicNodeLabels(OWLOntology o, String annotation_iri) throws N2OException {
+		OWLDataFactory df = OWLManager.getOWLDataFactory();
+		OWLAnnotationProperty annotationProperty = df.getOWLAnnotationProperty(IRI.create(annotation_iri));
+		
+		Set<OWLEntity> entities = new HashSet<>(o.getClassesInSignature(Imports.INCLUDED));
+		entities.addAll(new HashSet<>(o.getIndividualsInSignature(Imports.INCLUDED)));
+		
+		for (OWLEntity c : entities) {
+			for (OWLAnnotation a : EntitySearcher.getAnnotations(c, o, annotationProperty)) {
+				OWLAnnotationValue tag = a.getValue();
+				if (tag instanceof OWLLiteral) {
+					manager.addNodeLabel(c, ((OWLLiteral) tag).getLiteral());
+				}
+			}
+		}
+	}
+
+	private void addDynamicNodeLabels(OWLReasoner r) throws N2OException {
 		Map<String, Set<String>> classExpressionLabelMap = N2OConfig.getInstance().getClassExpressionNeoLabelMap();
 		for (String ces : classExpressionLabelMap.keySet()) {
 			Set<String> labels = classExpressionLabelMap.get(ces);
@@ -83,9 +142,9 @@ public class N2OOntologyLoader {
 						}
 					}
 					if (!label.isEmpty()) {
-						for (OWLClass sc : getSubClasses(o, r, ce, false, false))
+						for (OWLClass sc : getSubClasses(r, ce, false, false))
 							manager.addNodeLabel(sc, label);
-						for (OWLNamedIndividual sc : getInstances(o, r, ce))
+						for (OWLNamedIndividual sc : getInstances(r, ce))
 							manager.addNodeLabel(sc, label);
 					}
 				} catch (Exception e) {
@@ -195,10 +254,10 @@ public class N2OOntologyLoader {
 	private Set<OWLClass> querySubClassesOfClassExpression(OWLOntology o, OWLClassExpression e, boolean direct,
 			boolean excludeEquivalentClasses, Set<OWLClass> scannedClasses) {
 		Set<OWLClass> subClasses = new HashSet<>();
-		for (final OWLSubClassOfAxiom subClasse : o.getAxioms(AxiomType.SUBCLASS_OF)) {
-			if (subClasse.getSuperClass().equals(e)) {
-				if (!subClasse.getSubClass().isAnonymous()) {
-					subClasses.add(subClasse.getSubClass().asOWLClass());
+		for (final OWLSubClassOfAxiom subClassAxiom : o.getAxioms(AxiomType.SUBCLASS_OF, Imports.INCLUDED)) {
+			if (subClassAxiom.getSuperClass().equals(e)) {
+				if (!subClassAxiom.getSubClass().isAnonymous()) {
+					subClasses.add(subClassAxiom.getSubClass().asOWLClass());
 				}
 			}
 		}
@@ -622,4 +681,13 @@ public class N2OOntologyLoader {
 	public RelationTypeCounter getRelationTypeCounter() {
 		return this.relationTypeCounter;
 	}
+
+	public Boolean getEnableReasoning() {
+		return enableReasoning;
+	}
+
+	public void setEnableReasoning(Boolean enableReasoning) {
+		this.enableReasoning = enableReasoning;
+	}
+	
 }

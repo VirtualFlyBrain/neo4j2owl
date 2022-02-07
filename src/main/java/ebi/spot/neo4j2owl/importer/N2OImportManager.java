@@ -292,4 +292,8 @@ public class N2OImportManager {
     Map<String, Object> getRelationshipProperties(N2OOWLRelationship e) {
         return this.relationship_properties.get(e);
     }
+    
+    public Map<OWLEntity, Set<String>> getNodeLabels() {
+		return nodeLabels;
+	}
 }

@@ -106,7 +106,7 @@ public class N2OProcedureTest {
 		N2OImportService importService = new N2OImportService();
 		N2OImportResult importResults = new N2OImportResult();
 		importService.prepareConfig(configUrl, importdir);
-		N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(ontologyUrl, importdir, importResults, true);
+		N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(ontologyUrl, importdir, importResults);
 		File cypherDir = new File(importdir, "transactions");
 		if (!cypherDir.isDirectory()) {
 			cypherDir.mkdir();
