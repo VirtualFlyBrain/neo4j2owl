@@ -11,7 +11,7 @@ import org.semanticweb.owlapi.util.DefaultPrefixManager;
 import java.util.*;
 import java.util.regex.Pattern;
 
-class IRIManager {
+public class IRIManager {
 
     private final Pattern p = Pattern.compile("[a-zA-Z]+[_]+[0-9]+");
     private final Map<String,String> prefixNamespaceMap = new HashMap<>();
@@ -20,7 +20,7 @@ class IRIManager {
     private int NAMESPACECOUNTER = 0;
     private static N2OLog logger = N2OLog.getInstance();
 
-    IRIManager() {
+    public IRIManager() {
         addPrefixNamespacePair(N2OStatic.NEO4J_UNMAPPED_PROPERTY_PREFIX_URI, "n2oc");
         addPrefixNamespacePair(N2OStatic.NEO4J_BUILTIN_PROPERTY_PREFIX_URI, "n2o");
 

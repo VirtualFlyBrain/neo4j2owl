@@ -9,7 +9,7 @@ import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 import java.util.*;
 
-class N2OImportManager {
+public class N2OImportManager {
     private final ManchesterOWLSyntaxParser parser = OWLManager.createManchesterParser();
     private final Map<String, Set<String>> prop_columns = new HashMap<>();
     private final Map<String, Set<String>> node_columns = new HashMap<>();
@@ -25,7 +25,7 @@ class N2OImportManager {
     private final OWLOntology o;
     //private long nextavailableid = 1;
 
-    N2OImportManager(OWLOntology o, IRIManager curies) {
+    public N2OImportManager(OWLOntology o, IRIManager curies) {
         this.curies = curies;
         Map<String,OWLEntity> entityMap = prepareEntityMap(o);
         parser.setOWLEntityChecker(new N2OEntityChecker(entityMap));
@@ -240,7 +240,7 @@ class N2OImportManager {
         return Optional.empty();
     }
 
-    OWLClassExpression parseExpression(String manchesterSyntaxString) {
+    public OWLClassExpression parseExpression(String manchesterSyntaxString) {
         parser.setStringToParse(manchesterSyntaxString);
         return parser.parseClassExpression();
     }
@@ -292,4 +292,8 @@ class N2OImportManager {
     Map<String, Object> getRelationshipProperties(N2OOWLRelationship e) {
         return this.relationship_properties.get(e);
     }
+    
+    public Map<OWLEntity, Set<String>> getNodeLabels() {
+		return nodeLabels;
+	}
 }

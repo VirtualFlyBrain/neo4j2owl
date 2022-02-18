@@ -1,0 +1,214 @@
+allow_entities_without_labels: true
+index: false
+testmode: false
+batch: true
+safe_label: loose
+batch_size: 100000000
+relation_type_threshold: 0.95
+represent_values_and_annotations_as_json:
+  iris:
+    - "http://purl.obolibrary.org/obo/IAO_0000115"
+    - "http://www.geneontology.org/formats/oboInOwl#hasExactSynonym"
+    - "http://www.geneontology.org/formats/oboInOwl#hasNarrowSynonym"
+    - "http://www.geneontology.org/formats/oboInOwl#hasBroadSynonym"
+    - "http://www.geneontology.org/formats/oboInOwl#hasRelatedSynonym"
+
+neo_node_labelling:
+  - classes:
+      - CL:0011005
+      - RO:0015002 some CL:0011005
+    label: GABAergic
+  - classes:
+      - CL:0000679
+      - RO:0015002 some CL:0000679
+    label: Glutamatergic
+  - classes:
+      - CL:0002453
+      - RO:0015002 some CL:0002453
+    label: OPC
+  - classes:
+      - CL:0000127
+      - RO:0015002 some CL:0000127
+    label: Astrocyte
+  - classes:
+      - CL:0000128
+      - RO:0015002 some CL:0000128
+    label: Oligodendrocyte
+  - classes:
+      - CL:0000115
+      - RO:0015002 some CL:0000115
+    label: Endothelial
+  - classes:
+      - CL:0000359
+      - RO:0015002 some CL:0000359
+    label: SMC
+  - classes:
+      - CL:0000669
+      - RO:0015002 some CL:0000669
+    label: Pericyte
+  - classes:
+      - CL:0000129
+      - RO:0015002 some CL:0000129
+    label: Microglial
+  - classes:
+      - CL:4023051
+      - RO:0015002 some CL:0000129
+    label: VLMC
+  - classes:
+      - CL:4023065
+      - RO:0015002 some CL:4023065
+    label: Meis2
+  - classes:
+      - UBERON:0002616
+      - RO:0015002 some UBERON:0002616
+    label: Brain_Region
+  - classes:
+      - SO:0000704
+      - RO:0015002 some SO:0000704
+    label: Gene
+  - classes:
+      - PCL:0010001
+      - RO:0015002 some PCL:0010001
+    label: Cluster
+  - classes:
+      - PATO:0010006
+      - RO:0015002 some PATO:0010006
+    label: morphology
+  - classes:
+      - PATO:0070033
+      - RO:0015002 some PATO:0070033
+    label: projection
+##Morphological subclasses##
+  - classes:
+      - RO:0000053 some PATO:0070026
+    label: Multipolar
+  - classes:
+      - RO:0000053 some PATO:0070015
+    label: Pyramidal
+#  - classes:
+#      - CL:4023066
+#      - BDSHELP:exemplar_of some CL:4023066
+#    label: Horizontal_pyramidal
+#  - classes:
+#      - CL:4023092
+#      - BDSHELP:exemplar_of some CL:4023092
+#    label: Inverted_pyramidal
+#  - classes:
+#      - CL:4023093
+#      - BDSHELP:exemplar_of some CL:4023093
+#    label: Stellate_pyramidal
+#  - classes:
+#      - CL:4023094
+#      - BDSHELP:exemplar_of some CL:4023094
+#    label: Tufted_pyramidal
+  - classes:
+      - RO:0000053 some PATO:0070019
+    label: Untufted_pyramidal
+  - classes:
+      - RO:0000053 some PATO:0070007
+    label: Martinotti
+  - classes:
+      - RO:0000053 some PATO:0070009
+    label: Fan_Martinotti
+  - classes:
+      - RO:0000053 some PATO:0070008
+    label: T_Martinotti
+#  - classes:
+#      - CL:0000118
+#      - BDSHELP:exemplar_of some CL:0000118
+#    label: Basket
+#  - classes:
+#      - CL:4023088
+#      - BDSHELP:exemplar_of some CL:4023088
+#    label: Large_basket
+#  - classes:
+#      - CL:4023090
+#      - BDSHELP:exemplar_of some CL:4023090
+#    label: Small_basket
+#  - classes:
+#      - CL:4023089
+#      - BDSHELP:exemplar_of some CL:4023089
+#    label: Nest_basket
+  - classes:
+      - RO:0000053 some PATO:0070001
+    label: Neurogliaform
+  - classes:
+      - RO:0000053 some PATO:0070011
+    label: Chandelier
+#  - classes:
+#      - CL:4023077
+#      - BDSHELP:exemplar_of some CL:4023077
+#    label: Bitufted
+  - classes:
+      - RO:0000053 some PATO:0070006
+    label: Bipolar
+##Projection subclasses##
+  - classes:
+      - RO:0000053 some PATO:0070028
+    label: Extratelencephalic
+  - classes:
+      - RO:0000053 some PATO:0070034
+    label: Intratelencephalic
+  - classes:
+      - RO:0000053 some PATO:0070029
+    label: Corticothalamic
+  - classes:
+      - RO:0000053 some PATO:0070030
+    label: Near_projecting
+  - classes:
+      - RO:0000053 some PATO:0070031
+    label: Corticomedulla
+##specific badges##
+  - classes:
+      - RO:0002162 some NCBITaxon:10090
+    label: Mus_musculus
+  - classes:
+      - RO:0002162 some NCBITaxon:9606
+    label: Homo_sapiens
+  - classes:
+      - RO:0002162 some NCBITaxon:9483
+    label: Callithrix_jacchus
+  - classes:
+      - RO:0002100 some UBERON:0000956
+    label: Cerebral_cortex
+  - classes:
+      - RO:0002100 some UBERON:0001384
+    label: Primary_motor_cortex
+  - classes:
+      - RO:0002100 some UBERON:0002771
+    label: MTG
+
+
+curie_map:
+  GITHUB: https://github.com/
+  GITHUBH: http://github.com/
+  PMID: http://www.ncbi.nlm.nih.gov/pubmed/
+  orcid: https://orcid.org/
+  doi: https://doi.org/
+  rdfs: http://www.w3.org/2000/01/rdf-schema#
+  ncbigene: http://www.ncbi.nlm.nih.gov/gene/
+  cc: http://creativecommons.org/ns#
+  pato_rel: http://purl.obolibrary.org/obo/pato#
+  so_rel: http://purl.obolibrary.org/obo/so#
+  ro_rel: http://www.obofoundry.org/ro/ro.owl#
+  owl: http://www.w3.org/2002/07/owl#
+  skos: http://www.w3.org/2004/02/skos/core#
+  ensembl: http://identifiers.org/ensembl/
+  RO: http://purl.obolibrary.org/obo/RO_
+  UBERON: http://purl.obolibrary.org/obo/UBERON_
+  CL: http://purl.obolibrary.org/obo/CL_
+  n2o: http://n2o.neo/custom/
+  ILX: http://uri.interlex.org/base/ilx_
+  NCBITaxon: http://purl.obolibrary.org/obo/NCBITaxon_
+  PR: http://purl.obolibrary.org/obo/PR_
+  SO: http://purl.obolibrary.org/obo/SO_
+  OBI: http://purl.obolibrary.org/obo/OBI_
+  PCL: http://purl.obolibrary.org/obo/PCL_
+
+filters:
+  solr:
+    exclusion:
+      iri_prefix:
+        - http://virtualflybrain.org/reports/VFBc_
+      neo4j_node_label:
+        - Channel
