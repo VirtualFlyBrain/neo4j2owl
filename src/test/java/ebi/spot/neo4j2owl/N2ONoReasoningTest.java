@@ -41,7 +41,7 @@ class N2ONoReasoningTest {
 	private static OWLOntology o;
 	private static N2OOntologyLoader ontologyImporter;
 	private static OWLReasoner r;
-	private static final String CONFIG = "file://bigtest_config.yaml"; 
+	private static final String CONFIG = "file://bigtest_config.yaml";
 	private static File test_output = new File("./src/test/resources/test_output");
 
 	@BeforeAll
@@ -108,6 +108,27 @@ class N2ONoReasoningTest {
 			}
 		}
 	}
+	
+	/**
+	 *  A subClassOf B.  I Type A, I Type B --> remove I Type B
+	 *  
+	 * @throws OWLOntologyCreationException
+	 */
+	@Test
+	void testGetTypesRedundancyStripping() throws OWLOntologyCreationException {
+		Set<OWLNamedIndividual> entities = new HashSet<>(o.getIndividualsInSignature(Imports.INCLUDED));
+		for (OWLNamedIndividual e : entities) {
+			Set<OWLClass> reasonedTypes = r.getTypes(e, true).getFlattened();
+			Set<OWLClass> queriedTypes = ontologyImporter.queryTypes(o, e, true);
+
+			printDifference(reasonedTypes, queriedTypes);
+			assertEquals(reasonedTypes.size(), queriedTypes.size());
+
+			for (OWLClass clazz : reasonedTypes) {
+				assertTrue(queriedTypes.contains(clazz));
+			}
+		}
+	}
 
 	@Test
 	void testGetIndividuals() throws OWLOntologyCreationException {
@@ -124,30 +145,32 @@ class N2ONoReasoningTest {
 			}
 		}
 	}
-	
+
 	@Test
 	void testAddingDynamicAnnotations() throws OWLOntologyCreationException, N2OException, IOException {
 		String annotationIRI = "http://n2o.neo/property/nodeLabel";
-		
+
 		N2OConfig.getInstance().prepareConfig(CONFIG, test_output);
-		
+
 		N2OOntologyLoader reasonedLoader = new N2OOntologyLoader();
 		reasonedLoader.importOntology(o, new N2OImportResult(), true, null);
-		
+
 		N2OOntologyLoader prereasonedLoader = new N2OOntologyLoader();
 		prereasonedLoader.importOntology(o, new N2OImportResult(), false, annotationIRI);
-		
+
 		Map<OWLEntity, Set<String>> reasonedLabels = reasonedLoader.getImportManager().getNodeLabels();
 		Map<OWLEntity, Set<String>> queriedLabels = prereasonedLoader.getImportManager().getNodeLabels();
 
 		assertTrue(reasonedLabels.keySet().size() > 0);
+		printDifference(reasonedLabels.keySet(), queriedLabels.keySet());
+		// test is failing since vfb_expression_annotator didn't added root terms
 		assertEquals(reasonedLabels.keySet().size(), queriedLabels.keySet().size());
 		for (OWLEntity entity : reasonedLabels.keySet()) {
 			System.out.println(entity + "   " + reasonedLabels.get(entity));
 			assertTrue(queriedLabels.containsKey(entity));
 			assertEquals(reasonedLabels.get(entity), queriedLabels.get(entity));
 		}
-		
+
 	}
 
 	@Test
@@ -163,8 +186,9 @@ class N2ONoReasoningTest {
 		expressions.add("RO:0015002 some CL:0000359");
 		expressions.add("RO:0000053 some PATO:0070019");
 		expressions.add("RO:0002100 some UBERON:0002771");
-		// following crashes because, query cannot handle sub-property based class expressions
-		// 'in taxonomy' some NCBITaxon:10090  vs 'only in taxonomy' some NCBITaxon:10090
+		// following crashes because, query cannot handle sub-property based class
+		// expressions
+		// 'in taxonomy' some NCBITaxon:10090 vs 'only in taxonomy' some NCBITaxon:10090
 //		expressions.add("RO:0002162 some NCBITaxon:10090");
 
 		for (String expression : expressions) {
