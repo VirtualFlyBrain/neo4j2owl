@@ -108,27 +108,6 @@ class N2ONoReasoningTest {
 			}
 		}
 	}
-	
-	/**
-	 *  A subClassOf B.  I Type A, I Type B --> remove I Type B
-	 *  
-	 * @throws OWLOntologyCreationException
-	 */
-	@Test
-	void testGetTypesRedundancyStripping() throws OWLOntologyCreationException {
-		Set<OWLNamedIndividual> entities = new HashSet<>(o.getIndividualsInSignature(Imports.INCLUDED));
-		for (OWLNamedIndividual e : entities) {
-			Set<OWLClass> reasonedTypes = r.getTypes(e, true).getFlattened();
-			Set<OWLClass> queriedTypes = ontologyImporter.queryTypes(o, e, true);
-
-			printDifference(reasonedTypes, queriedTypes);
-			assertEquals(reasonedTypes.size(), queriedTypes.size());
-
-			for (OWLClass clazz : reasonedTypes) {
-				assertTrue(queriedTypes.contains(clazz));
-			}
-		}
-	}
 
 	@Test
 	void testGetIndividuals() throws OWLOntologyCreationException {
@@ -163,7 +142,6 @@ class N2ONoReasoningTest {
 
 		assertTrue(reasonedLabels.keySet().size() > 0);
 		printDifference(reasonedLabels.keySet(), queriedLabels.keySet());
-		// test is failing since vfb_expression_annotator didn't added root terms
 		assertEquals(reasonedLabels.keySet().size(), queriedLabels.keySet().size());
 		for (OWLEntity entity : reasonedLabels.keySet()) {
 			System.out.println(entity + "   " + reasonedLabels.get(entity));
