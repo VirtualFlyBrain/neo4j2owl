@@ -558,10 +558,11 @@ public class N2OOntologyLoader {
 		Set<OWLClass> namedClasses = types.stream().filter(type -> !type.isAnonymous()).map(type -> type.asOWLClass())
 				.collect(Collectors.toSet());
 		if (direct) {
+			// A subClassOf B.  I Type A, I Type B --> remove I Type B	
 			Set<OWLClass> allParents = new HashSet<>();
 			for (OWLClass owlClass : namedClasses) {
 				allParents.addAll(querySuperClasses(o, owlClass, false, true));
-			}
+			}		
 			namedClasses.removeAll(allParents);
 		}
 		return namedClasses;
