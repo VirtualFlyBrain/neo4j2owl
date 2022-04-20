@@ -38,6 +38,7 @@ import ebi.spot.neo4j2owl.importer.N2OOntologyLoader;
 class N2ONoReasoningTest {
 
 	private static final File TEST_ONTOLOGY = new File("./src/test/resources/bigtest_reasoned_with_tags.owl");
+	private static final File TEST_ONTOLOGY_SIMPLE = new File("./src/test/resources/simple_redundancy.owl");
 	private static OWLOntology o;
 	private static N2OOntologyLoader ontologyImporter;
 	private static OWLReasoner r;
@@ -60,6 +61,7 @@ class N2ONoReasoningTest {
 	@Test
 	void testGetDirectSubClasses() throws OWLOntologyCreationException {
 		Set<OWLClass> entities = new HashSet<>(o.getClassesInSignature(Imports.INCLUDED));
+		assertTrue(entities.size() > 0);
 		for (OWLClass e : entities) {
 			Set<OWLClass> reasonedClasses = ontologyImporter.getSubClasses(r, e, true, true);
 			reasonedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
@@ -78,6 +80,7 @@ class N2ONoReasoningTest {
 	@Test
 	void testGetAllSubClasses() throws OWLOntologyCreationException {
 		Set<OWLClass> entities = new HashSet<>(o.getClassesInSignature(Imports.INCLUDED));
+		assertTrue(entities.size() > 0);
 		for (OWLClass e : entities) {
 			Set<OWLClass> reasonedClasses = ontologyImporter.getSubClasses(r, e, false, false);
 			reasonedClasses.remove(o.getOWLOntologyManager().getOWLDataFactory().getOWLNothing());
@@ -94,8 +97,39 @@ class N2ONoReasoningTest {
 	}
 
 	@Test
+	void testGetTypesSimple() throws OWLOntologyCreationException {
+		try {
+			OWLOntology o = OWLManager.createOWLOntologyManager()
+					.loadOntologyFromOntologyDocument(IRI.create(TEST_ONTOLOGY_SIMPLE.toURI()));
+			N2OOntologyLoader ontologyImporter = new N2OOntologyLoader();
+
+			OWLReasoner r = new ElkReasonerFactory().createReasoner(o);
+			Set<OWLNamedIndividual> entities = new HashSet<>(o.getIndividualsInSignature(Imports.INCLUDED));
+			assertTrue(entities.size() > 0);
+			for (OWLNamedIndividual e : entities) {
+				Set<OWLClass> reasonedTypes = r.getTypes(e, true).getFlattened();
+				Set<OWLClass> queriedTypes = ontologyImporter.queryTypes(o, e, true);
+
+				printDifference(reasonedTypes, queriedTypes);
+				// only the most specific one remains
+				assertEquals(1, queriedTypes.size());
+				assertEquals(reasonedTypes.size(), queriedTypes.size());
+
+				System.out.println("Types of " + e);
+				for (OWLClass clazz : reasonedTypes) {
+					System.out.println(clazz);
+					assertTrue(queriedTypes.contains(clazz));
+				}
+			}
+		} catch (OWLOntologyCreationException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Test
 	void testGetTypes() throws OWLOntologyCreationException {
 		Set<OWLNamedIndividual> entities = new HashSet<>(o.getIndividualsInSignature(Imports.INCLUDED));
+		assertTrue(entities.size() > 0);
 		for (OWLNamedIndividual e : entities) {
 			Set<OWLClass> reasonedTypes = r.getTypes(e, true).getFlattened();
 			Set<OWLClass> queriedTypes = ontologyImporter.queryTypes(o, e, true);
@@ -112,6 +146,7 @@ class N2ONoReasoningTest {
 	@Test
 	void testGetIndividuals() throws OWLOntologyCreationException {
 		Set<OWLClass> entities = new HashSet<>(o.getClassesInSignature(Imports.INCLUDED));
+		assertTrue(entities.size() > 0);
 		for (OWLClass e : entities) {
 			Set<OWLNamedIndividual> reasonedIndvs = ontologyImporter.getInstances(r, e);
 			Set<OWLNamedIndividual> queriedIndvs = ontologyImporter.queryInstances(o, e);
