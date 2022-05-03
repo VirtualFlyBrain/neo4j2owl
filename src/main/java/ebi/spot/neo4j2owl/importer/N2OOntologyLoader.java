@@ -245,6 +245,38 @@ public class N2OOntologyLoader {
 
 		return subClasses;
 	}
+	
+	public Set<OWLClass> querySuperClasses(OWLOntology o, OWLClass e, boolean direct, boolean excludeEquivalentClasses) {
+		return querySuperClasses(o, e.asOWLClass(), direct, excludeEquivalentClasses, new HashSet<OWLClass>());
+	}
+	
+	private Set<OWLClass> querySuperClasses(OWLOntology o, OWLClass e, boolean direct, boolean excludeEquivalentClasses,
+			Set<OWLClass> scannedClasses) {
+		Set<OWLSubClassOfAxiom> subClassAxioms = o.getSubClassAxiomsForSubClass(e);
+		Set<OWLClass> superClasses = subClassAxioms.stream().filter(scoa -> !scoa.getSuperClass().isAnonymous())
+				.map(scoa -> scoa.getSuperClass().asOWLClass()).collect(Collectors.toSet());
+
+		superClasses.addAll(queryEquivalentClasses(o, e));
+
+		if (!direct) {
+			superClasses.add(e);
+			Set<OWLClass> indepthSuperClasses = new HashSet<>();
+			for (OWLClass superClass : superClasses) {
+				if (!scannedClasses.contains(superClass)) {
+					scannedClasses.add(superClass);
+					indepthSuperClasses
+							.addAll(querySuperClasses(o, superClass, direct, excludeEquivalentClasses, scannedClasses));
+				}
+			}
+			superClasses.addAll(indepthSuperClasses);
+		}
+
+		if (excludeEquivalentClasses && e.isClassExpressionLiteral()) {
+			superClasses.remove(e.asOWLClass());
+		}
+
+		return superClasses;
+	}
 
 	public Set<OWLClass> querySubClassesOfClassExpression(OWLOntology o, OWLClassExpression e, boolean direct,
 			boolean excludeEquivalentClasses) {
@@ -523,8 +555,17 @@ public class N2OOntologyLoader {
 
 	public Set<OWLClass> queryTypes(OWLOntology o, OWLNamedIndividual e, boolean direct) {
 		Collection<OWLClassExpression> types = EntitySearcher.getTypes(e, o);
-		return types.stream().filter(type -> !type.isAnonymous()).map(type -> type.asOWLClass())
+		Set<OWLClass> namedClasses = types.stream().filter(type -> !type.isAnonymous()).map(type -> type.asOWLClass())
 				.collect(Collectors.toSet());
+		if (direct) {
+			// A subClassOf B.  I Type A, I Type B --> remove I Type B	
+			Set<OWLClass> allParents = new HashSet<>();
+			for (OWLClass owlClass : namedClasses) {
+				allParents.addAll(querySuperClasses(o, owlClass, false, true));
+			}		
+			namedClasses.removeAll(allParents);
+		}
+		return namedClasses;
 	}
 
 	private void addExistentialRelationships(OWLOntology o) {

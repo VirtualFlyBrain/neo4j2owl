@@ -1,0 +1,42 @@
+Prefix(:=<http://scratch#>)
+Prefix(owl:=<http://www.w3.org/2002/07/owl#>)
+Prefix(rdf:=<http://www.w3.org/1999/02/22-rdf-syntax-ns#>)
+Prefix(xml:=<http://www.w3.org/XML/1998/namespace>)
+Prefix(xsd:=<http://www.w3.org/2001/XMLSchema#>)
+Prefix(rdfs:=<http://www.w3.org/2000/01/rdf-schema#>)
+
+
+Ontology(<http://scratch>
+Declaration(Class(:cell))
+Declaration(Class(:neuron))
+Declaration(Class(:neuron1))
+Declaration(NamedIndividual(:DL1_adPN))
+Declaration(AnnotationProperty(<http://www.geneontology.org/formats/oboInOwl#ClassAssertion(<http>))
+Declaration(AnnotationProperty(<http://www.geneontology.org/formats/oboInOwl#Declaration(Class(<http>))
+Declaration(AnnotationProperty(<http://www.geneontology.org/formats/oboInOwl#Declaration(NamedIndividual(<http>))
+Declaration(AnnotationProperty(<http://www.geneontology.org/formats/oboInOwl#SubClassOf(<http>))
+
+############################
+#   Classes
+############################
+
+# Class: :neuron (:neuron)
+
+SubClassOf(:neuron :cell)
+
+# Class: :neuron1 (:neuron1)
+
+SubClassOf(:neuron1 :neuron)
+
+
+############################
+#   Named Individuals
+############################
+
+# Individual: :DL1_adPN (:DL1_adPN)
+
+ClassAssertion(:cell :DL1_adPN)
+ClassAssertion(:neuron1 :DL1_adPN)
+
+
+)
