@@ -363,7 +363,9 @@ public class N2OExportService {
 	}
 	
 	/**
-	 * Ontology size can be bigger than max size of String. Chunks ontology into sub-strings and converts ontology in multiple strings.
+	 * Ontology size can be bigger than max size of String. Chunks ontology into
+	 * sub-strings and represents ontology as multiple strings.
+	 * 
 	 * @param byteArray ontology in byte array representation.
 	 * @return ontology sub-string chunks
 	 */
@@ -377,8 +379,7 @@ public class N2OExportService {
 				exclusive_end = byteArray.length;	
 			}
 			byte[] chunk = Arrays.copyOfRange(byteArray, start, exclusive_end);
-			String string = new String(chunk, java.nio.charset.StandardCharsets.UTF_8);
-			chunks.add(string);
+			chunks.add(new String(chunk, java.nio.charset.StandardCharsets.UTF_8));
 			start += maxArraySize;
 		}
 		return chunks;
