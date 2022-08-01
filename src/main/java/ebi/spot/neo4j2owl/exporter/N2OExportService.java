@@ -3,6 +3,7 @@ package ebi.spot.neo4j2owl.exporter;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -77,7 +78,9 @@ public class N2OExportService {
 			ByteArrayOutputStream os = new ByteArrayOutputStream(); // new FileOutputStream(new File(fileName))
 			man.saveOntology(o, new RDFXMLDocumentFormat(), os);
 			qsls_with_no_matching_properties.forEach(logger::log);
-			returnValue.setOntology(os.toString(java.nio.charset.StandardCharsets.UTF_8.name()));
+//			String osString = os.toString(java.nio.charset.StandardCharsets.UTF_16.name());
+			List<String> ontologyChunks = createArrayChunks(os.toByteArray());
+			returnValue.setOntology(ontologyChunks);
 			returnValue.setLog(o.getLogicalAxiomCount() + "");
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -357,5 +360,27 @@ public class N2OExportService {
 
 	private void createEntityForEachLabel(Node n) {
 		n.getLabels().forEach(l -> n2OEntityManager.createEntity(n, l.name()));
+	}
+	
+	/**
+	 * Ontology size can be bigger than max size of String. Chunks ontology into sub-strings and converts ontology in multiple strings.
+	 * @param byteArray ontology in byte array representation.
+	 * @return ontology sub-string chunks
+	 */
+	private List<String> createArrayChunks(byte[] byteArray) {
+		int maxArraySize = 500000000;
+		int start = 0;
+		List<String> chunks = new ArrayList<>();
+		while(start < byteArray.length) {
+			int exclusive_end = start + maxArraySize;
+			if (exclusive_end > byteArray.length) {
+				exclusive_end = byteArray.length;	
+			}
+			byte[] chunk = Arrays.copyOfRange(byteArray, start, exclusive_end);
+			String string = new String(chunk, java.nio.charset.StandardCharsets.UTF_8);
+			chunks.add(string);
+			start += maxArraySize;
+		}
+		return chunks;
 	}
 }
