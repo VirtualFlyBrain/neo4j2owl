@@ -34,5 +34,5 @@ curie_map:
   VFBext: http://purl.obolibrary.org/obo/fbbt/vfb/VFBext_
   vfbp: http://purl.obolibrary.org/obo/fbbt/vfb#
   vfb: http://www.virtualflybrain.org/owl/
-  doi: https://doi.org/
   nic: http://www.semanticweb.org/matentzn/ontologies/2018/1/untitled-ontology-73#
+  doi: https://doi.org/
