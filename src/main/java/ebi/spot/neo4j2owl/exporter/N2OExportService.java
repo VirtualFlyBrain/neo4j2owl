@@ -107,13 +107,13 @@ public class N2OExportService {
 				Map<String, Object> r = s.next();
 				Object object = r.get("n");
 				// log(r);
-	            Long nid = ((Node) r.get("n")).getId();
-	            Long xid = ((Node) r.get("x")).getId();
-	            Relationship rp = (Relationship) r.get("r");
+				Long nid = ((Node) r.get("n")).getId();
+				Long xid = ((Node) r.get("x")).getId();
+				Relationship rp = (Relationship) r.get("r");
 
-	            OWLAxiom ax = createAxiom(n2OEntityManager.getEntity(nid), n2OEntityManager.getEntity(xid), RELTYPE);
-	            Set<OWLAnnotation> axiomAnnotations = getAxiomAnnotations(rp);
-	            changes.add(new AddAxiom(o, ax.getAnnotatedAxiom(axiomAnnotations)));
+				OWLAxiom ax = createAxiom(n2OEntityManager.getEntity(nid), n2OEntityManager.getEntity(xid), RELTYPE);
+				Set<OWLAnnotation> axiomAnnotations = getAxiomAnnotations(rp);
+				changes.add(new AddAxiom(o, ax.getAnnotatedAxiom(axiomAnnotations)));
 			}
 			if (!changes.isEmpty()) {
 				try {
@@ -361,7 +361,7 @@ public class N2OExportService {
 	private void createEntityForEachLabel(Node n) {
 		n.getLabels().forEach(l -> n2OEntityManager.createEntity(n, l.name()));
 	}
-	
+
 	/**
 	 * Ontology size can be bigger than max size of String. Chunks ontology into
 	 * sub-strings and represents ontology as multiple strings.
@@ -370,18 +370,31 @@ public class N2OExportService {
 	 * @return ontology sub-string chunks
 	 */
 	private List<String> createArrayChunks(byte[] byteArray) {
-		int maxArraySize = 500000000;
+		int chunkSize = 500000000;
 		int start = 0;
 		List<String> chunks = new ArrayList<>();
-		while(start < byteArray.length) {
-			int exclusive_end = start + maxArraySize;
-			if (exclusive_end > byteArray.length) {
-				exclusive_end = byteArray.length;	
-			}
+		while (start < byteArray.length) {
+			int exclusive_end = safeAdd(start, chunkSize, byteArray.length);
 			byte[] chunk = Arrays.copyOfRange(byteArray, start, exclusive_end);
-			chunks.add(new String(chunk, java.nio.charset.StandardCharsets.UTF_8));
-			start += maxArraySize;
+			String string = new String(chunk, java.nio.charset.StandardCharsets.UTF_8);
+			chunks.add(string);
+			start = safeAdd(start, chunkSize, byteArray.length);
 		}
 		return chunks;
+	}
+
+	/**
+	 * Safe addition operation to prevent integer overflow via limiting addition
+	 * result with a max value.
+	 *
+	 * @param number    base number
+	 * @param increment value to increment base
+	 * @param maxValue  maximum allowed value to return on integer overflow
+	 * @return
+	 */
+	private int safeAdd(int number, int increment, int maxValue) {
+		int test = number + increment;
+		// test < number on integer overflow
+		return (test < number || test > maxValue) ? maxValue : test;
 	}
 }
