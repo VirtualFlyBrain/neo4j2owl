@@ -57,8 +57,26 @@ public class N2OProcedure {
 	@Procedure(mode = Mode.WRITE)
 	public Stream<N2OReturnValue> exportOWL() {
 		logger.resetTimer();
-		N2OExportService importService = new N2OExportService(db);
-		N2OReturnValue result = importService.owl2Export();
+		N2OExportService exportService = new N2OExportService(db);
+		N2OReturnValue result = exportService.owl2Export();
+		return Stream.of(result);
+	}
+	
+	@SuppressWarnings("unused")
+	@Procedure(mode = Mode.WRITE)
+	public Stream<N2OReturnValue> exportOWLNodes(@Name("skip") Long skip, @Name("limit") Long limit) {
+		logger.resetTimer();
+		N2OExportService exportService = new N2OExportService(db);
+		N2OReturnValue result = exportService.owl2ExportNodes(skip, limit);
+		return Stream.of(result);
+	}
+	
+	@SuppressWarnings("unused")
+	@Procedure(mode = Mode.WRITE)
+	public Stream<N2OReturnValue> exportOWLEdges() {
+		logger.resetTimer();
+		N2OExportService exportService = new N2OExportService(db);
+		N2OReturnValue result = exportService.owl2ExportEdges();
 		return Stream.of(result);
 	}
 
