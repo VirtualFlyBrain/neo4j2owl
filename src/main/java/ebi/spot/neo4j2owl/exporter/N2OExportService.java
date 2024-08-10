@@ -65,7 +65,7 @@ public class N2OExportService {
 			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 
 			OWLOntology o = man.createOntology();
-			addEntities(o);
+			addEntities(o, 0L, Long.MAX_VALUE);
 			addAnnotations(o);
 			addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
 			addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
@@ -79,6 +79,64 @@ public class N2OExportService {
 			man.saveOntology(o, new RDFXMLDocumentFormat(), os);
 			qsls_with_no_matching_properties.forEach(logger::log);
 //			String osString = os.toString(java.nio.charset.StandardCharsets.UTF_16.name());
+			List<String> ontologyChunks = createArrayChunks(os.toByteArray());
+			returnValue.setOntology(ontologyChunks);
+			returnValue.setLog(o.getLogicalAxiomCount() + "");
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnValue.setLog(logger.getStackTrace(e));
+		}
+		return returnValue;
+	}
+	
+	public N2OReturnValue owl2ExportNodes(Long skip, Long limit) {
+		n2OEntityManager = new N2OExportManager();
+		qsls_with_no_matching_properties = new HashSet<>();
+		logger.resetTimer();
+		N2OReturnValue returnValue = new N2OReturnValue();
+
+		try {
+			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+
+			OWLOntology o = man.createOntology();
+			addAnnotationProperties(o);
+			addEntities(o, skip, limit);
+			addAnnotations(o);
+			ByteArrayOutputStream os = new ByteArrayOutputStream(); // new FileOutputStream(new File(fileName))
+			man.saveOntology(o, new RDFXMLDocumentFormat(), os);
+			qsls_with_no_matching_properties.forEach(logger::log);
+			List<String> ontologyChunks = createArrayChunks(os.toByteArray());
+			returnValue.setOntology(ontologyChunks);
+			returnValue.setLog(o.getLogicalAxiomCount() + "");
+		} catch (Exception e) {
+			e.printStackTrace();
+			returnValue.setLog(logger.getStackTrace(e));
+		}
+		return returnValue;
+	}
+	
+	public N2OReturnValue owl2ExportEdges() {
+		n2OEntityManager = new N2OExportManager();
+		qsls_with_no_matching_properties = new HashSet<>();
+		logger.resetTimer();
+		N2OReturnValue returnValue = new N2OReturnValue();
+
+		try {
+			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
+
+			OWLOntology o = man.createOntology();
+			findEntities(0L, Long.MAX_VALUE);
+			addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
+			addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
+			for (String rel_qsl : getRelations(OWLAnnotationProperty.class)) {
+				addRelation(o, rel_qsl);
+			}
+			for (String rel_qsl : getRelations(OWLObjectProperty.class)) {
+				addRelation(o, rel_qsl);
+			}
+			ByteArrayOutputStream os = new ByteArrayOutputStream(); // new FileOutputStream(new File(fileName))
+			man.saveOntology(o, new RDFXMLDocumentFormat(), os);
+			qsls_with_no_matching_properties.forEach(logger::log);
 			List<String> ontologyChunks = createArrayChunks(os.toByteArray());
 			returnValue.setOntology(ontologyChunks);
 			returnValue.setLog(o.getLogicalAxiomCount() + "");
@@ -107,13 +165,13 @@ public class N2OExportService {
 				Map<String, Object> r = s.next();
 				Object object = r.get("n");
 				// log(r);
-				Long nid = ((Node) r.get("n")).getId();
-				Long xid = ((Node) r.get("x")).getId();
-				Relationship rp = (Relationship) r.get("r");
+	            Long nid = ((Node) r.get("n")).getId();
+	            Long xid = ((Node) r.get("x")).getId();
+	            Relationship rp = (Relationship) r.get("r");
 
-				OWLAxiom ax = createAxiom(n2OEntityManager.getEntity(nid), n2OEntityManager.getEntity(xid), RELTYPE);
-				Set<OWLAnnotation> axiomAnnotations = getAxiomAnnotations(rp);
-				changes.add(new AddAxiom(o, ax.getAnnotatedAxiom(axiomAnnotations)));
+	            OWLAxiom ax = createAxiom(n2OEntityManager.getEntity(nid), n2OEntityManager.getEntity(xid), RELTYPE);
+	            Set<OWLAnnotation> axiomAnnotations = getAxiomAnnotations(rp);
+	            changes.add(new AddAxiom(o, ax.getAnnotatedAxiom(axiomAnnotations)));
 			}
 			if (!changes.isEmpty()) {
 				try {
@@ -341,8 +399,32 @@ public class N2OExportService {
 	 * - just declarations. The main purpose is to index all entities for the next
 	 * Steps in the pipeline
 	 */
-	private void addEntities(OWLOntology o) throws N2OException {
-		String cypher = "MATCH (n:Entity) Return n";
+	private void addEntities(OWLOntology o, Long skip, Long limit) throws N2OException {
+		findEntities(skip, limit);
+		n2OEntityManager.entities().stream().filter(e -> !e.isBuiltIn()).forEach((e -> addDeclaration(e, o)));
+	}
+	
+	/**
+	 * Only discovers entities and updates the n2OEntityManager without adding to the Ontology.
+	 * @param o 
+	 * @param skip
+	 * @param limit
+	 * @throws N2OException
+	 */
+	private void findEntities(Long skip, Long limit) throws N2OException {
+		String cypher = String.format("MATCH (n:Entity) Return n SKIP %d LIMIT %d", skip, limit);
+		Result s;
+		try (Transaction tx = db.beginTx()) {
+			s = tx.execute(cypher);
+			Objects.requireNonNull(s);
+			s.stream().forEach(r -> createEntityForEachLabel((Node) r.get("n")));
+		} catch (Exception e) {
+			throw new N2OException(N2OStatic.CYPHER_FAILED_TO_EXECUTE + cypher, e);
+		}
+	}
+	
+	private void addAnnotationProperties(OWLOntology o) throws N2OException {
+		String cypher = String.format("MATCH (n:AnnotationProperty) Return n");
 		Result s;
 		try (Transaction tx = db.beginTx()) {
 			s = tx.execute(cypher);
