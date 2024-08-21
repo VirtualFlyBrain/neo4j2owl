@@ -17,6 +17,7 @@ public class N2OCSVWriter {
     private final RelationTypeCounter relationTypeCounter;
     private final N2OLog log = N2OLog.getInstance();
     private final N2OImportCSVConfig n2OImportCSVConfig = new N2OImportCSVConfig();
+    private final String csvPostfix;
     public enum CSV_TYPE
     {
         NODES("nodes"), RELATIONSHIPS("relationship");
@@ -26,10 +27,15 @@ public class N2OCSVWriter {
         }
     }
 
-    N2OCSVWriter(N2OImportManager manager, RelationTypeCounter relationTypeCounter, File dir) {
+    N2OCSVWriter(N2OImportManager manager, RelationTypeCounter relationTypeCounter, File dir, String csvPostfix) {
         this.manager = manager;
         this.dir = dir;
         this.relationTypeCounter = relationTypeCounter;
+        if(csvPostfix == null) {
+        	this.csvPostfix = "";
+        }else {
+        	this.csvPostfix = csvPostfix;
+        }
     }
 
     void exportOntologyToCSV() throws N2OException {
@@ -49,20 +55,20 @@ public class N2OCSVWriter {
         Map<String, List<N2OOWLRelationship>> relationships = indexRelationshipsByType();
         Map<String, List<String>> dataout_rel = prepareRelationCSVsForExport(relationships);
         prepareCyperQueries(dataout_rel, CSV_TYPE.RELATIONSHIPS);
-        N2OUtils.writeToFile(getImportDir(), dataout_rel, CSV_TYPE.RELATIONSHIPS);
+        N2OUtils.writeToFile(getImportDir(), dataout_rel, CSV_TYPE.RELATIONSHIPS, csvPostfix);
     }
 
     private void processExportForNodes() throws N2OException {
         Map<String, List<OWLEntity>> entities = indexEntitiesByType();
         Map<String, List<String>> dataout = prepareNodeCSVsForExport(entities);
         prepareCyperQueries(dataout, CSV_TYPE.NODES);
-        N2OUtils.writeToFile(dir, dataout, CSV_TYPE.NODES);
+        N2OUtils.writeToFile(dir, dataout, CSV_TYPE.NODES, csvPostfix);
 
     }
 
     private void prepareCyperQueries(Map<String, List<String>> dataout, CSV_TYPE csv_type) {
         for(String type: dataout.keySet()) {
-            File f = N2OUtils.constructFileHandle(dir, csv_type.name, type);
+            File f = N2OUtils.constructFileHandle(dir, csv_type.name, type, csvPostfix);
             String cypher = constructCypherQuery(csv_type, f);
             this.n2OImportCSVConfig.putImport(cypher, f.getName());
         }
@@ -72,6 +78,9 @@ public class N2OCSVWriter {
         String filename = f.getName();
 
         String type = filename.substring(filename.indexOf("_") + 1).replaceAll(N2OStatic.CSV_EXTENSION, "");
+       	if(!csvPostfix.isEmpty()) {
+    		type = type.replace(csvPostfix + "_" , "");
+    	}
         Integer periodic_commit = N2OConfig.getInstance().getPeriodicCommit();
         String cypher = "USING PERIODIC COMMIT "+periodic_commit+"\n" +
                 "LOAD CSV WITH HEADERS FROM \"file:/"+filename+"\" AS cl\n";
