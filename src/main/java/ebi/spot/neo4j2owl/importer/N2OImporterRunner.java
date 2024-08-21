@@ -14,10 +14,14 @@ public class N2OImporterRunner {
 		File importdir = new File(args[2]);
 		Boolean enableReasoning = true;
 		String annotation_iri = null;
+		String csvPostfix = null;
 
 		if (args.length > 3) {
 			enableReasoning = Boolean.parseBoolean(args[3]);
 			annotation_iri = args[4];
+		}
+		if (args.length > 5) {
+			csvPostfix = args[5];
 		}
 
 		if (config.equals("none")) {
@@ -28,7 +32,7 @@ public class N2OImporterRunner {
 		N2OImportResult importResults = new N2OImportResult();
 		try {
 			importService.prepareConfig(config, importdir);
-			N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(url, importdir, importResults, enableReasoning, annotation_iri);
+			N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(url, importdir, importResults, enableReasoning, annotation_iri, csvPostfix);
 			File cypherDir = new File(importdir, "transactions");
 			if (!cypherDir.isDirectory()) {
 				boolean created = cypherDir.mkdir();
