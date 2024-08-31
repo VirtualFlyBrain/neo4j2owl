@@ -125,7 +125,7 @@ public class N2OExportService {
 			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 
 			OWLOntology o = man.createOntology();
-			findEntities(o, skip, limit);
+			findEntities(skip, limit);
 			addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
 			addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
 			for (String rel_qsl : getRelations(OWLAnnotationProperty.class)) {
