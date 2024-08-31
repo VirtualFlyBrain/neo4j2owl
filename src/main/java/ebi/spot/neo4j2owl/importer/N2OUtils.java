@@ -62,11 +62,10 @@ public class N2OUtils {
         }
         return "neo4j2owl_UnknownValue";
     }
-
-
-    public static void writeToFile(File dir, Map<String, List<String>> dataout, N2OCSVWriter.CSV_TYPE nodeclass) throws N2OException {
+    
+    public static void writeToFile(File dir, Map<String, List<String>> dataout, N2OCSVWriter.CSV_TYPE nodeclass, String csvPostfix) throws N2OException {
         for (String type : dataout.keySet()) {
-            File f = constructFileHandle(dir, nodeclass.name, type);
+            File f = constructFileHandle(dir, nodeclass.name, type, csvPostfix);
             try {
                 FileUtils.writeLines(f, dataout.get(type));
             } catch (IOException e) {
@@ -74,9 +73,12 @@ public class N2OUtils {
             }
         }
     }
-
-    static File constructFileHandle(File dir, String nodeclass, String type) {
-        return new File(dir, nodeclass + "_" + type + N2OStatic.CSV_EXTENSION);
+    
+    static File constructFileHandle(File dir, String nodeclass, String type, String namePostfix) {
+    	if(!namePostfix.isEmpty() && !namePostfix.startsWith("_")) {
+    		namePostfix = "_" + namePostfix;
+    	}
+        return new File(dir, nodeclass + namePostfix + "_" + type + N2OStatic.CSV_EXTENSION);
     }
 
     public static String render(OWLClassExpression ce) {
