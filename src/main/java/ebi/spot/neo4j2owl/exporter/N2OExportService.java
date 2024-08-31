@@ -115,7 +115,7 @@ public class N2OExportService {
 		return returnValue;
 	}
 	
-	public N2OReturnValue owl2ExportEdges() {
+	public N2OReturnValue owl2ExportEdges(Long skip, Long limit) {
 		n2OEntityManager = new N2OExportManager();
 		qsls_with_no_matching_properties = new HashSet<>();
 		logger.resetTimer();
@@ -125,7 +125,7 @@ public class N2OExportService {
 			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 
 			OWLOntology o = man.createOntology();
-			findEntities(0L, Long.MAX_VALUE);
+			findEntities(o, skip, limit);
 			addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
 			addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
 			for (String rel_qsl : getRelations(OWLAnnotationProperty.class)) {
