@@ -50,7 +50,12 @@ public class N2OExportService {
 	// static IRIManager iriManager = new IRIManager();
 	private N2OExportManager n2OEntityManager;
 	private Set<String> qsls_with_no_matching_properties;
-
+	
+	private final static String SUBCLASS_OF = "subclassOf";
+	private final static String INSTANCE_OF = "instanceOf";
+	private final static String ANNOTATION_PROPERTY = "annotationProperty";
+	private final static String OBJECT_PROPERTY = "objectProperty";
+	
 	public N2OExportService(GraphDatabaseService db) {
 		this.db = db;
 	}
@@ -115,7 +120,7 @@ public class N2OExportService {
 		return returnValue;
 	}
 	
-	public N2OReturnValue owl2ExportEdges(Long skip, Long limit) {
+	public N2OReturnValue owl2ExportEdges(String relationType) {
 		n2OEntityManager = new N2OExportManager();
 		qsls_with_no_matching_properties = new HashSet<>();
 		logger.resetTimer();
@@ -125,14 +130,22 @@ public class N2OExportService {
 			OWLOntologyManager man = OWLManager.createOWLOntologyManager();
 
 			OWLOntology o = man.createOntology();
-			findEntities(skip, limit);
-			addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
-			addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
-			for (String rel_qsl : getRelations(OWLAnnotationProperty.class)) {
-				addRelation(o, rel_qsl);
+			findEntities(0L, Long.MAX_VALUE);
+			if (relationType == null || relationType.isEmpty() || relationType.equals(SUBCLASS_OF)) {
+				addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
 			}
-			for (String rel_qsl : getRelations(OWLObjectProperty.class)) {
-				addRelation(o, rel_qsl);
+			if (relationType == null || relationType.isEmpty() || relationType.equals(INSTANCE_OF)) {
+				addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
+			}
+			if (relationType == null || relationType.isEmpty() || relationType.equals(ANNOTATION_PROPERTY)) {
+				for (String rel_qsl : getRelations(OWLAnnotationProperty.class)) {
+					addRelation(o, rel_qsl);
+				}
+			}
+			if (relationType == null || relationType.isEmpty() || relationType.equals(OBJECT_PROPERTY)) {
+				for (String rel_qsl : getRelations(OWLObjectProperty.class)) {
+					addRelation(o, rel_qsl);
+				}
 			}
 			ByteArrayOutputStream os = new ByteArrayOutputStream(); // new FileOutputStream(new File(fileName))
 			man.saveOntology(o, new RDFXMLDocumentFormat(), os);

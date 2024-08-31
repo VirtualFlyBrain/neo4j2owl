@@ -73,10 +73,10 @@ public class N2OProcedure {
 	
 	@SuppressWarnings("unused")
 	@Procedure(mode = Mode.WRITE)
-	public Stream<N2OReturnValue> exportOWLEdges(@Name("skip") Long skip, @Name("limit") Long limit) {
+	public Stream<N2OReturnValue> exportOWLEdges(@Name("relationType") String relationType) {
 		logger.resetTimer();
 		N2OExportService exportService = new N2OExportService(db);
-		N2OReturnValue result = exportService.owl2ExportEdges(skip, limit);
+		N2OReturnValue result = exportService.owl2ExportEdges(relationType);
 		return Stream.of(result);
 	}
 
