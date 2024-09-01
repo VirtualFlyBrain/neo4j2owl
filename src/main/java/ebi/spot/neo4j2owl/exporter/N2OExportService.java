@@ -50,7 +50,12 @@ public class N2OExportService {
 	// static IRIManager iriManager = new IRIManager();
 	private N2OExportManager n2OEntityManager;
 	private Set<String> qsls_with_no_matching_properties;
-
+	
+	private final static String SUBCLASS_OF = "subclassOf";
+	private final static String INSTANCE_OF = "instanceOf";
+	private final static String ANNOTATION_PROPERTY = "annotationProperty";
+	private final static String OBJECT_PROPERTY = "objectProperty";
+	
 	public N2OExportService(GraphDatabaseService db) {
 		this.db = db;
 	}
@@ -115,7 +120,7 @@ public class N2OExportService {
 		return returnValue;
 	}
 	
-	public N2OReturnValue owl2ExportEdges() {
+	public N2OReturnValue owl2ExportEdges(String relationType, int currentChunk, int chunkCount) {
 		n2OEntityManager = new N2OExportManager();
 		qsls_with_no_matching_properties = new HashSet<>();
 		logger.resetTimer();
@@ -126,13 +131,23 @@ public class N2OExportService {
 
 			OWLOntology o = man.createOntology();
 			findEntities(0L, Long.MAX_VALUE);
-			addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
-			addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
-			for (String rel_qsl : getRelations(OWLAnnotationProperty.class)) {
-				addRelation(o, rel_qsl);
+			if (relationType == null || relationType.isEmpty() || relationType.equals(SUBCLASS_OF)) {
+				addRelation(o, N2OStatic.RELTYPE_SUBCLASSOF);
 			}
-			for (String rel_qsl : getRelations(OWLObjectProperty.class)) {
-				addRelation(o, rel_qsl);
+			if (relationType == null || relationType.isEmpty() || relationType.equals(INSTANCE_OF)) {
+				addRelation(o, N2OStatic.RELTYPE_INSTANCEOF);
+			}
+			if (relationType == null || relationType.isEmpty() || relationType.equals(ANNOTATION_PROPERTY)) {
+				for (String rel_qsl : getRelations(OWLAnnotationProperty.class)) {
+					addRelation(o, rel_qsl);
+				}
+			}
+			if (relationType == null || relationType.isEmpty() || relationType.equals(OBJECT_PROPERTY)) {
+				Set<String> objRelations = getRelations(OWLObjectProperty.class);
+				List<Set<String>> chunks = splitSet(objRelations, chunkCount);
+				for (String rel_qsl : chunks.get(currentChunk)) {
+					addRelation(o, rel_qsl);
+				}
 			}
 			ByteArrayOutputStream os = new ByteArrayOutputStream(); // new FileOutputStream(new File(fileName))
 			man.saveOntology(o, new RDFXMLDocumentFormat(), os);
@@ -479,4 +494,25 @@ public class N2OExportService {
 		// test < number on integer overflow
 		return (test < number || test > maxValue) ? maxValue : test;
 	}
+	
+
+	/**
+	 * Splits given set into given number of chunks.
+	 * @param set to split
+	 * @param numChunks number of chunks
+	 * @return List of subsets
+	 */
+	public static <T> List<Set<T>> splitSet(Set<T> set, int numChunks) {
+		List<Set<T>> chunks = new ArrayList<>();
+		List<T> list = new ArrayList<>(set);
+		int chunkSize = (int) Math.ceil((double) list.size() / numChunks);
+
+		for (int i = 0; i < list.size(); i += chunkSize) {
+			int end = Math.min(list.size(), i + chunkSize);
+			chunks.add(new HashSet<>(list.subList(i, end)));
+		}
+
+		return chunks;
+	}
+
 }
