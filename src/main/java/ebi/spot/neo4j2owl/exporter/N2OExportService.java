@@ -120,7 +120,7 @@ public class N2OExportService {
 		return returnValue;
 	}
 	
-	public N2OReturnValue owl2ExportEdges(String relationType) {
+	public N2OReturnValue owl2ExportEdges(String relationType, int currentChunk, int chunkCount) {
 		n2OEntityManager = new N2OExportManager();
 		qsls_with_no_matching_properties = new HashSet<>();
 		logger.resetTimer();
@@ -143,7 +143,9 @@ public class N2OExportService {
 				}
 			}
 			if (relationType == null || relationType.isEmpty() || relationType.equals(OBJECT_PROPERTY)) {
-				for (String rel_qsl : getRelations(OWLObjectProperty.class)) {
+				Set<String> objRelations = getRelations(OWLObjectProperty.class);
+				List<Set<String>> chunks = splitSet(objRelations, chunkCount);
+				for (String rel_qsl : chunks.get(currentChunk)) {
 					addRelation(o, rel_qsl);
 				}
 			}
@@ -492,4 +494,25 @@ public class N2OExportService {
 		// test < number on integer overflow
 		return (test < number || test > maxValue) ? maxValue : test;
 	}
+	
+
+	/**
+	 * Splits given set into given number of chunks.
+	 * @param set to split
+	 * @param numChunks number of chunks
+	 * @return List of subsets
+	 */
+	public static <T> List<Set<T>> splitSet(Set<T> set, int numChunks) {
+		List<Set<T>> chunks = new ArrayList<>();
+		List<T> list = new ArrayList<>(set);
+		int chunkSize = (int) Math.ceil((double) list.size() / numChunks);
+
+		for (int i = 0; i < list.size(); i += chunkSize) {
+			int end = Math.min(list.size(), i + chunkSize);
+			chunks.add(new HashSet<>(list.subList(i, end)));
+		}
+
+		return chunks;
+	}
+
 }
