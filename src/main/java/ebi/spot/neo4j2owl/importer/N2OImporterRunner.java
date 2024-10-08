@@ -5,6 +5,7 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 public class N2OImporterRunner {
@@ -15,6 +16,7 @@ public class N2OImporterRunner {
 		Boolean enableReasoning = true;
 		String annotation_iri = null;
 		String csvPostfix = null;
+		String exportTypes = "all";
 
 		if (args.length > 3) {
 			enableReasoning = Boolean.parseBoolean(args[3]);
@@ -22,6 +24,13 @@ public class N2OImporterRunner {
 		}
 		if (args.length > 5) {
 			csvPostfix = args[5];
+		}
+		if (args.length > 5) {
+			String[] allowedExportTypes = {"all", "only_nodes", "only_edges"};
+			String exportParam = args[6].strip().toLowerCase();
+			if (Arrays.asList(allowedExportTypes).contains(exportParam)) {
+				exportTypes = exportParam;
+			}
 		}
 
 		if (config.equals("none")) {
@@ -32,7 +41,7 @@ public class N2OImporterRunner {
 		N2OImportResult importResults = new N2OImportResult();
 		try {
 			importService.prepareConfig(config, importdir);
-			N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(url, importdir, importResults, enableReasoning, annotation_iri, csvPostfix);
+			N2OCSVWriter csvWriter = importService.prepareCSVFilesForImport(url, importdir, importResults, enableReasoning, annotation_iri, csvPostfix, exportTypes);
 			File cypherDir = new File(importdir, "transactions");
 			if (!cypherDir.isDirectory()) {
 				boolean created = cypherDir.mkdir();

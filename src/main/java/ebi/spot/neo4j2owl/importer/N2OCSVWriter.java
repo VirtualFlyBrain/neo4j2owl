@@ -38,10 +38,21 @@ public class N2OCSVWriter {
         }
     }
 
-    void exportOntologyToCSV() throws N2OException {
-        processExportForNodes();
-        processExportForRelationships();
-    }
+	void exportOntologyToCSV(String exportTypes) throws N2OException {
+		switch (exportTypes) {
+		case "only_nodes":
+			processExportForNodes();
+			break;
+		case "only_edges":
+			processExportForRelationships();
+			break;
+		case "all":
+		default:
+			processExportForNodes();
+            processExportForRelationships();
+            break;
+		}
+	}
 
     public void exportN2OImportConfig(File fileOut) throws IOException {
         n2OImportCSVConfig.saveConfig(fileOut);
