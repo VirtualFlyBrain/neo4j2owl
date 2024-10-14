@@ -73,10 +73,10 @@ public class N2OProcedure {
 	
 	@SuppressWarnings("unused")
 	@Procedure(mode = Mode.WRITE)
-	public Stream<N2OReturnValue> exportOWLEdges(@Name("relationType") String relationType, @Name("currentChunk") int currentChunk, @Name("limit") int chunkCount) {
+	public Stream<N2OReturnValue> exportOWLEdges(@Name("relationType") String relationType, @Name("currentChunk") Long currentChunk, @Name("limit") Long chunkCount) {
 		logger.resetTimer();
 		N2OExportService exportService = new N2OExportService(db);
-		N2OReturnValue result = exportService.owl2ExportEdges(relationType, currentChunk, chunkCount);
+		N2OReturnValue result = exportService.owl2ExportEdges(relationType, currentChunk.intValue(), chunkCount.intValue());
 		return Stream.of(result);
 	}
 
