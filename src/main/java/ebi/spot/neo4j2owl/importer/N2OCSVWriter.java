@@ -8,6 +8,9 @@ import org.semanticweb.owlapi.model.OWLEntity;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class N2OCSVWriter {
@@ -97,8 +100,11 @@ public class N2OCSVWriter {
                 "LOAD CSV WITH HEADERS FROM \"file:/"+filename+"\" AS cl\n";
         switch(csv_type) {
             case RELATIONSHIPS:
+                // Include the per-row edge signature in the MERGE key so that parallel
+                // relationships of the same type between the same pair of nodes are kept
+                // distinct rather than collapsed onto a single edge (issue #407).
                 cypher+="MATCH (s:Entity { iri: cl.start}),(e:Entity { iri: cl.end})\n" +
-                        "MERGE (s)-[r:" + type + "]->(e) " + uncomposedSetClauses("cl", "r", manager.getHeadersForRelationships(type));
+                        "MERGE (s)-[r:" + type + " { edge_sig: cl.edge_sig }]->(e) " + uncomposedSetClauses("cl", "r", manager.getHeadersForRelationships(type));
                 break;
             case NODES:
                 cypher+= "MERGE (n:Entity { iri: cl.iri }) " + uncomposedSetClauses("cl", "n", manager.getHeadersForNodes(type)) + " SET n :" + type;
@@ -218,6 +224,10 @@ public class N2OCSVWriter {
                 sb.append(nodeindex.get(e.getStart()).getIri()).append(",");
                 sb.append(nodeindex.get(e.getEnd()).getIri()).append(",");
                 //sb.append(e.getRelationId());
+                // Stable per-row signature over (type, sorted property values, start, end).
+                // Identical rows hash identically (structural edges still dedup); rows that
+                // differ in any property get distinct signatures and survive the MERGE.
+                sb.append(edgeSignature(type, sb.toString())).append(",");
                 String s = sb.toString();
                 csvout.add(s.substring(0, s.length() - 1));
             }
@@ -337,11 +347,38 @@ public class N2OCSVWriter {
         for (String column : columns_sorted) {
             sb.append(column).append(",");
         }
-        sb.append("start,").append("end");
+        sb.append("start,").append("end,").append("edge_sig");
         //sb.append("type");
         return sb.toString();
     }
 
-
+    /**
+     * Compute a stable signature for a single relationship row so that the load-time
+     * MERGE can keep parallel edges distinct (issue #407). The signature is a SHA-1
+     * hash over the relationship type and the already-serialised row body (sorted
+     * property cells followed by start and end IRIs). Two rows with identical content
+     * hash to the same value and are deduplicated on import; rows differing in any
+     * property value get distinct signatures and survive as separate edges.
+     *
+     * @param type    the relationship type
+     * @param rowBody the serialised CSV row up to and including the end IRI
+     * @return a lowercase hexadecimal SHA-1 digest
+     */
+    private String edgeSignature(String type, String rowBody) {
+        String material = type + "" + rowBody;
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] digest = md.digest(material.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(Character.forDigit((b >> 4) & 0xF, 16));
+                hex.append(Character.forDigit(b & 0xF, 16));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            // SHA-1 is part of every JRE; fall back to a stable string hash if absent.
+            return Integer.toHexString(material.hashCode());
+        }
+    }
 
 }

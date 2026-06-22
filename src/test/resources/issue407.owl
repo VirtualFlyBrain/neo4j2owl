@@ -1,0 +1,197 @@
+<?xml version="1.0"?>
+<!--
+  Regression fixture for issue #407: neo4j2owl CSV import collapses parallel
+  relationships. Two reproductions are encoded:
+
+  Case A (dropped xref accessions): FBbt_00067011 carries three
+  database_cross_reference (oboInOwl#hasDbXref) assertions to the SAME Site node
+  (DoOR), each with a different accession axiom annotation, plus one to a second
+  Site (FlyBrain_NDB). Before the fix the three DoOR edges collapse to one and
+  two accessions are lost.
+
+  Case B (contaminated synonym/definition references): FBbt_00049999 carries two
+  has_reference (dcterms:references) assertions to the SAME publication
+  (FBrf0224194): one typed def, one typed syn with a synonym value and a
+  has_synonym_type. Before the fix these collapse into a single edge whose typ,
+  value and has_synonym_type are mixed from different sources.
+-->
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://purl.obolibrary.org/obo/issue407.owl"
+     ontologyIRI="http://purl.obolibrary.org/obo/issue407.owl"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+
+    <!-- Subjects -->
+    <Declaration>
+        <Class IRI="http://purl.obolibrary.org/obo/FBbt_00067011"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://purl.obolibrary.org/obo/FBbt_00049999"/>
+    </Declaration>
+
+    <!-- Cross-reference target Sites -->
+    <Declaration>
+        <NamedIndividual IRI="http://virtualflybrain.org/data/DoOR"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://virtualflybrain.org/data/FlyBrain_NDB"/>
+    </Declaration>
+
+    <!-- Reference target publications -->
+    <Declaration>
+        <NamedIndividual IRI="http://flybase.org/reports/FBrf0224194"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://flybase.org/reports/FBrf0193772"/>
+    </Declaration>
+
+    <!-- Relationship annotation properties (IRI-valued -> reified to edges) -->
+    <Declaration>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#hasDbXref"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/references"/>
+    </Declaration>
+
+    <!-- Axiom-annotation properties (become edge properties) -->
+    <Declaration>
+        <AnnotationProperty IRI="http://n2o.test/accession"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://n2o.test/typ"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://n2o.test/value"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#has_synonym_type"/>
+    </Declaration>
+
+    <!-- Labels: drive safe-label derivation for edge type and property names -->
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00067011</IRI>
+        <Literal>adult olfactory receptor neuron Or65a</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00049999</IRI>
+        <Literal>adult anterior pars intercerebralis</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://www.geneontology.org/formats/oboInOwl#hasDbXref</IRI>
+        <Literal>database_cross_reference</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://purl.org/dc/terms/references</IRI>
+        <Literal>has_reference</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://n2o.test/accession</IRI>
+        <Literal>accession</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://n2o.test/typ</IRI>
+        <Literal>typ</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://n2o.test/value</IRI>
+        <Literal>value</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://www.geneontology.org/formats/oboInOwl#has_synonym_type</IRI>
+        <Literal>has_synonym_type</Literal>
+    </AnnotationAssertion>
+
+    <!-- Case A: three xrefs to DoOR (same Site), one to FlyBrain_NDB -->
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/accession"/>
+            <Literal>DoOR:Or65a</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#hasDbXref"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00067011</IRI>
+        <IRI>http://virtualflybrain.org/data/DoOR</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/accession"/>
+            <Literal>DoOR:Or65b</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#hasDbXref"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00067011</IRI>
+        <IRI>http://virtualflybrain.org/data/DoOR</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/accession"/>
+            <Literal>DoOR:Or65c</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#hasDbXref"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00067011</IRI>
+        <IRI>http://virtualflybrain.org/data/DoOR</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/accession"/>
+            <Literal>FlyBrain_NDB:10412</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#hasDbXref"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00067011</IRI>
+        <IRI>http://virtualflybrain.org/data/FlyBrain_NDB</IRI>
+    </AnnotationAssertion>
+
+    <!-- Case B: definition reference and a synonym reference, both to FBrf0224194 -->
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/typ"/>
+            <Literal>def</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/references"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00049999</IRI>
+        <IRI>http://flybase.org/reports/FBrf0224194</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/typ"/>
+            <Literal>syn</Literal>
+        </Annotation>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/value"/>
+            <Literal>rSMPma</Literal>
+        </Annotation>
+        <Annotation>
+            <AnnotationProperty IRI="http://www.geneontology.org/formats/oboInOwl#has_synonym_type"/>
+            <Literal>BRAIN_NAME_ABV</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/references"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00049999</IRI>
+        <IRI>http://flybase.org/reports/FBrf0224194</IRI>
+    </AnnotationAssertion>
+    <!-- A second synonym reference to a different publication -->
+    <AnnotationAssertion>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/typ"/>
+            <Literal>syn</Literal>
+        </Annotation>
+        <Annotation>
+            <AnnotationProperty IRI="http://n2o.test/value"/>
+            <Literal>PIa</Literal>
+        </Annotation>
+        <AnnotationProperty IRI="http://purl.org/dc/terms/references"/>
+        <IRI>http://purl.obolibrary.org/obo/FBbt_00049999</IRI>
+        <IRI>http://flybase.org/reports/FBrf0193772</IRI>
+    </AnnotationAssertion>
+</Ontology>
