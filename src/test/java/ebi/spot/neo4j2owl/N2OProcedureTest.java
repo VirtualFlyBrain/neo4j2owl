@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.driver.Config;
@@ -67,6 +68,15 @@ public class N2OProcedureTest {
 		try (Session session = driver.session()) {
 			session.run("MATCH (n) DETACH DELETE n");
 		}
+	}
+
+	@BeforeEach
+	void resetConfig() {
+		// N2OConfig is a process-wide singleton that prepareConfig mutates rather than
+		// replaces. In production each import is its own process, but the test suite
+		// shares one JVM, so reset it between methods to stop one test's config (e.g.
+		// smalltest's nic: node labelling) leaking into another's import.
+		N2OConfig.resetConfig();
 	}
 
 	@Test
@@ -204,7 +214,10 @@ public class N2OProcedureTest {
 			assertEquals("", resMap.get("extraInfo"));
 			assertEquals(16, session.run("MATCH (n:Class) RETURN count(n) AS count").next().get("count").asInt());
 
-			String ontologyString = (String) resMapExport.get("o");
+			// exportOWL() returns the ontology as chunked List<String> (N2OReturnValue.o);
+			// join the chunks rather than casting the list to String.
+			@SuppressWarnings("unchecked")
+			String ontologyString = String.join("", (java.util.List<String>) resMapExport.get("o"));
 			OWLOntologyManager man1 = OWLManager.createOWLOntologyManager();
 			OWLOntologyManager man2 = OWLManager.createOWLOntologyManager();
 			OWLOntology o_orginal = man1.loadOntologyFromOntologyDocument(IRI.create(ontologyUrl));
