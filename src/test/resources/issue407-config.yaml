@@ -1,0 +1,6 @@
+allow_entities_without_labels: true
+testmode: true
+batch: true
+safe_label: loose
+batch_size: 100000000
+relation_type_threshold: 0.66

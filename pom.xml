@@ -119,8 +119,8 @@
 		<!-- https://mvnrepository.com/artifact/org.semanticweb.elk/elk-reasoner -->
 		<dependency>
 			<groupId>org.semanticweb.elk</groupId>
-			<artifactId>elk-owlapi4</artifactId>
-			<version>0.5.0-SNAPSHOT</version>
+			<artifactId>elk-owlapi</artifactId>
+			<version>0.4.3</version>
 			<exclusions>
 				<exclusion>
 					<groupId>net.sourceforge.owlapi</groupId>
@@ -147,19 +147,6 @@
 
 	</dependencies>
 
-	<repositories>
-		<repository>
-			<!-- the repository for snapshot dependencies -->
-			<id>ossrh</id>
-			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-	</repositories>
 
 	<build>
 		<testSourceDirectory>src/test/java</testSourceDirectory>

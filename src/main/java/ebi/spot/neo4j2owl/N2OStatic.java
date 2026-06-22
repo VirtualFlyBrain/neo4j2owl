@@ -26,6 +26,10 @@ public class N2OStatic {
     public static final String ATT_IRI = "iri";
     public static final String ATT_SHORT_FORM = "short_form";
     public static final String ATT_NODE_TYPE = "type";
+    // Internal per-edge load key used to keep parallel relationships distinct on
+    // import (issue #407). Treated as built-in so it is never re-exported as an
+    // ontology annotation or re-applied via a SET clause.
+    public static final String ATT_EDGE_SIG = "edge_sig";
 
     public static final String ANNOTATION_DELIMITER  = "~|~|~";
     public static final String ANNOTATION_DELIMITER_ESCAPED  = "\\~\\|\\~\\|\\~";
@@ -64,11 +68,11 @@ public class N2OStatic {
     }
 
     public static boolean isN2OBuiltInProperty(String property) {
-        return property.equals(ATT_LABEL) || property.equals(ATT_SAFE_LABEL) || property.equals(ATT_QUALIFIED_SAFE_LABEL) || property.equals(ATT_CURIE) || property.equals(ATT_SHORT_FORM) || property.equals(ATT_IRI) || property.equals(ATT_NODE_TYPE);
+        return property.equals(ATT_LABEL) || property.equals(ATT_SAFE_LABEL) || property.equals(ATT_QUALIFIED_SAFE_LABEL) || property.equals(ATT_CURIE) || property.equals(ATT_SHORT_FORM) || property.equals(ATT_IRI) || property.equals(ATT_NODE_TYPE) || property.equals(ATT_EDGE_SIG);
     }
 
     public static boolean isN2OBuiltInProperty(OWLEntity property) {
-        return property.equals(abp(ATT_LABEL)) || property.equals(abp(ATT_SAFE_LABEL)) || property.equals(abp(ATT_QUALIFIED_SAFE_LABEL)) || property.equals(abp(ATT_CURIE)) || property.equals(abp(ATT_SHORT_FORM)) || property.equals(abp(ATT_IRI)) || property.equals(abp(ATT_NODE_TYPE));
+        return property.equals(abp(ATT_LABEL)) || property.equals(abp(ATT_SAFE_LABEL)) || property.equals(abp(ATT_QUALIFIED_SAFE_LABEL)) || property.equals(abp(ATT_CURIE)) || property.equals(abp(ATT_SHORT_FORM)) || property.equals(abp(ATT_IRI)) || property.equals(abp(ATT_NODE_TYPE)) || property.equals(abp(ATT_EDGE_SIG));
     }
 
     private static OWLEntity abp(String s) {

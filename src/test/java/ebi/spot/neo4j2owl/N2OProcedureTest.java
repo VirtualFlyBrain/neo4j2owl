@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.neo4j.driver.Config;
@@ -67,6 +68,15 @@ public class N2OProcedureTest {
 		try (Session session = driver.session()) {
 			session.run("MATCH (n) DETACH DELETE n");
 		}
+	}
+
+	@BeforeEach
+	void resetConfig() {
+		// N2OConfig is a process-wide singleton that prepareConfig mutates rather than
+		// replaces. In production each import is its own process, but the test suite
+		// shares one JVM, so reset it between methods to stop one test's config (e.g.
+		// smalltest's nic: node labelling) leaking into another's import.
+		N2OConfig.resetConfig();
 	}
 
 	@Test
@@ -131,6 +141,57 @@ public class N2OProcedureTest {
 		}
 	}
 
+	/**
+	 * Regression test for issue #407: the CSV importer must keep parallel
+	 * relationships of the same type between the same pair of nodes distinct
+	 * rather than collapsing them onto a single edge whose properties overwrite
+	 * each other. Exercises the full owl2Import path (CSV write + LOAD CSV MERGE)
+	 * over a fixture that encodes both reported reproductions.
+	 */
+	@Test
+	public void issue407ParallelEdgesSurvive() throws Exception {
+		String ontologyUrl = Objects.requireNonNull(getClass().getClassLoader().getResource("issue407.owl")).toURI()
+				.toURL().toString();
+		String configUrl = Objects.requireNonNull(getClass().getClassLoader().getResource("issue407-config.yaml"))
+				.toURI().toURL().toString();
+
+		try (Session session = driver.session()) {
+			session.run(String.format("CALL ebi.spot.neo4j2owl.owl2Import('%s','%s')", ontologyUrl, configUrl))
+					.consume();
+
+			// Case A: all four database_cross_reference accessions survive, including
+			// the three to the same DoOR Site that previously collapsed onto one edge.
+			assertEquals("all four xref edges should survive", 4L, count(session,
+					"MATCH (:Class {short_form:'FBbt_00067011'})-[r:database_cross_reference]->() RETURN count(r) AS count"));
+			assertEquals("three parallel xref edges to the same Site should survive", 3L, count(session,
+					"MATCH (:Class {short_form:'FBbt_00067011'})-[r:database_cross_reference]->({short_form:'DoOR'}) RETURN count(r) AS count"));
+			Set<String> accessions = new HashSet<>(session.run(
+					"MATCH (:Class {short_form:'FBbt_00067011'})-[r:database_cross_reference]->({short_form:'DoOR'}) "
+							+ "UNWIND r.accession AS a RETURN collect(DISTINCT a) AS accs")
+					.next().get("accs").asList(v -> v.asString()).stream().collect(Collectors.toSet()));
+			assertEquals("no accession should be overwritten",
+					new HashSet<>(java.util.Arrays.asList("DoOR:Or65a", "DoOR:Or65b", "DoOR:Or65c")), accessions);
+
+			// Case B: definition and synonym references to the same publication stay
+			// distinct, and the definition edge carries no synonym typing/value.
+			assertEquals("def and syn references to one pub should be two edges", 2L, count(session,
+					"MATCH (:Class {short_form:'FBbt_00049999'})-[r:has_reference]->({short_form:'FBrf0224194'}) RETURN count(r) AS count"));
+			org.neo4j.driver.Record defRec = session.run(
+					"MATCH (:Class {short_form:'FBbt_00049999'})-[r:has_reference]->({short_form:'FBrf0224194'}) "
+							+ "WHERE 'def' IN r.typ RETURN r.has_synonym_type AS hst, r.value AS value").next();
+			assertTrue("definition edge must not carry a synonym type", defRec.get("hst").isNull());
+			assertTrue("definition edge must not carry a synonym value", defRec.get("value").isNull());
+
+			// Systemic: no has_reference edge carries synonym typing on a non-syn edge.
+			assertEquals("no contaminated reference edges should remain", 0L, count(session,
+					"MATCH ()-[r:has_reference]->() WHERE r.has_synonym_type IS NOT NULL AND NOT ('syn' IN r.typ) RETURN count(r) AS count"));
+		}
+	}
+
+	private long count(Session session, String query) {
+		return session.run(query).next().get("count").asLong();
+	}
+
 	@Test
 	public void owl2Export() throws Exception {
 		// String ontologyUrl = test_resources_web + "smalltest.owl";
@@ -153,7 +214,10 @@ public class N2OProcedureTest {
 			assertEquals("", resMap.get("extraInfo"));
 			assertEquals(16, session.run("MATCH (n:Class) RETURN count(n) AS count").next().get("count").asInt());
 
-			String ontologyString = (String) resMapExport.get("o");
+			// exportOWL() returns the ontology as chunked List<String> (N2OReturnValue.o);
+			// join the chunks rather than casting the list to String.
+			@SuppressWarnings("unchecked")
+			String ontologyString = String.join("", (java.util.List<String>) resMapExport.get("o"));
 			OWLOntologyManager man1 = OWLManager.createOWLOntologyManager();
 			OWLOntologyManager man2 = OWLManager.createOWLOntologyManager();
 			OWLOntology o_orginal = man1.loadOntologyFromOntologyDocument(IRI.create(ontologyUrl));
