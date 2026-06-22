@@ -72,7 +72,7 @@ public class N2OStatic {
     }
 
     public static boolean isN2OBuiltInProperty(OWLEntity property) {
-        return property.equals(abp(ATT_LABEL)) || property.equals(abp(ATT_SAFE_LABEL)) || property.equals(abp(ATT_QUALIFIED_SAFE_LABEL)) || property.equals(abp(ATT_CURIE)) || property.equals(abp(ATT_SHORT_FORM)) || property.equals(abp(ATT_IRI)) || property.equals(abp(ATT_NODE_TYPE));
+        return property.equals(abp(ATT_LABEL)) || property.equals(abp(ATT_SAFE_LABEL)) || property.equals(abp(ATT_QUALIFIED_SAFE_LABEL)) || property.equals(abp(ATT_CURIE)) || property.equals(abp(ATT_SHORT_FORM)) || property.equals(abp(ATT_IRI)) || property.equals(abp(ATT_NODE_TYPE)) || property.equals(abp(ATT_EDGE_SIG));
     }
 
     private static OWLEntity abp(String s) {

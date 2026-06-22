@@ -365,7 +365,9 @@ public class N2OCSVWriter {
      * @return a lowercase hexadecimal SHA-1 digest
      */
     private String edgeSignature(String type, String rowBody) {
-        String material = type + "" + rowBody;
+        // Join with NUL, which cannot occur in a relationship type or a CSV row,
+        // so the type/row boundary is unambiguous and cannot induce collisions.
+        String material = type + '\0' + rowBody;
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
             byte[] digest = md.digest(material.getBytes(StandardCharsets.UTF_8));
