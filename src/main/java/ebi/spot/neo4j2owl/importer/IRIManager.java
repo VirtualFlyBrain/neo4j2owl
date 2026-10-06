@@ -18,6 +18,9 @@ public class IRIManager {
     private final Map<String,String> namespacePrefixMap = new HashMap<>();
     private final List<String> sortedUrlNamespaces = new ArrayList<>();
     private int NAMESPACECOUNTER = 0;
+    // Namespaces we have already warned about, so each is reported once rather than once per entity.
+    private final Set<String> warnedNoLegalNamespace = new HashSet<>();
+    private final Set<String> warnedDigitShortForm = new HashSet<>();
     private static N2OLog logger = N2OLog.getInstance();
 
     public IRIManager() {
@@ -57,7 +60,7 @@ public class IRIManager {
         // If the getNamespace() method returns the whole IRI, this mains a suitable remainder could not be identified.
         // In this case we go the other way, extract a shortform (which will look for the suffix after the last /), and
         // determine a "namespace" by saying: the namespace is whatever is left when you remove the shortform.
-        if(ns.equals(iris)) {
+        if(ns.equals(iris) && warnedNoLegalNamespace.add(iris.replaceAll("[0-9.]+$",""))) {
             logger.info("A namespace does not have a legal namespace (which has implications for the shape of the short form): "+ns+ ". You could provide an entry in the curie map to help decide the proper namespace.");
         }
 
@@ -162,7 +165,9 @@ public class IRIManager {
             short_form = prefix+"_"+short_form;
         } else if(Character.isDigit(short_form.charAt(0))) {
             short_form = prefix+"_"+short_form;
-            logger.info("A short_form (" + namespace + ") starts with a digit: " + short_form);
+            if(warnedDigitShortForm.add(namespace)) {
+                logger.info("A short_form (" + namespace + ") starts with a digit: " + short_form + " (reported once per namespace)");
+            }
         }
         return short_form;
     }
