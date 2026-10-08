@@ -14,6 +14,13 @@ public class N2OImportManager {
     private final Map<String, Set<String>> prop_columns = new HashMap<>();
     private final Map<String, Set<String>> node_columns = new HashMap<>();
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
+    // IRI -> the entity registered for it in nodeindex. Lets typedEntity() avoid
+    // scanning the whole node index for every IRI-valued annotation (that scan made
+    // "Extracting annotations to literals" quadratic: 68 h of a 71 h pdb build).
+    private final Map<IRI, OWLEntity> iriIndex = new HashMap<>();
+    // IRIs registered under more than one entity type (punning). For these the
+    // original first-match-in-nodeindex scan is kept so the output is unchanged.
+    private final Set<IRI> punnedIris = new HashSet<>();
     private final Map<String,N2OEntity> qslEntityIndex = new HashMap<>();
     private final Map<N2OEntity,String> entityQSLIndex = new HashMap<>();
     private final Map<OWLEntity, Set<String>> nodeLabels = new HashMap<>();
@@ -74,6 +81,10 @@ public class N2OImportManager {
         }
         if (!nodeindex.containsKey(e)) {
             nodeindex.put(e, new N2OEntity(e, o, curies));
+            OWLEntity previous = iriIndex.putIfAbsent(e.getIRI(), e);
+            if (previous != null && !previous.equals(e)) {
+                punnedIris.add(e.getIRI());
+            }
             //nextavailableid++;
             //System.out.println(nodeindex.get(e));
         }
@@ -89,10 +100,18 @@ public class N2OImportManager {
 
 
     OWLEntity typedEntity(IRI iri, OWLOntology o) {
-        for (OWLEntity e : nodeindex.keySet()) {
-            if (e.getIRI().equals(iri)) {
-                return e;
+        if (punnedIris.contains(iri)) {
+            // Rare: several entity types share this IRI. Keep the original
+            // first-match scan so which one is chosen does not change.
+            for (OWLEntity e : nodeindex.keySet()) {
+                if (e.getIRI().equals(iri)) {
+                    return e;
+                }
             }
+        }
+        OWLEntity indexed = iriIndex.get(iri);
+        if (indexed != null) {
+            return indexed;
         }
         // If its nowhere on the node index, pretend its a class, and add it to the node index.
         OWLClass c = o.getOWLOntologyManager().getOWLDataFactory().getOWLClass(iri);
