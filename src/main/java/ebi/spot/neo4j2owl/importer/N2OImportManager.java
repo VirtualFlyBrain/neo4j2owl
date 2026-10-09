@@ -14,6 +14,9 @@ public class N2OImportManager {
     private final Map<String, Set<String>> prop_columns = new HashMap<>();
     private final Map<String, Set<String>> node_columns = new HashMap<>();
     private final Map<OWLEntity, N2OEntity> nodeindex = new HashMap<>();
+    // IRI -> entity, kept in step with nodeindex (only getNode() adds to it). typedEntity() used to scan every
+    // nodeindex key per IRI-valued annotation, which is O(nodes x annotations) and took days on the full VFB pdb.owl.
+    private final Map<IRI, OWLEntity> iriIndex = new HashMap<>();
     private final Map<String,N2OEntity> qslEntityIndex = new HashMap<>();
     private final Map<N2OEntity,String> entityQSLIndex = new HashMap<>();
     private final Map<OWLEntity, Set<String>> nodeLabels = new HashMap<>();
@@ -74,6 +77,7 @@ public class N2OImportManager {
         }
         if (!nodeindex.containsKey(e)) {
             nodeindex.put(e, new N2OEntity(e, o, curies));
+            iriIndex.putIfAbsent(e.getIRI(), e);   // first entity registered for an IRI wins (punned IRIs)
             //nextavailableid++;
             //System.out.println(nodeindex.get(e));
         }
@@ -89,10 +93,9 @@ public class N2OImportManager {
 
 
     OWLEntity typedEntity(IRI iri, OWLOntology o) {
-        for (OWLEntity e : nodeindex.keySet()) {
-            if (e.getIRI().equals(iri)) {
-                return e;
-            }
+        OWLEntity known = iriIndex.get(iri);
+        if (known != null) {
+            return known;
         }
         // If its nowhere on the node index, pretend its a class, and add it to the node index.
         OWLClass c = o.getOWLOntologyManager().getOWLDataFactory().getOWLClass(iri);
